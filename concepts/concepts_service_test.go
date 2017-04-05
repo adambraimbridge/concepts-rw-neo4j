@@ -13,6 +13,7 @@ import (
 	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
+	"time"
 )
 
 const (
@@ -48,6 +49,25 @@ var anotherBasicAggregatedConcept = AggregatedConcept{
 	PrefLabel: anotherBasicConcept.PrefLabel,
 	Type:      anotherBasicConcept.Type,
 	SourceRepresentations: []Concept{anotherBasicConcept},
+}
+
+func init() {
+	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
+	// we run tests so initialising the service will create the constraints first
+
+	url := os.Getenv("NEO4J_TEST_URL")
+	if url == "" {
+		url = "http://localhost:7474/db/data"
+	}
+
+	conf := neoutils.DefaultConnectionConfig()
+	conf.Transactional = false
+	db, _ := neoutils.Connect(url, conf)
+	service := NewConceptService(db)
+	service.Initialise()
+
+	duration := 5 * time.Second
+	time.Sleep(duration)
 }
 
 func TestConnectivityCheck(t *testing.T) {

@@ -121,7 +121,7 @@ func TestUnknownAuthorityGivesError(t *testing.T) {
 	newBasicAggConcept.SourceRepresentations = []Concept{newBasicConcept}
 
 	err := conceptsDriver.Write(newBasicAggConcept)
-	assert.EqualError(err, fmt.Sprintf("Unknown authority, therefore unable to add the relevant Identifier node: %s", newBasicConcept.Authority))
+	assert.EqualError(err, fmt.Sprintf("Invalid Request", newBasicConcept.Authority))
 }
 
 func TestDeleteWillDeleteEntireNodeIfNoRelationship(t *testing.T) {

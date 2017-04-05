@@ -16,7 +16,7 @@ type Concept struct {
 	AuthorityValue string `json:"authorityValue"`
 }
 
-// Slice of all the possible node types so we can ensure they all have
+// Map of all the possible node types so we can ensure they all have
 // constraints on the uuid
 var constraintMap = map[string]string{
 	"Thing":             "uuid",

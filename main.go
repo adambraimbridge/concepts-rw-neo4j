@@ -74,7 +74,7 @@ func main() {
 		services := map[string]baseftrwapp.Service{
 			"topics":         conceptsDriver,
 			"subjects":       conceptsDriver,
-			"special-reports": conceptsDriver,
+			"specialreports": conceptsDriver,
 			"genres":         conceptsDriver,
 			"locations":      conceptsDriver,
 			"sections":      conceptsDriver,

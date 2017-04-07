@@ -87,6 +87,11 @@ func (s service) Write(thing interface{}) error {
 
 	aggregatedConcept := thing.(AggregatedConcept)
 
+	error := validateObject(aggregatedConcept)
+	if (error != nil) {
+		return error
+	}
+
 	//cleanUP all the previous IDENTIFIERS referring to that uuid
 	deletePreviousIdentifiersQuery := &neoism.CypherQuery{
 		Statement: `MATCH (t:Thing {uuid:{uuid}})
@@ -143,6 +148,34 @@ func (s service) Write(thing interface{}) error {
 
 	return s.conn.CypherBatch(queryBatch)
 
+}
+
+func validateObject(aggConcept AggregatedConcept) error {
+	if (aggConcept.PrefLabel == "") {
+		return requestError{formatErrorString("prefLabel", aggConcept.UUID)}
+	}
+	if (aggConcept.Type == "") {
+		return requestError{formatErrorString("type", aggConcept.UUID)}
+	}
+	if (aggConcept.SourceRepresentations == nil) {
+		return requestError{formatErrorString("sourceRepresentation", aggConcept.UUID)}
+	}
+	for _, concept := range aggConcept.SourceRepresentations {
+		if (concept.PrefLabel == "") {
+			return requestError{formatErrorString("sourceRepresentation.prefLabel", concept.UUID)}
+		}
+		if (concept.Type == "") {
+			return requestError{formatErrorString("sourceRepresentation.type", concept.UUID)}
+		}
+		if (concept.AuthorityValue == "") {
+			return requestError{formatErrorString("sourceRepresentation.authorityValue", concept.UUID)}
+		}
+	}
+	return nil
+}
+
+func formatErrorString (field string, uuid string) string {
+	return fmt.Sprintf("Invalid request, no %s has been supplied for: %s", field, uuid)
 }
 
 func getAllLabels(conceptType string) string {

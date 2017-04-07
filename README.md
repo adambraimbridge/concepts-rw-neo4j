@@ -90,3 +90,4 @@ Build-Info: [http://localhost:8080/build-info](http://localhost:8080/build-info)
  logging requires an env app parameter, for all environments  other than local logs are written to file
  when running locally logging is written to console (if you want to log locally to file you need to pass in an env parameter that is != local)
  NOTE: build-info end point is not logged as it is called every second from varnish and this information is not needed in  logs/splunk
+

@@ -32,7 +32,7 @@ var basicConcept = Concept{
 var basicAggregatedConcept = AggregatedConcept{
 	UUID:      basicConcept.UUID,
 	PrefLabel: basicConcept.PrefLabel,
-	Type:      basicConcept.Type,
+
 	SourceRepresentations: []Concept{basicConcept},
 }
 
@@ -47,7 +47,7 @@ var anotherBasicConcept = Concept{
 var anotherBasicAggregatedConcept = AggregatedConcept{
 	UUID:      anotherBasicConcept.UUID,
 	PrefLabel: anotherBasicConcept.PrefLabel,
-	Type:      anotherBasicConcept.Type,
+
 	SourceRepresentations: []Concept{anotherBasicConcept},
 }
 
@@ -230,14 +230,6 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	assert.Equal(err.(requestError).details, fmt.Sprintf("Invalid request, no prefLabel has been supplied for: %s", anotherObj.UUID))
 
 	anotherObj.PrefLabel = "Pref Label"
-	anotherObj.Type = ""
-	err = conceptsDriver.Write(anotherObj)
-	assert.Error(err)
-	assert.IsType(requestError{}, err)
-	assert.EqualError(err, "Invalid Request")
-	assert.Equal(err.(requestError).details, fmt.Sprintf("Invalid request, no type has been supplied for: %s", anotherObj.UUID))
-
-	anotherObj.Type = "Type"
 	anotherObj.SourceRepresentations = nil
 	err = conceptsDriver.Write(anotherObj)
 	assert.Error(err)
@@ -271,6 +263,16 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	assert.IsType(requestError{}, err)
 	assert.EqualError(err, "Invalid Request")
 	assert.Equal(err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation.authorityValue has been supplied for: %s", anotherObj.UUID))
+
+	yetAnotherBasicConcept = basicConcept
+	yetAnotherBasicConcept.Type = "TEST_TYPE"
+	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
+	err = conceptsDriver.Write(anotherObj)
+	assert.Error(err)
+	assert.IsType(requestError{}, err)
+	assert.EqualError(err, "Invalid Request")
+	assert.Equal(err.(requestError).details, fmt.Sprintf("The source representation of uuid: %s has an unknown type of: %s", yetAnotherBasicConcept.UUID, yetAnotherBasicConcept.Type))
+
 
 }
 

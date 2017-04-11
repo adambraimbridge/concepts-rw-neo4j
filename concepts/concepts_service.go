@@ -77,8 +77,8 @@ func (s service) Read(uuid string) (interface{}, bool, error) {
 	// currently there is no concordance for only TME concepts and needs to be
 	// updated when there are rules involved to ascertain the canonical information
 	// e.g for people or orgs
-	aggregatedConcept := AggregatedConcept{UUID: results[0].UUID, Type: typeName,
-		PrefLabel: results[0].PrefLabel, SourceRepresentations: []Concept{concept}}
+	aggregatedConcept := AggregatedConcept{UUID: results[0].UUID, PrefLabel: results[0].PrefLabel,
+		SourceRepresentations: []Concept{concept}}
 
 	return aggregatedConcept, true, nil
 }
@@ -118,7 +118,7 @@ func (s service) Write(thing interface{}) error {
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
 								set n={allprops}
-								set n :%s`, getAllLabels(aggregatedConcept.Type)),
+								set n :%s`, getAllLabels(concept.Type)),
 			Parameters: map[string]interface{}{
 				"uuid": aggregatedConcept.UUID,
 				"allprops": map[string]interface{}{
@@ -154,9 +154,6 @@ func validateObject(aggConcept AggregatedConcept) error {
 	if (aggConcept.PrefLabel == "") {
 		return requestError{formatErrorString("prefLabel", aggConcept.UUID)}
 	}
-	if (aggConcept.Type == "") {
-		return requestError{formatErrorString("type", aggConcept.UUID)}
-	}
 	if (aggConcept.SourceRepresentations == nil) {
 		return requestError{formatErrorString("sourceRepresentation", aggConcept.UUID)}
 	}
@@ -169,6 +166,9 @@ func validateObject(aggConcept AggregatedConcept) error {
 		}
 		if (concept.AuthorityValue == "") {
 			return requestError{formatErrorString("sourceRepresentation.authorityValue", concept.UUID)}
+		}
+		if _, ok := constraintMap[concept.Type]; !ok {
+			return requestError{fmt.Sprintf("The source representation of uuid: %s has an unknown type of: %s", concept.UUID, concept.Type)}
 		}
 	}
 	return nil

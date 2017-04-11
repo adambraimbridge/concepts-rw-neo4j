@@ -3,7 +3,6 @@ package concepts
 type AggregatedConcept struct {
 	UUID                  string    `json:"uuid"`
 	PrefLabel             string    `json:"prefLabel"`
-	Type                  string    `json:"type"`
 	SourceRepresentations []Concept `json:"sourceRepresentations"`
 }
 
@@ -29,6 +28,7 @@ var constraintMap = map[string]string{
 	"Topic":             "uuid",
 	"Genre":             "uuid",
 	"Brand":             "uuid",
+	"AlphavilleSeries":  "uuid",
 	"UPPIdentifier":     "value",
 	"TMEIdentifier":     "value",
 	"FactsetIdentifier": "value",
@@ -45,3 +45,6 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"TME":     "TMEIdentifier",
 	"UPP":     "UPPIdentifier",
 }
+
+var BasicTmePaths = []string{"topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series"}
+

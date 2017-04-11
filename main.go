@@ -71,18 +71,17 @@ func main() {
 
 		baseftrwapp.OutputMetricsIfRequired(*graphiteTCPAddress, *graphitePrefix, *logMetrics)
 
-		basicTmePaths := []string{"topics", "subjects", "specialreports", "genres", "locations", "sections"}
 
 		services := map[string]baseftrwapp.Service{}
 
-		for _, path := range basicTmePaths {
+		for _, path := range concepts.BasicTmePaths {
 			services[path] = conceptsDriver
 		}
 
 		var checks []v1a.Check
 
 		// We are only checking Neo4J so only need to check with the implementation for one type
-		checks = append(checks, makeCheck(services[basicTmePaths[0]], db))
+		checks = append(checks, makeCheck(services[concepts.BasicTmePaths[0]], db))
 
 		baseftrwapp.RunServerWithConf(baseftrwapp.RWConf{
 			Services:      services,

@@ -64,7 +64,7 @@ func init() {
 
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
-		url = "http://localhost:7474/db/data"
+		url = "http://localhost:7777/db/data"
 	}
 
 	conf := neoutils.DefaultConnectionConfig()
@@ -333,7 +333,7 @@ func getDatabaseConnectionAndCheckClean(t *testing.T, assert *assert.Assertions)
 func getDatabaseConnection(assert *assert.Assertions) neoutils.NeoConnection {
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
-		url = "http://localhost:7474/db/data"
+		url = "http://localhost:7777/db/data"
 	}
 
 	conf := neoutils.DefaultConnectionConfig()
@@ -346,7 +346,7 @@ func getDatabaseConnection(assert *assert.Assertions) neoutils.NeoConnection {
 func getConceptService(t *testing.T) service {
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
-		url = "http://localhost:7474/db/data"
+		url = "http://localhost:7777/db/data"
 	}
 
 	conf := neoutils.DefaultConnectionConfig()

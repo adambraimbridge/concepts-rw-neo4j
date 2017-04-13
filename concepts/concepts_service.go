@@ -108,9 +108,7 @@ func (s service) Read(uuid string) (interface{}, bool, error) {
 
 	if (isConcordedNode) {
 		for _, srcConcept := range results[0].SourceRepresentations {
-
 			conceptType, error := mapper.MostSpecificType(srcConcept.Types)
-			fmt.Printf("ERROR: %v", error)
 			if error != nil {
 				return AggregatedConcept{}, false, err
 			}

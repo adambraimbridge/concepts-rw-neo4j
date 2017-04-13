@@ -17,7 +17,7 @@ func main() {
 	app := cli.App("concepts-rw-neo4j", "A RESTful API for managing Concepts in neo4j")
 	neoURL := app.String(cli.StringOpt{
 		Name:   "neo-url",
-		Value:  "http://localhost:7474/db/data",
+		Value:  "http://localhost:7777/db/data",
 		Desc:   "neo4j endpoint URL",
 		EnvVar: "NEO_URL",
 	})
@@ -70,7 +70,6 @@ func main() {
 		conceptsDriver.Initialise()
 
 		baseftrwapp.OutputMetricsIfRequired(*graphiteTCPAddress, *graphitePrefix, *logMetrics)
-
 
 		services := map[string]baseftrwapp.Service{}
 

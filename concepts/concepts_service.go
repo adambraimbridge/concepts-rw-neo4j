@@ -33,6 +33,15 @@ func (s service) Initialise() error {
 	return s.conn.EnsureConstraints(constraintMap)
 }
 
+type neoAggregatedConcept struct {
+	UUID                  string    `json:"uuid"`
+	PrefLabel             string    `json:"prefLabel"`
+	Types           []string `json:"types"`
+	Authority      string   `json:"authority"`
+	AuthorityValue string   `json:"authorityValue"`
+	SourceRepresentations []neoConcept `json:"sourceRepresentations"`
+}
+
 type neoConcept struct {
 	UUID           string   `json:"uuid"`
 	PrefLabel      string   `json:"prefLabel"`
@@ -42,19 +51,41 @@ type neoConcept struct {
 }
 
 func (s service) Read(uuid string) (interface{}, bool, error) {
-	results := []neoConcept{}
+	// TODO should we allow to come in from any UUID not only the canonical one
+	results := []neoAggregatedConcept{}
 
-	query := &neoism.CypherQuery{
-		Statement: `MATCH (n:Concept {uuid:{uuid}})
+	// Is the UUID a concorded concept
+	isConcordedNode, error := s.isConcordedConcept(uuid)
+
+	if error != nil {
+		return AggregatedConcept{}, false, error
+	}
+
+	var query *neoism.CypherQuery
+
+	if isConcordedNode {
+		query = &neoism.CypherQuery{
+			Statement: `MATCH (n:Concept {uuid:{uuid}})<-[:EQUIVALENT_TO]-(node:Concept)
+					WITH n.uuid as uuid, n.prefLabel as prefLabel, labels(n) as types,
+					{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue, types: labels(node)} as sources
+					RETURN uuid, prefLabel, types, collect(sources) as sourceRepresentations `,
+			Parameters: map[string]interface{}{
+				"uuid": uuid,
+			},
+			Result: &results,
+		}
+	} else {
+		query = &neoism.CypherQuery{
+			Statement: `MATCH (n:Concept {uuid:{uuid}})
 			return distinct n.uuid as uuid, n.prefLabel as prefLabel,
 			labels(n) as types, n.authority as authority,
 			n.authorityValue as authorityValue `,
-		Parameters: map[string]interface{}{
-			"uuid": uuid,
-		},
-		Result: &results,
+			Parameters: map[string]interface{}{
+				"uuid": uuid,
+			},
+			Result: &results,
+		}
 	}
-
 	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
 
 	if err != nil {
@@ -70,17 +101,58 @@ func (s service) Read(uuid string) (interface{}, bool, error) {
 		return AggregatedConcept{}, false, err
 	}
 
-	concept := Concept{UUID: results[0].UUID, PrefLabel: results[0].PrefLabel,
-		Authority: results[0].Authority, AuthorityValue: results[0].AuthorityValue,
-		Type: typeName}
+	var sourceConcepts []Concept
+	var concept Concept
 
-	// currently there is no concordance for only TME concepts and needs to be
-	// updated when there are rules involved to ascertain the canonical information
-	// e.g for people or orgs
-	aggregatedConcept := AggregatedConcept{UUID: results[0].UUID, PrefLabel: results[0].PrefLabel,
-		SourceRepresentations: []Concept{concept}}
+	aggregatedConcept := AggregatedConcept{UUID: results[0].UUID, PrefLabel: results[0].PrefLabel, Type: typeName}
+
+	if (isConcordedNode) {
+		for _, srcConcept := range results[0].SourceRepresentations {
+
+			conceptType, error := mapper.MostSpecificType(srcConcept.Types)
+			fmt.Printf("ERROR: %v", error)
+			if error != nil {
+				return AggregatedConcept{}, false, err
+			}
+
+			concept.UUID = srcConcept.UUID
+			concept.PrefLabel = srcConcept.PrefLabel
+			concept.Authority = srcConcept.Authority
+			concept.AuthorityValue = srcConcept.AuthorityValue
+			concept.Type = conceptType
+			sourceConcepts = append(sourceConcepts, concept)
+		}
+	} else {
+		concept.UUID = aggregatedConcept.UUID
+		concept.PrefLabel = aggregatedConcept.PrefLabel
+		concept.Authority = results[0].Authority
+		concept.AuthorityValue = results[0].AuthorityValue
+		concept.Type = typeName
+		sourceConcepts = append(sourceConcepts, concept)
+	}
+	aggregatedConcept.SourceRepresentations = sourceConcepts
 
 	return aggregatedConcept, true, nil
+}
+
+func (s service) isConcordedConcept(uuid string) (bool, error) {
+	results := []struct {
+		uuid string `json:"uuid"`
+	}{}
+	query := &neoism.CypherQuery{
+		Statement: `MATCH (n:Concept {uuid:{uuid}})-[:EQUIVALENT_TO]-(c) return n.uuid`,
+		Parameters: map[string]interface{}{
+			"uuid": uuid,
+		},
+		Result: &results,
+	}
+
+	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
+	if err != nil {
+		return false, err
+	}
+
+	return (len(results) > 1), nil
 }
 
 func (s service) Write(thing interface{}) error {
@@ -88,62 +160,41 @@ func (s service) Write(thing interface{}) error {
 	aggregatedConcept := thing.(AggregatedConcept)
 
 	error := validateObject(aggregatedConcept)
-	if (error != nil) {
+	if error != nil {
 		return error
 	}
 
-	//cleanUP all the previous IDENTIFIERS referring to that uuid
-	deletePreviousIdentifiersQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {uuid:{uuid}})
-			OPTIONAL MATCH (t)<-[iden:IDENTIFIES]-(i)
-			DELETE iden, i`,
-		Parameters: map[string]interface{}{
-			"uuid": aggregatedConcept.UUID,
-		},
+	var queryBatch []*neoism.CypherQuery
+
+	// If canonical node is needed create it i.e more than one source and link each node to it
+	// Is a canonical node needed?
+	if len(aggregatedConcept.SourceRepresentations) > 1 {
+		canonicalConcept := Concept{UUID: aggregatedConcept.UUID, PrefLabel: aggregatedConcept.PrefLabel, Type: aggregatedConcept.Type,
+			Authority: "UPP", AuthorityValue: aggregatedConcept.UUID}
+		queryBatch = append(queryBatch, createNodeQueries(canonicalConcept)...)
 	}
 
-	queryBatch := []*neoism.CypherQuery{deletePreviousIdentifiersQuery}
-
-	var uppIdentifierQuery *neoism.CypherQuery
-	var authorityIdentifierQuery *neoism.CypherQuery
-	var createConceptQuery *neoism.CypherQuery
-
-	// create-update node for CONCEPT
-	// This needs to be enhanced for when concordance is done because it is only using the source representation rather
-	// than the canonical information as it is the same for this scenario
-	// ADD all the IDENTIFIER nodes and IDENTIFIES relationships
-
+	// Else create the lone node
 	for _, concept := range aggregatedConcept.SourceRepresentations {
 
-		createConceptQuery = &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
-			Parameters: map[string]interface{}{
-				"uuid": aggregatedConcept.UUID,
-				"allprops": map[string]interface{}{
-					"uuid":           concept.UUID,
-					"prefLabel":      concept.PrefLabel,
-					"authority":      concept.Authority,
-					"authorityValue": concept.AuthorityValue,
+		queryBatch = append(queryBatch, createNodeQueries(concept)...)
+
+		// If more than one source system we need to link to the canonical node
+		if len(aggregatedConcept.SourceRepresentations) > 1 {
+			// Add Authority identifier
+			authorityIdentifierQuery := createNewIdentifierQuery(concept.UUID, authorityToIdentifierLabelMap[concept.Authority], concept.AuthorityValue)
+			queryBatch = append(queryBatch, authorityIdentifierQuery)
+
+			equivQuery := &neoism.CypherQuery{
+				Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {uuid:{canonicalUuid}})
+					MERGE (t)-[:EQUIVALENT_TO]->(c)`,
+				Parameters: map[string]interface{}{
+					"uuid":          concept.UUID,
+					"canonicalUuid": aggregatedConcept.UUID,
 				},
-			},
+			}
+			queryBatch = append(queryBatch, equivQuery)
 		}
-
-		queryBatch = append(queryBatch, createConceptQuery)
-
-		// Add UPPIdentififer
-		uppIdentifierQuery = createNewIdentifierQuery(concept.UUID, authorityToIdentifierLabelMap["UPP"], concept.UUID)
-		queryBatch = append(queryBatch, uppIdentifierQuery)
-
-		// Is Authority recognised
-		if _, ok := authorityToIdentifierLabelMap[concept.Authority]; !ok {
-			return requestError{(fmt.Sprintf("Unknown authority, therefore unable to add the relevant Identifier node: %s", concept.Authority))}
-		}
-
-		// Add Authority identifier
-		authorityIdentifierQuery = createNewIdentifierQuery(concept.UUID, authorityToIdentifierLabelMap[concept.Authority], concept.AuthorityValue)
-		queryBatch = append(queryBatch, authorityIdentifierQuery)
 	}
 
 	return s.conn.CypherBatch(queryBatch)
@@ -151,20 +202,27 @@ func (s service) Write(thing interface{}) error {
 }
 
 func validateObject(aggConcept AggregatedConcept) error {
-	if (aggConcept.PrefLabel == "") {
+	if aggConcept.PrefLabel == "" {
 		return requestError{formatErrorString("prefLabel", aggConcept.UUID)}
 	}
-	if (aggConcept.SourceRepresentations == nil) {
+	if aggConcept.Type == "" {
+		return requestError{formatErrorString("type", aggConcept.UUID)}
+	}
+	if aggConcept.SourceRepresentations == nil {
 		return requestError{formatErrorString("sourceRepresentation", aggConcept.UUID)}
 	}
 	for _, concept := range aggConcept.SourceRepresentations {
-		if (concept.PrefLabel == "") {
+		// Is Authority recognised?
+		if _, ok := authorityToIdentifierLabelMap[concept.Authority]; !ok {
+			return requestError{(fmt.Sprintf("Unknown authority, therefore unable to add the relevant Identifier node: %s", concept.Authority))}
+		}
+		if concept.PrefLabel == "" {
 			return requestError{formatErrorString("sourceRepresentation.prefLabel", concept.UUID)}
 		}
-		if (concept.Type == "") {
+		if concept.Type == "" {
 			return requestError{formatErrorString("sourceRepresentation.type", concept.UUID)}
 		}
-		if (concept.AuthorityValue == "") {
+		if concept.AuthorityValue == "" {
 			return requestError{formatErrorString("sourceRepresentation.authorityValue", concept.UUID)}
 		}
 		if _, ok := constraintMap[concept.Type]; !ok {
@@ -174,7 +232,7 @@ func validateObject(aggConcept AggregatedConcept) error {
 	return nil
 }
 
-func formatErrorString (field string, uuid string) string {
+func formatErrorString(field string, uuid string) string {
 	return fmt.Sprintf("Invalid request, no %s has been supplied for: %s", field, uuid)
 }
 
@@ -186,6 +244,42 @@ func getAllLabels(conceptType string) string {
 		parentType = mapper.ParentType(parentType)
 	}
 	return labels
+}
+
+func createNodeQueries(concept Concept) []*neoism.CypherQuery {
+
+	//cleanUP all the previous IDENTIFIERS referring to that uuid
+	deletePreviousIdentifiersQuery := &neoism.CypherQuery{
+		Statement: `MATCH (t:Thing {uuid:{uuid}})
+			OPTIONAL MATCH (t)<-[iden:IDENTIFIES]-(i)
+			DELETE iden, i`,
+		Parameters: map[string]interface{}{
+			"uuid": concept.UUID,
+		},
+	}
+	queryBatch := []*neoism.CypherQuery{deletePreviousIdentifiersQuery}
+	createConceptQuery := &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
+								set n={allprops}
+								set n :%s`, getAllLabels(concept.Type)),
+		Parameters: map[string]interface{}{
+			"uuid": concept.UUID,
+			"allprops": map[string]interface{}{
+				"uuid":           concept.UUID,
+				"prefLabel":      concept.PrefLabel,
+				"authority":      concept.Authority,
+				"authorityValue": concept.AuthorityValue,
+			},
+		},
+	}
+	queryBatch = append(queryBatch, createConceptQuery)
+	// Add UPPIdentififer
+	uppIdentifierQuery := createNewIdentifierQuery(concept.UUID,
+		authorityToIdentifierLabelMap["UPP"], concept.UUID)
+
+	queryBatch = append(queryBatch, uppIdentifierQuery)
+	return queryBatch
+
 }
 
 func createNewIdentifierQuery(uuid string, identifierLabel string, identifierValue string) *neoism.CypherQuery {
@@ -204,6 +298,8 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 }
 
 func (s service) Delete(uuid string) (bool, error) {
+	// TODO: We need to establish what are the bounds of this service, how much of a concorded concept should be deleted
+
 	// We don't know what labels there are so we need to loop through all the types
 	// so we can try and remove all the possibilities for this taxonomy
 	var labelsToRemove string

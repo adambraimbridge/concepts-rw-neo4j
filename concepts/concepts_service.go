@@ -2,12 +2,12 @@ package concepts
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
+	"fmt"
 )
 
 // CypherDriver - CypherDriver
@@ -271,6 +271,16 @@ func createNodeQueries(concept Concept) []*neoism.CypherQuery {
 		},
 	}
 	queryBatch = append(queryBatch, createConceptQuery)
+
+	//Add Alternative Identifier
+	for k, v := range authorityToIdentifierLabelMap {
+		if k == concept.Authority {
+			alternativeIdentifierQuery := createNewIdentifierQuery(concept.UUID,
+				v, concept.AuthorityValue)
+			queryBatch = append(queryBatch, alternativeIdentifierQuery)
+		}
+	}
+
 	// Add UPPIdentififer
 	uppIdentifierQuery := createNewIdentifierQuery(concept.UUID,
 		authorityToIdentifierLabelMap["UPP"], concept.UUID)

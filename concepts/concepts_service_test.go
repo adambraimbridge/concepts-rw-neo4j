@@ -28,7 +28,24 @@ var basicConcept = Concept{
 	Authority:      "TME",
 	AuthorityValue: "1234",
 }
-
+func getBasicConcept() Concept {
+	basicConcept = Concept{
+		UUID:           "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+		PrefLabel:      "basic concept label",
+		Type:           "Section",
+		Authority:      "TME",
+		AuthorityValue: "1234",
+	}
+	return basicConcept
+}
+func getBasicAggregatedConcept() AggregatedConcept {
+	return AggregatedConcept{
+		UUID:      basicConcept.UUID,
+		PrefLabel: basicConcept.PrefLabel,
+		Type: "Section",
+		SourceRepresentations: []Concept{getBasicConcept()},
+	}
+}
 var basicAggregatedConcept = AggregatedConcept{
 	UUID:      basicConcept.UUID,
 	PrefLabel: basicConcept.PrefLabel,
@@ -124,7 +141,7 @@ func TestCreateHandlesSpecialCharacters(t *testing.T) {
 
 	readConceptAndCompare(basicAggregatedConceptToWrite, t, db)
 }
-//
+
 //func TestAddingConceptWithExistingIdentifiersShouldFail(t *testing.T) {
 //	assert := assert.New(t)
 //
@@ -145,6 +162,39 @@ func TestCreateHandlesSpecialCharacters(t *testing.T) {
 //	assert.Error(err)
 //	assert.IsType(rwapi.ConstraintOrTransactionError{}, err)
 //}
+
+func TestIdentifierNodesCreatedForBasicConcept(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnectionAndCheckClean(t, assert)
+	defer cleanDB([]string{basicConcept.UUID}, db, t, assert)
+
+	conceptsDriver := NewConceptService(db)
+	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
+
+	actualValue := getIdentifierValue(assert, db, basicAggregatedConcept.UUID, "UPPIdentifier")
+	assert.Equal(basicAggregatedConcept.SourceRepresentations[0].UUID, actualValue)
+
+	actualValue = getIdentifierValue(assert, db, basicAggregatedConcept.UUID, "TMEIdentifier")
+	assert.Equal(basicAggregatedConcept.SourceRepresentations[0].AuthorityValue, actualValue)
+}
+
+func TestIdentifierNodesUpdatedForBasicConcept(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnectionAndCheckClean(t, assert)
+	bac := getBasicAggregatedConcept()
+	defer cleanDB([]string{bac.UUID}, db, t, assert)
+	conceptsDriver := NewConceptService(db)
+
+	assert.NoError(conceptsDriver.Write(bac), "Failed to write concept")
+
+	expectedNewTMEIdentifierValue := "UpdatedAuthorityValue"
+	bac.SourceRepresentations[0].AuthorityValue = expectedNewTMEIdentifierValue
+
+	assert.NoError(conceptsDriver.Write(bac), "Failed to write concept")
+
+	actualValue := getIdentifierValue(assert, db, bac.UUID, "TMEIdentifier")
+	assert.Equal(bac.SourceRepresentations[0].AuthorityValue, actualValue)
+}
 
 func TestUnknownAuthorityGivesError(t *testing.T) {
 	assert := assert.New(t)
@@ -476,4 +526,25 @@ func writeJSONToService(service baseftrwapp.Service, pathToJSONFile string, asse
 	assert.NoError(errr)
 	errrr := service.Write(inst)
 	assert.NoError(errrr)
+}
+
+func getIdentifierValue(assert *assert.Assertions, db neoutils.NeoConnection, uuid string, label string) string{
+	results := []struct {
+		Value string `json:"i.value"`
+	}{}
+
+	query := &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`
+			match (c:Concept {uuid :{uuid}})-[r:IDENTIFIES]-(i:%s) return i.value
+		`, label),
+		Parameters: map[string]interface{}{
+			"uuid": uuid,
+		},
+		Result: &results,
+	}
+
+	err := db.CypherBatch([]*neoism.CypherQuery{query})
+	assert.NoError(err, fmt.Sprintf("Error while retrieving %s", label))
+	return results[0].Value
+
 }

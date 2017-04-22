@@ -16,21 +16,23 @@ import (
 	"github.com/stretchr/testify/assert"
 	"sort"
 )
-
+//all uuids to be cleaned from DB
 const (
 	contentUUID = "3fc9fe3e-af8c-4f7f-961a-e5065392bb31"
+	basicConceptUUID = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
+	anotherBasicConceptUUID = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
+	newBasicConceptUUID = "122333333"
 )
 
-var basicConcept = Concept{
-	UUID:           "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
-	PrefLabel:      "basic concept label",
-	Type:           "Section",
-	Authority:      "TME",
-	AuthorityValue: "1234",
-}
-func getBasicConcept() Concept {
-	basicConcept = Concept{
-		UUID:           "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+//Reusable Neo4J connection
+var db neoutils.NeoConnection
+
+//Concept Service under test
+var conceptsDriver service
+
+func BasicConcept() Concept {
+	basicConcept := Concept{
+		UUID:           basicConceptUUID,
 		PrefLabel:      "basic concept label",
 		Type:           "Section",
 		Authority:      "TME",
@@ -38,57 +40,48 @@ func getBasicConcept() Concept {
 	}
 	return basicConcept
 }
-func getBasicAggregatedConcept() AggregatedConcept {
+
+func BasicAggregatedConcept() AggregatedConcept {
+	basicConcept := BasicConcept()
 	return AggregatedConcept{
-		UUID:      basicConcept.UUID,
+		UUID:     basicConcept.UUID,
 		PrefLabel: basicConcept.PrefLabel,
 		Type: "Section",
-		SourceRepresentations: []Concept{getBasicConcept()},
+		SourceRepresentations: []Concept{basicConcept},
 	}
 }
-var basicAggregatedConcept = AggregatedConcept{
-	UUID:      basicConcept.UUID,
-	PrefLabel: basicConcept.PrefLabel,
-	Type: "Section",
-	SourceRepresentations: []Concept{basicConcept},
+
+func AnotherBasicConcept() Concept {
+	return Concept{
+		UUID:           anotherBasicConceptUUID,
+		PrefLabel:      "another basic concept label",
+		Type:           "Section",
+		Authority:      "TME",
+		AuthorityValue: "987456321",
+	}
 }
 
-var anotherBasicConcept = Concept{
-	UUID:           "4c41f314-4548-4fb6-ac48-4618fcbfa84c",
-	PrefLabel:      "another basic concept label",
-	Type:           "Section",
-	Authority:      "TME",
-	AuthorityValue: "987456321",
-}
-
-var anotherBasicAggregatedConcept = AggregatedConcept{
-	UUID:      anotherBasicConcept.UUID,
-	PrefLabel: anotherBasicConcept.PrefLabel,
-	Type: "Section",
-	SourceRepresentations: []Concept{anotherBasicConcept},
-}
-
-var aggregatedConceptWithMultipleConcepts = AggregatedConcept{
-	UUID:   "e870f8c7-9649-43d9-a24c-51ee881853e9",
-	PrefLabel: basicConcept.PrefLabel,
-	Type: "Section",
-	SourceRepresentations: []Concept{basicConcept, anotherBasicConcept},
+func AnotherBasicAggregatedConcept() AggregatedConcept {
+	anotherBasicConcept := AnotherBasicConcept()
+	return AggregatedConcept {
+		UUID:      anotherBasicConcept.UUID,
+		PrefLabel: anotherBasicConcept.PrefLabel,
+		Type: "Section",
+		SourceRepresentations: []Concept{anotherBasicConcept},
+	}
 }
 
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
-
-	url := os.Getenv("NEO4J_TEST_URL")
-	if url == "" {
-		url = "http://localhost:7474/db/data"
-	}
-
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
-	db, _ := neoutils.Connect(url, conf)
-	service := NewConceptService(db)
-	service.Initialise()
+	db, _ = neoutils.Connect(neoUrl(), conf)
+	if db == nil {
+		panic("Cannot connect to Neo4J")
+	}
+	conceptsDriver = NewConceptService(db)
+	conceptsDriver.Initialise()
 
 	duration := 5 * time.Second
 	time.Sleep(duration)
@@ -102,35 +95,31 @@ func TestConnectivityCheck(t *testing.T) {
 
 func TestCreateAllValuesPresent(t *testing.T) {
 	assert := assert.New(t)
-	db := getDatabaseConnectionAndCheckClean(t, assert)
-	conceptsDriver := NewConceptService(db)
+	cleanDB(assert)
 
-	defer cleanDB([]string{basicConcept.UUID}, db, t, assert)
+	basicAggregatedConcept := BasicAggregatedConcept()
+
 	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
-	readConceptAndCompare(basicAggregatedConcept, t, db)
+	readConceptAndCompare(basicAggregatedConcept, assert)
 }
 
 //func TestMultipleConceptsAreCreatedForMultipleSourceRepresentations(t *testing.T) {
 //	assert := assert.New(t)
+//      cleanDB(assert)
 //
-//	db := getDatabaseConnectionAndCheckClean(t, assert)
-//	conceptsDriver := NewConceptService(db)
-//
-//	defer cleanDB([]string{basicConcept.UUID, aggregatedConceptWithMultipleConcepts.UUID, anotherBasicConcept.UUID}, db, t, assert)
 //	fmt.Printf("\n %v \n", aggregatedConceptWithMultipleConcepts)
 //	assert.NoError(conceptsDriver.Write(aggregatedConceptWithMultipleConcepts), "Failed to write concept")
 //
-//	readConceptAndCompare(aggregatedConceptWithMultipleConcepts, t, db)
+//	readConceptAndCompare(aggregatedConceptWithMultipleConcepts, assert)
 //}
 
 func TestCreateHandlesSpecialCharacters(t *testing.T) {
 	assert := assert.New(t)
-	db := getDatabaseConnectionAndCheckClean(t, assert)
-	conceptsDriver := NewConceptService(db)
+	cleanDB(assert)
 
-	defer cleanDB([]string{basicConcept.UUID}, db, t, assert)
+	basicAggregatedConcept := BasicAggregatedConcept()
 
-	basicConceptToWrite := basicConcept
+	basicConceptToWrite := BasicConcept()
 	basicConceptToWrite.PrefLabel = "Herr Ümlaut und Frau Groß"
 
 	basicAggregatedConceptToWrite := basicAggregatedConcept
@@ -139,23 +128,19 @@ func TestCreateHandlesSpecialCharacters(t *testing.T) {
 
 	assert.NoError(conceptsDriver.Write(basicAggregatedConceptToWrite), "Failed to write concept")
 
-	readConceptAndCompare(basicAggregatedConceptToWrite, t, db)
+	readConceptAndCompare(basicAggregatedConceptToWrite, assert)
 }
 
 //func TestAddingConceptWithExistingIdentifiersShouldFail(t *testing.T) {
 //	assert := assert.New(t)
+//	cleanDB(assert)
 //
-//	db := getDatabaseConnectionAndCheckClean(t, assert)
-//	conceptsDriver := NewConceptService(db)
-//
-//	newBasicAggConcept := basicAggregatedConcept
+//	newBasicAggConcept := BasicAggregatedConcept()
 //
 //	newBasicConcept := basicConcept
 //	newBasicConcept.UUID = "122333333"
 //	newBasicAggConcept.UUID = newBasicConcept.UUID
 //	newBasicAggConcept.SourceRepresentations = []Concept{newBasicConcept}
-//
-//	defer cleanDB([]string{basicConcept.UUID, newBasicConcept.UUID}, db, t, assert)
 //
 //	assert.NoError(conceptsDriver.Write(basicAggregatedConcept))
 //	err := conceptsDriver.Write(newBasicAggConcept)
@@ -165,26 +150,25 @@ func TestCreateHandlesSpecialCharacters(t *testing.T) {
 
 func TestIdentifierNodesCreatedForBasicConcept(t *testing.T) {
 	assert := assert.New(t)
-	db := getDatabaseConnectionAndCheckClean(t, assert)
-	defer cleanDB([]string{basicConcept.UUID}, db, t, assert)
+	cleanDB(assert)
 
 	conceptsDriver := NewConceptService(db)
+
+	basicAggregatedConcept := BasicAggregatedConcept()
 	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
 
-	actualValue := getIdentifierValue(assert, db, basicAggregatedConcept.UUID, "UPPIdentifier")
+	actualValue := getIdentifierValue(assert, basicAggregatedConcept.UUID, "UPPIdentifier")
 	assert.Equal(basicAggregatedConcept.SourceRepresentations[0].UUID, actualValue)
 
-	actualValue = getIdentifierValue(assert, db, basicAggregatedConcept.UUID, "TMEIdentifier")
+	actualValue = getIdentifierValue(assert, basicAggregatedConcept.UUID, "TMEIdentifier")
 	assert.Equal(basicAggregatedConcept.SourceRepresentations[0].AuthorityValue, actualValue)
 }
 
 func TestIdentifierNodesUpdatedForBasicConcept(t *testing.T) {
 	assert := assert.New(t)
-	db := getDatabaseConnectionAndCheckClean(t, assert)
-	bac := getBasicAggregatedConcept()
-	defer cleanDB([]string{bac.UUID}, db, t, assert)
-	conceptsDriver := NewConceptService(db)
+	cleanDB(assert)
 
+	bac := BasicAggregatedConcept()
 	assert.NoError(conceptsDriver.Write(bac), "Failed to write concept")
 
 	expectedNewTMEIdentifierValue := "UpdatedAuthorityValue"
@@ -192,21 +176,17 @@ func TestIdentifierNodesUpdatedForBasicConcept(t *testing.T) {
 
 	assert.NoError(conceptsDriver.Write(bac), "Failed to write concept")
 
-	actualValue := getIdentifierValue(assert, db, bac.UUID, "TMEIdentifier")
-	assert.Equal(bac.SourceRepresentations[0].AuthorityValue, actualValue)
+	actualValue := getIdentifierValue(assert, bac.UUID, "TMEIdentifier")
+	assert.Equal(expectedNewTMEIdentifierValue, actualValue, "Failed to unpdate TMEIdentifier value")
 }
 
 func TestUnknownAuthorityGivesError(t *testing.T) {
 	assert := assert.New(t)
+	cleanDB(assert)
 
-	db := getDatabaseConnectionAndCheckClean(t, assert)
-	conceptsDriver := NewConceptService(db)
+	newBasicAggConcept := BasicAggregatedConcept()
 
-	defer cleanDB([]string{basicConcept.UUID}, db, t, assert)
-
-	newBasicAggConcept := basicAggregatedConcept
-
-	newBasicConcept := basicConcept
+	newBasicConcept := BasicConcept()
 	newBasicConcept.Authority = "Nicky"
 	newBasicAggConcept.SourceRepresentations = []Concept{newBasicConcept}
 
@@ -219,12 +199,9 @@ func TestUnknownAuthorityGivesError(t *testing.T) {
 
 func TestDeleteWillDeleteEntireNodeIfNoRelationship(t *testing.T) {
 	assert := assert.New(t)
+	cleanDB(assert)
 
-	db := getDatabaseConnectionAndCheckClean(t, assert)
-	conceptsDriver := NewConceptService(db)
-
-	defer cleanDB([]string{basicConcept.UUID, contentUUID}, db, t, assert)
-
+	basicAggregatedConcept := BasicAggregatedConcept()
 	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
 
 	found, err := conceptsDriver.Delete(basicAggregatedConcept.UUID)
@@ -236,21 +213,18 @@ func TestDeleteWillDeleteEntireNodeIfNoRelationship(t *testing.T) {
 	assert.Equal(AggregatedConcept{}, concept, "Found concept %s who should have been deleted", concept)
 	assert.False(found, "Found concept for uuid %s who should have been deleted", basicAggregatedConcept.UUID)
 	assert.NoError(err, "Error trying to find concept for uuid %s", basicAggregatedConcept.UUID)
-	assert.Equal(false, doesThingExistAtAll(basicAggregatedConcept.UUID, db, t, assert), "Found thing who should have been deleted uuid: %s", basicAggregatedConcept.UUID)
+	assert.Equal(false, doesThingExistAtAll(basicAggregatedConcept.UUID, assert), "Found thing who should have been deleted uuid: %s", basicAggregatedConcept.UUID)
 }
 
 func TestDeleteWithRelationshipsMaintainsRelationshipsButDumbsDownToThing(t *testing.T) {
 	assert := assert.New(t)
+	cleanDB(assert)
 
-	db := getDatabaseConnectionAndCheckClean(t, assert)
-	conceptsDriver := NewConceptService(db)
-
-	defer cleanDB([]string{basicConcept.UUID, contentUUID}, db, t, assert)
-
+	basicAggregatedConcept := BasicAggregatedConcept()
 	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
 
-	writeContent(assert, db)
-	writeAnnotation(assert, db)
+	writeContent(assert)
+	writeAnnotation(assert)
 
 	found, err := conceptsDriver.Delete(basicAggregatedConcept.UUID)
 
@@ -262,22 +236,21 @@ func TestDeleteWithRelationshipsMaintainsRelationshipsButDumbsDownToThing(t *tes
 	assert.Equal(AggregatedConcept{}, concept, "Found concept %s who should have been deleted", concept)
 	assert.False(found, "Found concept for uuid %s who should have been deleted", basicAggregatedConcept.UUID)
 	assert.NoError(err, "Error trying to find concept for uuid %s", basicAggregatedConcept.UUID)
-	assert.Equal(true, doesThingExistWithIdentifiers(basicAggregatedConcept.UUID, db, t, assert), "Unable to find a Thing with any Identifiers, uuid: %s", basicAggregatedConcept.UUID)
+	assert.Equal(true, doesThingExistWithIdentifiers(basicAggregatedConcept.UUID, assert), "Unable to find a Thing with any Identifiers, uuid: %s", basicAggregatedConcept.UUID)
 }
 
 func TestCount(t *testing.T) {
 	assert := assert.New(t)
-	db := getDatabaseConnectionAndCheckClean(t, assert)
-	conceptsDriver := NewConceptService(db)
+	cleanDB(assert)
 
-	defer cleanDB([]string{basicConcept.UUID, anotherBasicConcept.UUID}, db, t, assert)
+	basicAggregatedConcept := BasicAggregatedConcept()
 	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
 
 	nr, err := conceptsDriver.Count()
 	assert.Equal(1, nr, "Should be 1 concept in Neo4j - count differs")
 	assert.NoError(err, "An unexpected error occurred during count")
 
-	assert.NoError(conceptsDriver.Write(anotherBasicAggregatedConcept), "Failed to write concept")
+	assert.NoError(conceptsDriver.Write(AnotherBasicAggregatedConcept()), "Failed to write concept")
 
 	nr, err = conceptsDriver.Count()
 	assert.Equal(2, nr, "Should be 2 subjects in Neo4j - count differs")
@@ -286,11 +259,9 @@ func TestCount(t *testing.T) {
 
 func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	assert := assert.New(t)
-	db := getDatabaseConnectionAndCheckClean(t, assert)
-	conceptsDriver := NewConceptService(db)
-	defer cleanDB([]string{basicConcept.UUID}, db, t, assert)
+	cleanDB(assert)
 
-	anotherObj := basicAggregatedConcept
+	anotherObj := BasicAggregatedConcept()
 
 	anotherObj.PrefLabel = ""
 	err := conceptsDriver.Write(anotherObj)
@@ -315,6 +286,7 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	assert.EqualError(err, "Invalid Request")
 	assert.Equal(err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation has been supplied for: %s", anotherObj.UUID))
 
+	basicConcept := BasicConcept()
 	yetAnotherBasicConcept := basicConcept
 	yetAnotherBasicConcept.PrefLabel = ""
 	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
@@ -352,10 +324,7 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	assert.Equal(err.(requestError).details, fmt.Sprintf("The source representation of uuid: %s has an unknown type of: %s", yetAnotherBasicConcept.UUID, yetAnotherBasicConcept.Type))
 }
 
-func readConceptAndCompare(expected AggregatedConcept, t *testing.T, db neoutils.NeoConnection) {
-	assert := assert.New(t)
-	conceptsDriver := NewConceptService(db)
-
+func readConceptAndCompare(expected AggregatedConcept, assert *assert.Assertions) {
 	actual, found, err := conceptsDriver.Read(expected.UUID)
 	actualConcept := actual.(AggregatedConcept)
 	sort.Slice(expected.SourceRepresentations, func(i, j int) bool {
@@ -371,64 +340,26 @@ func readConceptAndCompare(expected AggregatedConcept, t *testing.T, db neoutils
 	assert.EqualValues(expected, actualConcept)
 }
 
-
-func getDatabaseConnectionAndCheckClean(t *testing.T, assert *assert.Assertions) neoutils.NeoConnection {
-	db := getDatabaseConnection(assert)
-	checkDbClean([]string{basicAggregatedConcept.UUID, basicConcept.UUID}, db, t)
-	return db
-}
-
-func getDatabaseConnection(assert *assert.Assertions) neoutils.NeoConnection {
+func neoUrl() string {
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
 		url = "http://localhost:7474/db/data"
 	}
-
-	conf := neoutils.DefaultConnectionConfig()
-	conf.Transactional = false
-	db, err := neoutils.Connect(url, conf)
-	assert.NoError(err, "Failed to connect to Neo4j")
-	return db
+	return url
 }
 
 func getConceptService(t *testing.T) service {
-	url := os.Getenv("NEO4J_TEST_URL")
-	if url == "" {
-		url = "http://localhost:7474/db/data"
-	}
-
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
-	db, err := neoutils.Connect(url, conf)
+	db, err := neoutils.Connect(neoUrl(), conf)
 	assert.NoError(t, err, "Failed to connect to Neo4j")
 	service := NewConceptService(db)
 	service.Initialise()
 	return service
 }
 
-func checkDbClean(uuidsCleaned []string, db neoutils.NeoConnection, t *testing.T) {
-
-	assert := assert.New(t)
-
-	result := []struct {
-		Uuid string `json:"thing.uuid"`
-	}{}
-
-	checkGraph := neoism.CypherQuery{
-		Statement: `
-			MATCH (thing) WHERE thing.uuid in {uuids} RETURN thing.uuid
-		`,
-		Parameters: neoism.Props{
-			"uuids": uuidsCleaned,
-		},
-		Result: &result,
-	}
-	err := db.CypherBatch([]*neoism.CypherQuery{&checkGraph})
-	assert.NoError(err)
-	assert.Empty(result)
-}
-
-func cleanDB(uuidsToClean []string, db neoutils.NeoConnection, t *testing.T, assert *assert.Assertions) {
+func cleanDB(assert *assert.Assertions) {
+	uuidsToClean := []string {basicConceptUUID, anotherBasicConceptUUID, newBasicConceptUUID, contentUUID}
 	qs := make([]*neoism.CypherQuery, len(uuidsToClean))
 	for i, uuid := range uuidsToClean {
 		qs[i] = &neoism.CypherQuery{
@@ -442,7 +373,7 @@ func cleanDB(uuidsToClean []string, db neoutils.NeoConnection, t *testing.T, ass
 	assert.NoError(err)
 }
 
-func doesThingExistAtAll(uuid string, db neoutils.NeoConnection, t *testing.T, assert *assert.Assertions) bool {
+func doesThingExistAtAll(uuid string, assert *assert.Assertions) bool {
 	result := []struct {
 		Uuid string `json:"thing.uuid"`
 	}{}
@@ -467,7 +398,7 @@ func doesThingExistAtAll(uuid string, db neoutils.NeoConnection, t *testing.T, a
 	return true
 }
 
-func doesThingExistWithIdentifiers(uuid string, db neoutils.NeoConnection, t *testing.T, assert *assert.Assertions) bool {
+func doesThingExistWithIdentifiers(uuid string, assert *assert.Assertions) bool {
 	result := []struct {
 		uuid string
 	}{}
@@ -490,18 +421,17 @@ func doesThingExistWithIdentifiers(uuid string, db neoutils.NeoConnection, t *te
 	if len(result) == 0 {
 		return false
 	}
-
 	return true
 }
 
-func writeAnnotation(assert *assert.Assertions, db neoutils.NeoConnection) annotations.Service {
+func writeAnnotation(assert *assert.Assertions) annotations.Service {
 	annotationsRW := annotations.NewCypherAnnotationsService(db, "v1", "annotations-v1")
 	assert.NoError(annotationsRW.Initialise())
 	writeJSONToAnnotationsService(annotationsRW, contentUUID, "./fixtures/Annotations-3fc9fe3e-af8c-4f7f-961a-e5065392bb31-v2.json", assert)
 	return annotationsRW
 }
 
-func writeContent(assert *assert.Assertions, db neoutils.NeoConnection) baseftrwapp.Service {
+func writeContent(assert *assert.Assertions) baseftrwapp.Service {
 	contentRW := content.NewCypherContentService(db)
 	assert.NoError(contentRW.Initialise())
 	writeJSONToService(contentRW, "./fixtures/Content-3fc9fe3e-af8c-4f7f-961a-e5065392bb31.json", assert)
@@ -528,7 +458,7 @@ func writeJSONToService(service baseftrwapp.Service, pathToJSONFile string, asse
 	assert.NoError(errrr)
 }
 
-func getIdentifierValue(assert *assert.Assertions, db neoutils.NeoConnection, uuid string, label string) string{
+func getIdentifierValue(assert *assert.Assertions, uuid string, label string) string{
 	results := []struct {
 		Value string `json:"i.value"`
 	}{}
@@ -546,5 +476,4 @@ func getIdentifierValue(assert *assert.Assertions, db neoutils.NeoConnection, uu
 	err := db.CypherBatch([]*neoism.CypherQuery{query})
 	assert.NoError(err, fmt.Sprintf("Error while retrieving %s", label))
 	return results[0].Value
-
 }

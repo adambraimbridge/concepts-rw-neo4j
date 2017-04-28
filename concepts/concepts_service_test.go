@@ -133,24 +133,6 @@ func TestCreateHandlesSpecialCharacters(t *testing.T) {
 	readConceptAndCompare(basicAggregatedConceptToWrite, assert)
 }
 
-func TestCreateRemovesOldLabels(t *testing.T) {
-	assert := assert.New(t)
-	//cleanDB(assert)
-
-	basicAggregatedConceptToWrite := BasicAggregatedConcept()
-
-	assert.NoError(conceptsDriver.Write(basicAggregatedConceptToWrite), "Failed to write concept")
-
-	updatedBasicAggregatedConceptToWrite := BasicAggregatedConcept()
-	updatedBasicConcept := BasicConcept()
-	updatedBasicConcept.Type = "Brand"
-	updatedBasicAggregatedConceptToWrite.SourceRepresentations = []Concept{updatedBasicConcept}
-
-	assert.NoError(conceptsDriver.Write(updatedBasicAggregatedConceptToWrite), "Failed to write concept")
-
-	verifyLabelsAreCorrect(updatedBasicAggregatedConceptToWrite.UUID, assert)
-}
-
 func TestAddingConceptWithExistingIdentifiersShouldFail(t *testing.T) {
 	assert := assert.New(t)
 	cleanDB(assert)

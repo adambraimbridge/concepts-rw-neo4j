@@ -3,7 +3,7 @@ package concepts
 type AggregatedConcept struct {
 	UUID                  string    `json:"uuid"`
 	PrefLabel             string    `json:"prefLabel"`
-	Type           	string `json:"type"`
+	Type                  string    `json:"type"`
 	SourceRepresentations []Concept `json:"sourceRepresentations"`
 }
 
@@ -43,9 +43,8 @@ var conceptLabels = [...]string{
 // Map of authority and nodelabel for identifiers - we should be removing
 // Identifiers after all the concepts have been migrated to the new model
 var authorityToIdentifierLabelMap = map[string]string{
-	"TME":     "TMEIdentifier",
-	"UPP":     "UPPIdentifier",
+	"TME": "TMEIdentifier",
+	"UPP": "UPPIdentifier",
 }
 
 var BasicTmePaths = []string{"topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series"}
-

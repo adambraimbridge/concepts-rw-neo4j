@@ -12,16 +12,18 @@ import (
 	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
 	"github.com/Financial-Times/content-rw-neo4j/content"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
 	"sort"
 )
+
 //all uuids to be cleaned from DB
 const (
-	contentUUID = "3fc9fe3e-af8c-4f7f-961a-e5065392bb31"
-	basicConceptUUID = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
+	contentUUID             = "3fc9fe3e-af8c-4f7f-961a-e5065392bb31"
+	basicConceptUUID        = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
 	anotherBasicConceptUUID = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
-	newBasicConceptUUID = "122333333"
+	newBasicConceptUUID     = "122333333"
 )
 
 //Reusable Neo4J connection
@@ -44,9 +46,9 @@ func BasicConcept() Concept {
 func BasicAggregatedConcept() AggregatedConcept {
 	basicConcept := BasicConcept()
 	return AggregatedConcept{
-		UUID:     basicConcept.UUID,
+		UUID:      basicConcept.UUID,
 		PrefLabel: basicConcept.PrefLabel,
-		Type: "Section",
+		Type:      "Section",
 		SourceRepresentations: []Concept{basicConcept},
 	}
 }
@@ -63,10 +65,10 @@ func AnotherBasicConcept() Concept {
 
 func AnotherBasicAggregatedConcept() AggregatedConcept {
 	anotherBasicConcept := AnotherBasicConcept()
-	return AggregatedConcept {
+	return AggregatedConcept{
 		UUID:      anotherBasicConcept.UUID,
 		PrefLabel: anotherBasicConcept.PrefLabel,
-		Type: "Section",
+		Type:      "Section",
 		SourceRepresentations: []Concept{anotherBasicConcept},
 	}
 }
@@ -131,22 +133,46 @@ func TestCreateHandlesSpecialCharacters(t *testing.T) {
 	readConceptAndCompare(basicAggregatedConceptToWrite, assert)
 }
 
-//func TestAddingConceptWithExistingIdentifiersShouldFail(t *testing.T) {
-//	assert := assert.New(t)
-//	cleanDB(assert)
-//
-//	newBasicAggConcept := BasicAggregatedConcept()
-//
-//	newBasicConcept := basicConcept
-//	newBasicConcept.UUID = "122333333"
-//	newBasicAggConcept.UUID = newBasicConcept.UUID
-//	newBasicAggConcept.SourceRepresentations = []Concept{newBasicConcept}
-//
-//	assert.NoError(conceptsDriver.Write(basicAggregatedConcept))
-//	err := conceptsDriver.Write(newBasicAggConcept)
-//	assert.Error(err)
-//	assert.IsType(rwapi.ConstraintOrTransactionError{}, err)
-//}
+func TestCreateRemovesOldLabels(t *testing.T) {
+	assert := assert.New(t)
+	//cleanDB(assert)
+
+	basicAggregatedConceptToWrite := BasicAggregatedConcept()
+
+	assert.NoError(conceptsDriver.Write(basicAggregatedConceptToWrite), "Failed to write concept")
+
+	updatedBasicAggregatedConceptToWrite := BasicAggregatedConcept()
+	updatedBasicConcept := BasicConcept()
+	updatedBasicConcept.Type = "Brand"
+	updatedBasicAggregatedConceptToWrite.SourceRepresentations = []Concept{updatedBasicConcept}
+
+	assert.NoError(conceptsDriver.Write(updatedBasicAggregatedConceptToWrite), "Failed to write concept")
+
+	verifyLabelsAreCorrect(updatedBasicAggregatedConceptToWrite.UUID, assert)
+}
+
+func TestAddingConceptWithExistingIdentifiersShouldFail(t *testing.T) {
+	assert := assert.New(t)
+	cleanDB(assert)
+
+	newBasicAggConcept := BasicAggregatedConcept()
+
+	alternateBasicConcept := Concept{
+		UUID:           anotherBasicConceptUUID,
+		PrefLabel:      "basic concept label",
+		Type:           "Section",
+		Authority:      "TME",
+		AuthorityValue: "1234",
+	}
+
+	alternateAggConcept := BasicAggregatedConcept()
+	alternateAggConcept.SourceRepresentations = []Concept{alternateBasicConcept}
+
+	assert.NoError(conceptsDriver.Write(newBasicAggConcept))
+	err := conceptsDriver.Write(alternateAggConcept)
+	assert.Error(err)
+	assert.IsType(rwapi.ConstraintOrTransactionError{}, err)
+}
 
 func TestIdentifierNodesCreatedForBasicConcept(t *testing.T) {
 	assert := assert.New(t)
@@ -359,7 +385,7 @@ func getConceptService(t *testing.T) service {
 }
 
 func cleanDB(assert *assert.Assertions) {
-	uuidsToClean := []string {basicConceptUUID, anotherBasicConceptUUID, newBasicConceptUUID, contentUUID}
+	uuidsToClean := []string{basicConceptUUID, anotherBasicConceptUUID, newBasicConceptUUID, contentUUID}
 	qs := make([]*neoism.CypherQuery, len(uuidsToClean))
 	for i, uuid := range uuidsToClean {
 		qs[i] = &neoism.CypherQuery{
@@ -458,7 +484,7 @@ func writeJSONToService(service baseftrwapp.Service, pathToJSONFile string, asse
 	assert.NoError(errrr)
 }
 
-func getIdentifierValue(assert *assert.Assertions, uuid string, label string) string{
+func getIdentifierValue(assert *assert.Assertions, uuid string, label string) string {
 	results := []struct {
 		Value string `json:"i.value"`
 	}{}

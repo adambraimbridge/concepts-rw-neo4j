@@ -5,9 +5,9 @@ import (
 
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 
+	"fmt"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
-	"fmt"
 )
 
 // CypherDriver - CypherDriver
@@ -34,11 +34,11 @@ func (s service) Initialise() error {
 }
 
 type neoAggregatedConcept struct {
-	UUID                  string    `json:"uuid"`
-	PrefLabel             string    `json:"prefLabel"`
-	Types           []string `json:"types"`
-	Authority      string   `json:"authority"`
-	AuthorityValue string   `json:"authorityValue"`
+	UUID                  string       `json:"uuid"`
+	PrefLabel             string       `json:"prefLabel"`
+	Types                 []string     `json:"types"`
+	Authority             string       `json:"authority"`
+	AuthorityValue        string       `json:"authorityValue"`
 	SourceRepresentations []neoConcept `json:"sourceRepresentations"`
 }
 
@@ -106,7 +106,7 @@ func (s service) Read(uuid string) (interface{}, bool, error) {
 
 	aggregatedConcept := AggregatedConcept{UUID: results[0].UUID, PrefLabel: results[0].PrefLabel, Type: typeName}
 
-	if (isConcordedNode) {
+	if isConcordedNode {
 		for _, srcConcept := range results[0].SourceRepresentations {
 			conceptType, error := mapper.MostSpecificType(srcConcept.Types)
 			if error != nil {
@@ -245,17 +245,25 @@ func getAllLabels(conceptType string) string {
 }
 
 func createNodeQueries(concept Concept) []*neoism.CypherQuery {
+	var labelsToRemove string
+	for i, conceptType := range conceptLabels {
+		labelsToRemove += conceptType
+		if i+1 < len(conceptLabels) {
+			labelsToRemove += ":"
+		}
+	}
 
 	//cleanUP all the previous IDENTIFIERS referring to that uuid
-	deletePreviousIdentifiersQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {uuid:{uuid}})
+	deletePreviousIdentifiersAndLabelsQuery := &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{uuid}})
 			OPTIONAL MATCH (t)<-[iden:IDENTIFIES]-(i)
-			DELETE iden, i`,
+			REMOVE t:%s
+			DELETE iden, i`, labelsToRemove),
 		Parameters: map[string]interface{}{
 			"uuid": concept.UUID,
 		},
 	}
-	queryBatch := []*neoism.CypherQuery{deletePreviousIdentifiersQuery}
+	queryBatch := []*neoism.CypherQuery{deletePreviousIdentifiersAndLabelsQuery}
 	createConceptQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
 								set n={allprops}

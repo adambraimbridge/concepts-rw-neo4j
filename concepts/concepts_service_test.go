@@ -8,6 +8,8 @@ import (
 
 	"time"
 
+	"sort"
+
 	"github.com/Financial-Times/annotations-rw-neo4j/annotations"
 	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
 	"github.com/Financial-Times/content-rw-neo4j/content"
@@ -15,7 +17,6 @@ import (
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
-	"sort"
 )
 
 //all uuids to be cleaned from DB
@@ -30,7 +31,7 @@ const (
 var db neoutils.NeoConnection
 
 //Concept Service under test
-var conceptsDriver service
+var conceptsDriver Service
 
 func BasicConcept() Concept {
 	basicConcept := Concept{
@@ -345,18 +346,33 @@ func readConceptAndCompare(expected AggregatedConcept, assert *assert.Assertions
 
 	assert.NoError(err)
 	assert.True(found)
+
+	assert.Equal(expected.PrefLabel, actualConcept.PrefLabel)
+	assert.Equal(expected.Type, actualConcept.Type)
+	assert.Equal(expected.UUID, actualConcept.UUID)
+
+	var concepts []Concept
+	for _, concept := range actualConcept.SourceRepresentations {
+		assert.NotEqual(0, concept.LastModifiedEpoch)
+
+		// Remove the last modified date time now that we have checked it so we can compare the rest of the model
+		concept.LastModifiedEpoch = 0
+		concepts = append(concepts, concept)
+	}
+	actualConcept.SourceRepresentations = concepts
+
 	assert.EqualValues(expected, actualConcept)
 }
 
 func neoUrl() string {
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
-		url = "http://localhost:7474/db/data"
+		url = "http://localhost:7777/db/data"
 	}
 	return url
 }
 
-func getConceptService(t *testing.T) service {
+func getConceptService(t *testing.T) Service {
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
 	db, err := neoutils.Connect(neoUrl(), conf)

@@ -11,7 +11,7 @@ RUN apk --no-cache --virtual .build-dependencies add git \
     && update-ca-certificates --fresh \
     && git config --global http.https://gopkg.in.followRedirects true \
     && cd $GOPATH/src/github.com/Financial-Times/concepts-rw-neo4j \
-    && BUILDINFO_PACKAGE="github.com/Financial-Times/service-status-go/buildinfo." \
+    && BUILDINFO_PACKAGE="github.com/Financial-Times/concepts-rw-neo4j/vendor/github.com/Financial-Times/service-status-go/buildinfo." \
     && VERSION="version=$(git describe --tag --always 2> /dev/null)" \
     && DATETIME="dateTime=$(date -u +%Y%m%d%H%M%S)" \
     && REPOSITORY="repository=$(git config --get remote.origin.url)" \

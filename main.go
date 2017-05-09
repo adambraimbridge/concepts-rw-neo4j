@@ -101,7 +101,7 @@ func makeCheck(service baseftrwapp.Service, cr neoutils.CypherRunner) v1a.Check 
 	return v1a.Check{
 		BusinessImpact:   "Cannot read/write concepts via this writer",
 		Name:             "Check connectivity to Neo4j - neoUrl is a parameter in hieradata for this service",
-		PanicGuide:       "TODO - write panic guide",
+		PanicGuide:       "https://dewey.ft.com/concepts-rw-neo4j.html",
 		Severity:         1,
 		TechnicalSummary: fmt.Sprintf("Cannot connect to Neo4j instance %s with at least one concept loaded in it", cr),
 		Checker:          func() (string, error) { return "", service.Check() },

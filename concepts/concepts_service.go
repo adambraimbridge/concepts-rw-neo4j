@@ -6,23 +6,24 @@ import (
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 
 	"fmt"
+	"time"
+
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
 )
 
-// CypherDriver - CypherDriver
-type service struct {
+//Service - CypherDriver - CypherDriver
+type Service struct {
 	conn neoutils.NeoConnection
 }
 
 //NewConceptService instantiate driver
-func NewConceptService(cypherRunner neoutils.NeoConnection) service {
-	return service{cypherRunner}
+func NewConceptService(cypherRunner neoutils.NeoConnection) Service {
+	return Service{cypherRunner}
 }
 
-// Would this be better as an extension in Neo4j? i.e. that any Thing has this
-// constraint added on creation
-func (s service) Initialise() error {
+//Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
+func (s Service) Initialise() error {
 	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
 	})
@@ -40,25 +41,28 @@ type neoAggregatedConcept struct {
 	Authority             string       `json:"authority"`
 	AuthorityValue        string       `json:"authorityValue"`
 	SourceRepresentations []neoConcept `json:"sourceRepresentations"`
+	LastModifiedEpoch     int          `json:"lastModifiedEpoch,omitempty"`
 }
 
 type neoConcept struct {
-	UUID           string   `json:"uuid"`
-	PrefLabel      string   `json:"prefLabel"`
-	Types          []string `json:"types"`
-	Authority      string   `json:"authority"`
-	AuthorityValue string   `json:"authorityValue"`
+	UUID              string   `json:"uuid"`
+	PrefLabel         string   `json:"prefLabel"`
+	Types             []string `json:"types"`
+	Authority         string   `json:"authority"`
+	AuthorityValue    string   `json:"authorityValue"`
+	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`
 }
 
-func (s service) Read(uuid string) (interface{}, bool, error) {
+//Read - read service
+func (s Service) Read(uuid string) (interface{}, bool, error) {
 	// TODO should we allow to come in from any UUID not only the canonical one
 	results := []neoAggregatedConcept{}
 
 	// Is the UUID a concorded concept
-	isConcordedNode, error := s.isConcordedConcept(uuid)
+	isConcordedNode, errs := s.isConcordedConcept(uuid)
 
-	if error != nil {
-		return AggregatedConcept{}, false, error
+	if errs != nil {
+		return AggregatedConcept{}, false, errs
 	}
 
 	var query *neoism.CypherQuery
@@ -67,7 +71,7 @@ func (s service) Read(uuid string) (interface{}, bool, error) {
 		query = &neoism.CypherQuery{
 			Statement: `MATCH (n:Concept {uuid:{uuid}})<-[:EQUIVALENT_TO]-(node:Concept)
 					WITH n.uuid as uuid, n.prefLabel as prefLabel, labels(n) as types,
-					{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue, types: labels(node)} as sources
+					{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue, types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch} as sources
 					RETURN uuid, prefLabel, types, collect(sources) as sourceRepresentations `,
 			Parameters: map[string]interface{}{
 				"uuid": uuid,
@@ -79,7 +83,7 @@ func (s service) Read(uuid string) (interface{}, bool, error) {
 			Statement: `MATCH (n:Concept {uuid:{uuid}})
 			return distinct n.uuid as uuid, n.prefLabel as prefLabel,
 			labels(n) as types, n.authority as authority,
-			n.authorityValue as authorityValue `,
+			n.authorityValue as authorityValue, n.lastModifiedEpoch as lastModifiedEpoch `,
 			Parameters: map[string]interface{}{
 				"uuid": uuid,
 			},
@@ -118,6 +122,7 @@ func (s service) Read(uuid string) (interface{}, bool, error) {
 			concept.Authority = srcConcept.Authority
 			concept.AuthorityValue = srcConcept.AuthorityValue
 			concept.Type = conceptType
+			concept.LastModifiedEpoch = srcConcept.LastModifiedEpoch
 			sourceConcepts = append(sourceConcepts, concept)
 		}
 	} else {
@@ -126,6 +131,7 @@ func (s service) Read(uuid string) (interface{}, bool, error) {
 		concept.Authority = results[0].Authority
 		concept.AuthorityValue = results[0].AuthorityValue
 		concept.Type = typeName
+		concept.LastModifiedEpoch = results[0].LastModifiedEpoch
 		sourceConcepts = append(sourceConcepts, concept)
 	}
 	aggregatedConcept.SourceRepresentations = sourceConcepts
@@ -133,9 +139,9 @@ func (s service) Read(uuid string) (interface{}, bool, error) {
 	return aggregatedConcept, true, nil
 }
 
-func (s service) isConcordedConcept(uuid string) (bool, error) {
+func (s Service) isConcordedConcept(uuid string) (bool, error) {
 	results := []struct {
-		uuid string `json:"uuid"`
+		uuid string
 	}{}
 	query := &neoism.CypherQuery{
 		Statement: `MATCH (n:Concept {uuid:{uuid}})-[:EQUIVALENT_TO]-(c) return n.uuid`,
@@ -153,7 +159,8 @@ func (s service) isConcordedConcept(uuid string) (bool, error) {
 	return (len(results) > 1), nil
 }
 
-func (s service) Write(thing interface{}) error {
+//Write - write method
+func (s Service) Write(thing interface{}) error {
 
 	aggregatedConcept := thing.(AggregatedConcept)
 
@@ -264,6 +271,7 @@ func createNodeQueries(concept Concept) []*neoism.CypherQuery {
 		},
 	}
 	queryBatch := []*neoism.CypherQuery{deletePreviousIdentifiersAndLabelsQuery}
+
 	createConceptQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
 								set n={allprops}
@@ -271,10 +279,11 @@ func createNodeQueries(concept Concept) []*neoism.CypherQuery {
 		Parameters: map[string]interface{}{
 			"uuid": concept.UUID,
 			"allprops": map[string]interface{}{
-				"uuid":           concept.UUID,
-				"prefLabel":      concept.PrefLabel,
-				"authority":      concept.Authority,
-				"authorityValue": concept.AuthorityValue,
+				"uuid":              concept.UUID,
+				"prefLabel":         concept.PrefLabel,
+				"authority":         concept.Authority,
+				"authorityValue":    concept.AuthorityValue,
+				"lastModifiedEpoch": time.Now().Unix(),
 			},
 		},
 	}
@@ -313,7 +322,8 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 	return query
 }
 
-func (s service) Delete(uuid string) (bool, error) {
+//Delete - Delete method
+func (s Service) Delete(uuid string) (bool, error) {
 	// TODO: We need to establish what are the bounds of this service, how much of a concorded concept should be deleted
 
 	// We don't know what labels there are so we need to loop through all the types
@@ -371,19 +381,22 @@ func (s service) Delete(uuid string) (bool, error) {
 	return deleted, err
 }
 
-func (s service) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
+//DecodeJSON - decode json
+func (s Service) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
 	sub := AggregatedConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.UUID, err
 }
 
-func (s service) Check() error {
+//Check - checker
+func (s Service) Check() error {
 	return neoutils.Check(s.conn)
 }
 
+//Count - Count of concepts
 // TODO: This needs to change of course to be taxonomy specific but will involve
 // a breaking change to the base app so vendoring needs to be applied - Do we care about this count?
-func (s service) Count() (int, error) {
+func (s Service) Count() (int, error) {
 
 	results := []struct {
 		Count int `json:"c"`
@@ -407,10 +420,12 @@ type requestError struct {
 	details string
 }
 
+//Error - Error
 func (re requestError) Error() string {
 	return "Invalid Request"
 }
 
+//InvalidRequestDetails - Specific error for providing bad request (400) back
 func (re requestError) InvalidRequestDetails() string {
 	return re.details
 }

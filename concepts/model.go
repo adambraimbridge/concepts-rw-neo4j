@@ -9,11 +9,12 @@ type AggregatedConcept struct {
 
 // Concept - could be any concept genre, subject etc
 type Concept struct {
-	UUID           string `json:"uuid"`
-	PrefLabel      string `json:"prefLabel"`
-	Type           string `json:"type"`
-	Authority      string `json:"authority"`
-	AuthorityValue string `json:"authorityValue"`
+	UUID              string `json:"uuid"`
+	PrefLabel         string `json:"prefLabel"`
+	Type              string `json:"type"`
+	Authority         string `json:"authority"`
+	AuthorityValue    string `json:"authorityValue"`
+	LastModifiedEpoch int    `json:"lastModifiedEpoch,omitempty"`
 }
 
 // Map of all the possible node types so we can ensure they all have

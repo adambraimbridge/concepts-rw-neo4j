@@ -7,7 +7,7 @@ import (
 
 	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
-	"github.com/Financial-Times/go-fthealth/v1a"
+	"github.com/Financial-Times/go-fthealth"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jawher/mow.cli"
@@ -77,14 +77,14 @@ func main() {
 			services[path] = conceptsDriver
 		}
 
-		var checks []v1a.Check
+		var checks []fthealth.Check
 
 		// We are only checking Neo4J so only need to check with the implementation for one type
 		checks = append(checks, makeCheck(services[concepts.BasicTmePaths[0]], db))
 
 		baseftrwapp.RunServerWithConf(baseftrwapp.RWConf{
 			Services:      services,
-			HealthHandler: v1a.Handler("ft-concepts_rw_neo4j ServiceModule", "Writes 'concepts' to Neo4j, usually as part of a bulk upload done on a schedule", checks...),
+			HealthHandler: fthealth.Handler("ft-concepts_rw_neo4j ServiceModule", "Writes 'concepts' to Neo4j, usually as part of a bulk upload done on a schedule", checks...),
 			Port:          *port,
 			ServiceName:   "concepts-rw-neo4j",
 			Env:           *env,
@@ -97,13 +97,13 @@ func main() {
 	app.Run(os.Args)
 }
 
-func makeCheck(service baseftrwapp.Service, cr neoutils.CypherRunner) v1a.Check {
-	return v1a.Check{
+func makeCheck(service baseftrwapp.Service, cr neoutils.CypherRunner) fthealth.Check {
+	return fthealth.Check{
 		BusinessImpact:   "Cannot read/write concepts via this writer",
 		Name:             "Check connectivity to Neo4j - neoUrl is a parameter in hieradata for this service",
-		PanicGuide:       "TODO - write panic guide",
+		PanicGuide:       "https://dewey.ft.com/concepts-rw-neo4j.html",
 		Severity:         1,
 		TechnicalSummary: fmt.Sprintf("Cannot connect to Neo4j instance %s with at least one concept loaded in it", cr),
-		Checker:          func() (string, error) { return "", service.Check() },
+		Checker:          func() error { return service.Check() },
 	}
 }

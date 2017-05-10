@@ -92,6 +92,7 @@ func main() {
 		})
 	}
 
+	log.SetFormatter(&log.JSONFormatter{})
 	log.SetLevel(log.InfoLevel)
 	log.Infof("Application started with args %s", os.Args)
 	app.Run(os.Args)

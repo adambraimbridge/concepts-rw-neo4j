@@ -1,6 +1,6 @@
 # Concept Reader/Writer for Neo4j (concept-rw-neo4j)
 
-[![Circle CI](https://circleci.com/gh/Financial-Times/concept-rw-neo4j.svg?style=shield)](https://circleci.com/gh/Financial-Times/concept-rw-neo4j)[![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/people-rw-neo4j)](https://goreportcard.com/report/github.com/Financial-Times/people-rw-neo4j) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/people-rw-neo4j/badge.svg)](https://coveralls.io/github/Financial-Times/people-rw-neo4j)
+[![Circle CI](https://circleci.com/gh/Financial-Times/concepts-rw-neo4j.svg?style=shield)](https://circleci.com/gh/Financial-Times/concepts-rw-neo4j)[![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/concepts-rw-neo4j)](https://goreportcard.com/report/github.com/Financial-Times/concepts-rw-neo4j) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/concepts-rw-neo4j/badge.svg)](https://coveralls.io/github/Financial-Times/concepts-rw-neo4j)
 __An API for reading/writing concepts into Neo4j. 
 
 ## Installation

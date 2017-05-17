@@ -42,6 +42,7 @@ type neoAggregatedConcept struct {
 	AuthorityValue        string       `json:"authorityValue"`
 	SourceRepresentations []neoConcept `json:"sourceRepresentations"`
 	LastModifiedEpoch     int          `json:"lastModifiedEpoch,omitempty"`
+	Aliases               []string     `json:"aliases,omitempty"`
 }
 
 type neoConcept struct {
@@ -51,6 +52,7 @@ type neoConcept struct {
 	Authority         string   `json:"authority"`
 	AuthorityValue    string   `json:"authorityValue"`
 	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`
+	Aliases           []string `json:"aliases,omitempty"`
 }
 
 //Read - read service
@@ -71,7 +73,7 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 		query = &neoism.CypherQuery{
 			Statement: `MATCH (n:Concept {uuid:{uuid}})<-[:EQUIVALENT_TO]-(node:Concept)
 					WITH n.uuid as uuid, n.prefLabel as prefLabel, labels(n) as types,
-					{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue, types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch} as sources
+					{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue, types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, aliases: node.aliases} as sources
 					RETURN uuid, prefLabel, types, collect(sources) as sourceRepresentations `,
 			Parameters: map[string]interface{}{
 				"uuid": uuid,
@@ -83,7 +85,7 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 			Statement: `MATCH (n:Concept {uuid:{uuid}})
 			return distinct n.uuid as uuid, n.prefLabel as prefLabel,
 			labels(n) as types, n.authority as authority,
-			n.authorityValue as authorityValue, n.lastModifiedEpoch as lastModifiedEpoch `,
+			n.authorityValue as authorityValue, n.lastModifiedEpoch as lastModifiedEpoch, n.aliases as aliases`,
 			Parameters: map[string]interface{}{
 				"uuid": uuid,
 			},
@@ -116,7 +118,9 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 			if error != nil {
 				return AggregatedConcept{}, false, err
 			}
-
+			if len(srcConcept.Aliases) > 0 {
+				concept.Aliases = srcConcept.Aliases
+			}
 			concept.UUID = srcConcept.UUID
 			concept.PrefLabel = srcConcept.PrefLabel
 			concept.Authority = srcConcept.Authority
@@ -132,6 +136,9 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 		concept.AuthorityValue = results[0].AuthorityValue
 		concept.Type = typeName
 		concept.LastModifiedEpoch = results[0].LastModifiedEpoch
+		if len(results[0].Aliases) > 0 {
+			concept.Aliases = results[0].Aliases
+		}
 		sourceConcepts = append(sourceConcepts, concept)
 	}
 	aggregatedConcept.SourceRepresentations = sourceConcepts
@@ -284,6 +291,7 @@ func createNodeQueries(concept Concept) []*neoism.CypherQuery {
 				"authority":         concept.Authority,
 				"authorityValue":    concept.AuthorityValue,
 				"lastModifiedEpoch": time.Now().Unix(),
+				"aliases":           concept.Aliases,
 			},
 		},
 	}

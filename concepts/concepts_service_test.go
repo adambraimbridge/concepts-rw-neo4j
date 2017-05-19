@@ -134,6 +134,23 @@ func TestCreateHandlesSpecialCharacters(t *testing.T) {
 	readConceptAndCompare(basicAggregatedConceptToWrite, assert)
 }
 
+func TestCreateHandlesAliases(t *testing.T) {
+	assert := assert.New(t)
+	cleanDB(assert)
+
+	basicAggregatedConcept := BasicAggregatedConcept()
+
+	basicConceptToWrite := BasicConcept()
+	basicConceptToWrite.Aliases = []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"}
+
+	basicAggregatedConceptToWrite := basicAggregatedConcept
+	basicAggregatedConceptToWrite.SourceRepresentations = []Concept{basicConceptToWrite}
+
+	assert.NoError(conceptsDriver.Write(basicAggregatedConceptToWrite), "Failed to write concept")
+
+	readConceptAndCompare(basicAggregatedConceptToWrite, assert)
+}
+
 func TestAddingConceptWithExistingIdentifiersShouldFail(t *testing.T) {
 	assert := assert.New(t)
 	cleanDB(assert)
@@ -350,6 +367,9 @@ func readConceptAndCompare(expected AggregatedConcept, assert *assert.Assertions
 	assert.Equal(expected.PrefLabel, actualConcept.PrefLabel)
 	assert.Equal(expected.Type, actualConcept.Type)
 	assert.Equal(expected.UUID, actualConcept.UUID)
+	if len(expected.SourceRepresentations[0].Aliases) > 0 {
+		assert.Equal(expected.SourceRepresentations[0].Aliases, actualConcept.SourceRepresentations[0].Aliases)
+	}
 
 	var concepts []Concept
 	for _, concept := range actualConcept.SourceRepresentations {

@@ -2,9 +2,10 @@ machine:
   services:
     - docker
   environment:
+    PROJECT_GOPATH: "${HOME}/.go_project"
     NEO4J_TEST_URL: http://localhost:7474/db/data/
-    GOPATH: "${HOME}/.go_workspace:/usr/local/go_workspace:${HOME}/.go_project"
-    GO_PROJECT_PATH: "${HOME}/.go_project/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+    GOPATH: "${HOME}/.go_workspace:${PROJECT_GOPATH}"
+    GO_PROJECT_PATH: "${PROJECT_GOPATH}/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
 
 checkout:
   post:

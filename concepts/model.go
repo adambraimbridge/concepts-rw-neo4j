@@ -9,12 +9,13 @@ type AggregatedConcept struct {
 
 // Concept - could be any concept genre, subject etc
 type Concept struct {
-	UUID              string `json:"uuid"`
-	PrefLabel         string `json:"prefLabel"`
-	Type              string `json:"type"`
-	Authority         string `json:"authority"`
-	AuthorityValue    string `json:"authorityValue"`
-	LastModifiedEpoch int    `json:"lastModifiedEpoch,omitempty"`
+	UUID              string   `json:"uuid"`
+	PrefLabel         string   `json:"prefLabel"`
+	Type              string   `json:"type"`
+	Authority         string   `json:"authority"`
+	AuthorityValue    string   `json:"authorityValue"`
+	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`
+	Aliases           []string `json:"aliases,omitempty"`
 }
 
 // Map of all the possible node types so we can ensure they all have
@@ -34,11 +35,12 @@ var constraintMap = map[string]string{
 	"UPPIdentifier":     "value",
 	"TMEIdentifier":     "value",
 	"FactsetIdentifier": "value",
+	"Person":            "value",
 }
 
 var conceptLabels = [...]string{
 	"Concept", "Classification", "Section", "Subject", "SpecialReport", "Topic",
-	"Location", "Genre", "Brand",
+	"Location", "Genre", "Brand", "Person",
 }
 
 // Map of authority and nodelabel for identifiers - we should be removing
@@ -48,4 +50,4 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"UPP": "UPPIdentifier",
 }
 
-var BasicTmePaths = []string{"topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series"}
+var BasicTmePaths = []string{"topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people"}

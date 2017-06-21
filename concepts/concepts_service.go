@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"log"
-
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
 )
@@ -172,7 +170,11 @@ func (s Service) isConcordedConcept(uuid string) (bool, error) {
 //Write - write method
 func (s Service) Write(thing interface{}) error {
 
+	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
+	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
 	aggregatedConcept := thing.(AggregatedConcept)
+
+	// TODO: Compare: existingNeoRepresentation, _, _ := s.Read(aggregatedConcept.PrefUUID)
 
 	error := validateObject(aggregatedConcept)
 	if error != nil {
@@ -183,6 +185,9 @@ func (s Service) Write(thing interface{}) error {
 
 	// If canonical node is needed create it i.e more than one source and link each node to it
 	if len(aggregatedConcept.SourceRepresentations) > 1 {
+		// Does the canonical node exist already?
+		// Clear down and delete any equivilent-to relationship
+		
 		// Create the canonical node
 		queryBatch = append(queryBatch, createCanonicalNodeQueries(aggregatedConcept.PrefUUID, "",
 			aggregatedConcept.PrefLabel,
@@ -206,6 +211,8 @@ func (s Service) Write(thing interface{}) error {
 			}
 		}
 	} else {
+		// TODO Check if there is already a canonical node with this prefUUID - This might be unconcord operation
+
 		// Lone node with no concordance created first
 		// Assuming that there is 1 source system. Also assuming that if there is only one source system then the
 		// preflabel and uuid should be the same as the aggregated level. However TODO add validation of this
@@ -219,7 +226,30 @@ func (s Service) Write(thing interface{}) error {
 			aggregatedConcept.SourceRepresentations[0].Aliases)...)
 
 	}
+
+	// TODO Compare original neo model and set prefUUID if needed
+
+	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
 	return s.conn.CypherBatch(queryBatch)
+}
+
+func returnNewlyOrphanedLoneNodes(originalLeaves []Concept, futureLeaves []Concept) []Concept {
+	conceptMap := make(map[string]Concept)
+	for _, originalLeaf := range originalLeaves {
+		conceptMap[originalLeaf.UUID] = originalLeaf
+		for _, futureLeaf := range futureLeaves {
+			if futureLeaf.UUID == originalLeaf.UUID {
+				delete(conceptMap, originalLeaf.UUID)
+			}
+		}
+	}
+
+	orpahanNodes := make([]Concept, 0, len(conceptMap))
+
+	for _, value := range conceptMap {
+		orpahanNodes = append(orpahanNodes, value)
+	}
+	return orpahanNodes
 }
 
 func validateObject(aggConcept AggregatedConcept) error {

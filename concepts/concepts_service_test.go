@@ -37,7 +37,7 @@ var conceptsDriver Service
 
 // A lone concept should always have matching pref labels and uuid at the src system level and the top level - We are
 // currently missing validation around this
-func FullLoneAggregatedConcept() AggregatedConcept {
+func getFullLoneAggregatedConcept() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:  basicConceptUUID,
 		PrefLabel: "Concept PrefLabel",
@@ -53,7 +53,23 @@ func FullLoneAggregatedConcept() AggregatedConcept {
 	}
 }
 
-func FullConcordedAggregatedConcept() AggregatedConcept {
+func getAnotherFullLoneAggregatedConcept() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  anotherBasicConceptUUID,
+		PrefLabel: "Concept PrefLabel",
+		Type:      "Section",
+		SourceRepresentations: []Concept{{
+			UUID:           anotherBasicConceptUUID,
+			PrefLabel:      "Concept PrefLabel",
+			Type:           "Section",
+			Authority:      "TME",
+			AuthorityValue: "4321",
+			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		}},
+	}
+}
+
+func getFullConcordedAggregatedConcept() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:  basicConceptUUID,
 		PrefLabel: "Concept PrefLabel",
@@ -75,6 +91,61 @@ func FullConcordedAggregatedConcept() AggregatedConcept {
 		}},
 	}
 }
+
+func updateLoneSourceSystemPrefLabel(prefLabel string) AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: prefLabel,
+		Type:      "Section",
+		SourceRepresentations: []Concept{{
+			UUID:           basicConceptUUID,
+			PrefLabel:      prefLabel,
+			Type:           "Section",
+			Authority:      "TME",
+			AuthorityValue: "1234",
+			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		}}}
+}
+
+func getConcordedConceptWithConflictedIdentifier() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "Concept PrefLabel",
+		Type:      "Section",
+		SourceRepresentations: []Concept{{
+			UUID:           anotherBasicConceptUUID,
+			PrefLabel:      "Another Concept PrefLabel",
+			Type:           "Section",
+			Authority:      "TME",
+			AuthorityValue: "1234",
+			Aliases:        []string{"anotheroneLabel", "anothersecondLabel"},
+		}, {
+			UUID:           basicConceptUUID,
+			PrefLabel:      "Concept PrefLabel",
+			Type:           "Section",
+			Authority:      "TME",
+			AuthorityValue: "1234",
+			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		}},
+	}
+}
+
+func getUnknownAuthority() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "Pref Label",
+		Type:      "Section",
+		SourceRepresentations: []Concept{{
+			UUID:           basicConceptUUID,
+			PrefLabel:      "Pref Label",
+			Type:           "Section",
+			Authority:      "BooHalloo",
+			AuthorityValue: "1234",
+			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		}}}
+}
+
+
 
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
@@ -98,27 +169,18 @@ func TestConnectivityCheck(t *testing.T) {
 	assert.NoError(t, err, "Unexpected error on connectivity check")
 }
 
-//func TestMultipleConceptsAreCreatedForMultipleSourceRepresentations(t *testing.T) {
-//	assert := assert.New(t)
-//      cleanDB(assert)
-//
-//	fmt.Printf("\n %v \n", aggregatedConceptWithMultipleConcepts)
-//	assert.NoError(conceptsDriver.Write(aggregatedConceptWithMultipleConcepts), "Failed to write concept")
-//
-//	readConceptAndCompare(aggregatedConceptWithMultipleConcepts, assert)
-//}
-
 func TestWriteService(t *testing.T) {
-	//defer cleanDB(t, basicConceptUUID, anotherBasicConceptUUID)
+	defer cleanDB(t, basicConceptUUID, anotherBasicConceptUUID)
 	tests := []struct {
 		testName          string
 		aggregatedConcept AggregatedConcept
-		err               error
+		errStr            string
 	}{
-		{"Creates All Values Present for a Lone Concept", FullLoneAggregatedConcept(), nil},
-		{"Creates All Values Present for a Concorded Concept", FullConcordedAggregatedConcept(), nil},
-		//{"Creates Handles Special Characters", AggregatedConcept{basicConceptUUID, "Herr Ümlaut und Frau Groß", "Section", []Concept{fullConcept()}}, nil},
-		//	{"Adding Concept with existing Identifiers fails", AggregatedConcept{basicConceptUUID, "PrefLabel", "Section", []Concept{Concept{UUID: anotherBasicConceptUUID, PrefLabel: "Pref", Type: "Type", Authority: "Authority", AuthorityValue: "value"}}}, nil},
+		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), ""},
+		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), ""},
+		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), ""},
+		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), "already exists with label TMEIdentifier and property \"value\"=[1234]"},
+		{"Unknown Authority Should Fail", getUnknownAuthority(), "Invalid Request"},
 	}
 
 	for _, test := range tests {
@@ -126,217 +188,163 @@ func TestWriteService(t *testing.T) {
 			cleanDB(t, basicConceptUUID, anotherBasicConceptUUID)
 			err := conceptsDriver.Write(test.aggregatedConcept)
 
-			if test.err == nil {
+			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
 				readConceptAndCompare(t, test.aggregatedConcept, test.testName)
-			}
 
-			if err != nil {
-				assert.EqualError(t, test.err, err.Error())
+				// Check lone nodes and leaf nodes for identifiers nodes
+				// lone node
+				if (len(test.aggregatedConcept.SourceRepresentations) == 1) {
+
+				} else {
+					// Check leaf nodes for Identifiers
+					for _, leaf := range test.aggregatedConcept.SourceRepresentations {
+						actualValue := getIdentifierValue(t, "uuid", leaf.UUID, fmt.Sprintf("%vIdentifier", leaf.Authority))
+						assert.Equal(t, leaf.AuthorityValue, actualValue,"Identifier value incorrect")
+					}
+
+					// Check Canonical node doesn't have a Identifier node
+					actualValue := getIdentifierValue(t, "prefUUID", test.aggregatedConcept.PrefUUID, "UPPIdentifier")
+					assert.Equal(t, "", actualValue,"Identifier nodes should not be related to Canonical Nodes")
+				}
+
+			} else {
+				// TODO: Check these errors better
+				assert.Error(t, err, "Error was expected")
+				assert.Contains(t, err.Error(), test.errStr, "Error message is not correct")
 			}
 		})
 	}
 }
 
-//
-//func TestAddingConceptWithExistingIdentifiersShouldFail(t *testing.T) {
-//	assert := assert.New(t)
-//	cleanDB(assert)
-//
-//	newBasicAggConcept := FullLoneAggregatedConcept()
-//
-//	alternateBasicConcept := Concept{
-//		UUID:           anotherBasicConceptUUID,
-//		PrefLabel:      "basic concept label",
-//		Type:           "Section",
-//		Authority:      "TME",
-//		AuthorityValue: "1234",
-//	}
-//
-//	alternateAggConcept := FullLoneAggregatedConcept()
-//	alternateAggConcept.SourceRepresentations = []Concept{alternateBasicConcept}
-//
-//	assert.NoError(conceptsDriver.Write(newBasicAggConcept))
-//	err := conceptsDriver.Write(alternateAggConcept)
-//	assert.Error(err)
-//	assert.IsType(rwapi.ConstraintOrTransactionError{}, err)
-//}
-//
-//func TestIdentifierNodesCreatedForBasicConcept(t *testing.T) {
-//	assert := assert.New(t)
-//	cleanDB(assert)
-//
-//	conceptsDriver := NewConceptService(db)
-//
-//	basicAggregatedConcept := FullLoneAggregatedConcept()
-//	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
-//
-//	actualValue := getIdentifierValue(assert, basicAggregatedConcept.UUID, "UPPIdentifier")
-//	assert.Equal(basicAggregatedConcept.SourceRepresentations[0].UUID, actualValue)
-//
-//	actualValue = getIdentifierValue(assert, basicAggregatedConcept.UUID, "TMEIdentifier")
-//	assert.Equal(basicAggregatedConcept.SourceRepresentations[0].AuthorityValue, actualValue)
-//}
-//
-//func TestIdentifierNodesUpdatedForBasicConcept(t *testing.T) {
-//	assert := assert.New(t)
-//	cleanDB(assert)
-//
-//	bac := FullLoneAggregatedConcept()
-//	assert.NoError(conceptsDriver.Write(bac), "Failed to write concept")
-//
-//	expectedNewTMEIdentifierValue := "UpdatedAuthorityValue"
-//	bac.SourceRepresentations[0].AuthorityValue = expectedNewTMEIdentifierValue
-//
-//	assert.NoError(conceptsDriver.Write(bac), "Failed to write concept")
-//
-//	actualValue := getIdentifierValue(assert, bac.UUID, "TMEIdentifier")
-//	assert.Equal(expectedNewTMEIdentifierValue, actualValue, "Failed to unpdate TMEIdentifier value")
-//}
-//
-//func TestUnknownAuthorityGivesError(t *testing.T) {
-//	assert := assert.New(t)
-//	cleanDB(assert)
-//
-//	newBasicAggConcept := FullLoneAggregatedConcept()
-//
-//	newBasicConcept := fullConcept()
-//	newBasicConcept.Authority = "Nicky"
-//	newBasicAggConcept.SourceRepresentations = []Concept{newBasicConcept}
-//
-//	err := conceptsDriver.Write(newBasicAggConcept)
-//	assert.Error(err)
-//	assert.IsType(requestError{}, err)
-//	assert.EqualError(err, "Invalid Request")
-//	assert.Equal(err.(requestError).details, fmt.Sprintf("Unknown authority, therefore unable to add the relevant Identifier node: %s", newBasicConcept.Authority))
-//}
-//
-//func TestDeleteWillDeleteEntireNodeIfNoRelationship(t *testing.T) {
-//	assert := assert.New(t)
-//	cleanDB(assert)
-//
-//	basicAggregatedConcept := FullLoneAggregatedConcept()
-//	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
-//
-//	found, err := conceptsDriver.Delete(basicAggregatedConcept.UUID)
-//	assert.True(found, "Didn't manage to delete concept for uuid %", basicAggregatedConcept.UUID)
-//	assert.NoError(err, "Error deleting concept for uuid %s", basicAggregatedConcept)
-//
-//	concept, found, err := conceptsDriver.Read(basicAggregatedConcept.UUID)
-//
-//	assert.Equal(AggregatedConcept{}, concept, "Found concept %s who should have been deleted", concept)
-//	assert.False(found, "Found concept for uuid %s who should have been deleted", basicAggregatedConcept.UUID)
-//	assert.NoError(err, "Error trying to find concept for uuid %s", basicAggregatedConcept.UUID)
-//	assert.Equal(false, doesThingExistAtAll(basicAggregatedConcept.UUID, assert), "Found thing who should have been deleted uuid: %s", basicAggregatedConcept.UUID)
-//}
-//
-//func TestDeleteWithRelationshipsMaintainsRelationshipsButDumbsDownToThing(t *testing.T) {
-//	assert := assert.New(t)
-//	cleanDB(assert)
-//
-//	basicAggregatedConcept := FullLoneAggregatedConcept()
-//	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
-//
-//	writeContent(assert)
-//	writeAnnotation(assert)
-//
-//	found, err := conceptsDriver.Delete(basicAggregatedConcept.UUID)
-//
-//	assert.True(found, "Didn't manage to delete concept for uuid %", basicAggregatedConcept.UUID)
-//	assert.NoError(err, "Error deleting concept for uuid %s", basicAggregatedConcept.UUID)
-//
-//	concept, found, err := conceptsDriver.Read(basicAggregatedConcept.UUID)
-//
-//	assert.Equal(AggregatedConcept{}, concept, "Found concept %s who should have been deleted", concept)
-//	assert.False(found, "Found concept for uuid %s who should have been deleted", basicAggregatedConcept.UUID)
-//	assert.NoError(err, "Error trying to find concept for uuid %s", basicAggregatedConcept.UUID)
-//	assert.Equal(true, doesThingExistWithIdentifiers(basicAggregatedConcept.UUID, assert), "Unable to find a Thing with any Identifiers, uuid: %s", basicAggregatedConcept.UUID)
-//}
-//
-//func TestCount(t *testing.T) {
-//	assert := assert.New(t)
-//	cleanDB(assert)
-//
-//	basicAggregatedConcept := FullLoneAggregatedConcept()
-//	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
-//
-//	nr, err := conceptsDriver.Count()
-//	assert.Equal(1, nr, "Should be 1 concept in Neo4j - count differs")
-//	assert.NoError(err, "An unexpected error occurred during count")
-//
-//	assert.NoError(conceptsDriver.Write(AnotherBasicAggregatedConcept()), "Failed to write concept")
-//
-//	nr, err = conceptsDriver.Count()
-//	assert.Equal(2, nr, "Should be 2 subjects in Neo4j - count differs")
-//	assert.NoError(err, "An unexpected error occurred during count")
-//}
-//
-//func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
-//	assert := assert.New(t)
-//	cleanDB(assert)
-//
-//	anotherObj := FullLoneAggregatedConcept()
-//
-//	anotherObj.PrefLabel = ""
-//	err := conceptsDriver.Write(anotherObj)
-//	assert.Error(err)
-//	assert.IsType(requestError{}, err)
-//	assert.EqualError(err, "Invalid Request")
-//	assert.Equal(err.(requestError).details, fmt.Sprintf("Invalid request, no prefLabel has been supplied for: %s", anotherObj.UUID))
-//
-//	anotherObj.PrefLabel = "Pref Label"
-//	anotherObj.Type = ""
-//	err = conceptsDriver.Write(anotherObj)
-//	assert.Error(err)
-//	assert.IsType(requestError{}, err)
-//	assert.EqualError(err, "Invalid Request")
-//	assert.Equal(err.(requestError).details, fmt.Sprintf("Invalid request, no type has been supplied for: %s", anotherObj.UUID))
-//
-//	anotherObj.Type = "Type"
-//	anotherObj.SourceRepresentations = nil
-//	err = conceptsDriver.Write(anotherObj)
-//	assert.Error(err)
-//	assert.IsType(requestError{}, err)
-//	assert.EqualError(err, "Invalid Request")
-//	assert.Equal(err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation has been supplied for: %s", anotherObj.UUID))
-//
-//	basicConcept := fullConcept()
-//	yetAnotherBasicConcept := basicConcept
-//	yetAnotherBasicConcept.PrefLabel = ""
-//	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
-//	err = conceptsDriver.Write(anotherObj)
-//	assert.Error(err)
-//	assert.IsType(requestError{}, err)
-//	assert.EqualError(err, "Invalid Request")
-//	assert.Equal(err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation.prefLabel has been supplied for: %s", anotherObj.UUID))
-//
-//	yetAnotherBasicConcept = basicConcept
-//	yetAnotherBasicConcept.Type = ""
-//	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
-//	err = conceptsDriver.Write(anotherObj)
-//	assert.Error(err)
-//	assert.IsType(requestError{}, err)
-//	assert.EqualError(err, "Invalid Request")
-//	assert.Equal(err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation.type has been supplied for: %s", anotherObj.UUID))
-//
-//	yetAnotherBasicConcept = basicConcept
-//	yetAnotherBasicConcept.AuthorityValue = ""
-//	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
-//	err = conceptsDriver.Write(anotherObj)
-//	assert.Error(err)
-//	assert.IsType(requestError{}, err)
-//	assert.EqualError(err, "Invalid Request")
-//	assert.Equal(err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation.authorityValue has been supplied for: %s", anotherObj.UUID))
-//
-//	yetAnotherBasicConcept = basicConcept
-//	yetAnotherBasicConcept.Type = "TEST_TYPE"
-//	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
-//	err = conceptsDriver.Write(anotherObj)
-//	assert.Error(err)
-//	assert.IsType(requestError{}, err)
-//	assert.EqualError(err, "Invalid Request")
-//	assert.Equal(err.(requestError).details, fmt.Sprintf("The source representation of uuid: %s has an unknown type of: %s", yetAnotherBasicConcept.UUID, yetAnotherBasicConcept.Type))
-//}
+func TestDeleteWillDeleteEntireNodeIfNoRelationship(t *testing.T) {
+	defer cleanDB(t, basicConceptUUID)
+	basicAggregatedConcept := getFullLoneAggregatedConcept()
+	assert.NoError(t, conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
+
+	found, err := conceptsDriver.Delete(basicConceptUUID)
+	assert.True(t, found, "Didn't manage to delete concept for uuid %s", basicConceptUUID)
+	assert.NoError(t, err, "Error deleting concept for uuid %s", basicAggregatedConcept)
+
+	concept, found, err := conceptsDriver.Read(basicConceptUUID)
+
+	assert.Equal(t, AggregatedConcept{}, concept, "Found concept %s who should have been deleted", concept)
+	assert.False(t, found, "Found concept for uuid %s who should have been deleted", basicConceptUUID)
+	assert.NoError(t, err, "Error trying to find concept for uuid %s", basicConceptUUID)
+	assert.Equal(t, false, doesThingExistAtAll(t, basicConceptUUID), "Found thing who should have been deleted uuid: %s", basicConceptUUID)
+}
+
+func TestDeleteWithRelationshipsMaintainsRelationshipsButDumbsDownToThing(t *testing.T) {
+	defer cleanDB(t, basicConceptUUID)
+	basicAggregatedConcept := getFullLoneAggregatedConcept()
+	assert.NoError(t, conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
+
+	writeContent(t)
+	writeAnnotation(t)
+
+	found, err := conceptsDriver.Delete(basicConceptUUID)
+
+	assert.True(t, found, "Didn't manage to delete concept for uuid %", basicConceptUUID)
+	assert.NoError(t, err, "Error deleting concept for uuid %s", basicConceptUUID)
+
+	concept, found, err := conceptsDriver.Read(basicConceptUUID)
+
+	assert.Equal(t, AggregatedConcept{}, concept, "Found concept %s who should have been deleted", concept)
+	assert.False(t, found, "Found concept for uuid %s who should have been deleted", basicConceptUUID)
+	assert.NoError(t, err, "Error trying to find concept for uuid %s", basicConceptUUID)
+	assert.Equal(t, true, doesThingExistWithIdentifiers(t, basicConceptUUID), "Unable to find a Thing with any Identifiers, uuid: %s", basicConceptUUID)
+}
+
+func TestCount(t *testing.T) {
+	assert := assert.New(t)
+	cleanDB(t, basicConceptUUID, anotherBasicConceptUUID)
+
+	basicAggregatedConcept := getFullLoneAggregatedConcept()
+	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
+
+	nr, err := conceptsDriver.Count()
+	assert.Equal(1, nr, "Should be 1 concept in Neo4j - count differs")
+	assert.NoError(err, "An unexpected error occurred during count")
+
+	assert.NoError(conceptsDriver.Write(getAnotherFullLoneAggregatedConcept()), "Failed to write concept")
+
+	nr, err = conceptsDriver.Count()
+	assert.Equal(2, nr, "Should be 2 subjects in Neo4j - count differs")
+	assert.NoError(err, "An unexpected error occurred during count")
+}
+
+// TODO do these tests in a loop
+func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
+	defer cleanDB(t, basicConceptUUID)
+
+	anotherObj := getFullLoneAggregatedConcept()
+
+	anotherObj.PrefLabel = ""
+	err := conceptsDriver.Write(anotherObj)
+	assert.Error(t, err)
+	assert.IsType(t, requestError{}, err)
+	assert.EqualError(t, err, "Invalid Request")
+	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no prefLabel has been supplied for: %s", basicConceptUUID))
+
+	anotherObj.PrefLabel = "Pref Label"
+	anotherObj.Type = ""
+	err = conceptsDriver.Write(anotherObj)
+	assert.Error(t, err)
+	assert.IsType(t, requestError{}, err)
+	assert.EqualError(t, err, "Invalid Request")
+	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no type has been supplied for: %s", basicConceptUUID))
+
+	anotherObj.Type = "Type"
+	anotherObj.SourceRepresentations = nil
+	err = conceptsDriver.Write(anotherObj)
+	assert.Error(t, err)
+	assert.IsType(t, requestError{}, err)
+	assert.EqualError(t, err, "Invalid Request")
+	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation has been supplied for: %s", basicConceptUUID))
+
+	yetAnotherBasicConcept := Concept{
+			UUID:           basicConceptUUID,
+			PrefLabel:      "Concept PrefLabel",
+			Type:           "Section",
+			Authority:      "TME",
+			AuthorityValue: "1234",
+			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+	}
+	yetAnotherBasicConcept.PrefLabel = ""
+	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
+	err = conceptsDriver.Write(anotherObj)
+	assert.Error(t, err)
+	assert.IsType(t, requestError{}, err)
+	assert.EqualError(t, err, "Invalid Request")
+	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation.prefLabel has been supplied for: %s", yetAnotherBasicConcept.UUID))
+
+	yetAnotherBasicConcept.PrefLabel = "Pref Label"
+	yetAnotherBasicConcept.Type = ""
+	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
+	err = conceptsDriver.Write(anotherObj)
+	assert.Error(t, err)
+	assert.IsType(t, requestError{}, err)
+	assert.EqualError(t, err, "Invalid Request")
+	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation.type has been supplied for: %s", yetAnotherBasicConcept.UUID))
+
+	yetAnotherBasicConcept.Type = "Section"
+	yetAnotherBasicConcept.AuthorityValue = ""
+	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
+	err = conceptsDriver.Write(anotherObj)
+	assert.Error(t, err)
+	assert.IsType(t, requestError{}, err)
+	assert.EqualError(t, err, "Invalid Request")
+	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation.authorityValue has been supplied for: %s", yetAnotherBasicConcept.UUID))
+
+	yetAnotherBasicConcept.AuthorityValue = "UPP"
+	yetAnotherBasicConcept.Type = "TEST_TYPE"
+	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
+	err = conceptsDriver.Write(anotherObj)
+	assert.Error(t, err)
+	assert.IsType(t, requestError{}, err)
+	assert.EqualError(t, err, "Invalid Request")
+	assert.Equal(t, err.(requestError).details, fmt.Sprintf("The source representation of uuid: %s has an unknown type of: %s", yetAnotherBasicConcept.UUID, yetAnotherBasicConcept.Type))
+}
 
 func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName string) {
 	actual, found, err := conceptsDriver.Read(expected.PrefUUID)
@@ -404,7 +412,7 @@ func cleanDB(t *testing.T, uuids ...string) {
 	assert.NoError(t, err, "Error executing clean up cypher")
 }
 
-func doesThingExistAtAll(uuid string, assert *assert.Assertions) bool {
+func doesThingExistAtAll(t *testing.T, uuid string) bool {
 	result := []struct {
 		Uuid string `json:"thing.uuid"`
 	}{}
@@ -420,7 +428,7 @@ func doesThingExistAtAll(uuid string, assert *assert.Assertions) bool {
 	}
 
 	err := db.CypherBatch([]*neoism.CypherQuery{&checkGraph})
-	assert.NoError(err)
+	assert.NoError(t, err)
 
 	if len(result) == 0 {
 		return false
@@ -429,7 +437,7 @@ func doesThingExistAtAll(uuid string, assert *assert.Assertions) bool {
 	return true
 }
 
-func doesThingExistWithIdentifiers(uuid string, assert *assert.Assertions) bool {
+func doesThingExistWithIdentifiers(t *testing.T, uuid string) bool {
 	result := []struct {
 		uuid string
 	}{}
@@ -447,7 +455,7 @@ func doesThingExistWithIdentifiers(uuid string, assert *assert.Assertions) bool 
 	}
 
 	err := db.CypherBatch([]*neoism.CypherQuery{&checkGraph})
-	assert.NoError(err)
+	assert.NoError(t, err)
 
 	if len(result) == 0 {
 		return false
@@ -455,56 +463,59 @@ func doesThingExistWithIdentifiers(uuid string, assert *assert.Assertions) bool 
 	return true
 }
 
-func writeAnnotation(assert *assert.Assertions) annotations.Service {
+func writeAnnotation(t *testing.T) annotations.Service {
 	annotationsRW := annotations.NewCypherAnnotationsService(db, "v1", "annotations-v1")
-	assert.NoError(annotationsRW.Initialise())
-	writeJSONToAnnotationsService(annotationsRW, contentUUID, "./fixtures/Annotations-3fc9fe3e-af8c-4f7f-961a-e5065392bb31-v2.json", assert)
+	assert.NoError(t, annotationsRW.Initialise())
+	writeJSONToAnnotationsService(t, annotationsRW, contentUUID, "./fixtures/Annotations-3fc9fe3e-af8c-4f7f-961a-e5065392bb31-v2.json")
 	return annotationsRW
 }
 
-func writeContent(assert *assert.Assertions) baseftrwapp.Service {
+func writeContent(t *testing.T) baseftrwapp.Service {
 	contentRW := content.NewCypherContentService(db)
-	assert.NoError(contentRW.Initialise())
-	writeJSONToService(contentRW, "./fixtures/Content-3fc9fe3e-af8c-4f7f-961a-e5065392bb31.json", assert)
+	assert.NoError(t, contentRW.Initialise())
+	writeJSONToService(t, contentRW, "./fixtures/Content-3fc9fe3e-af8c-4f7f-961a-e5065392bb31.json")
 	return contentRW
 }
 
-func writeJSONToAnnotationsService(service annotations.Service, contentUUID string, pathToJSONFile string, assert *assert.Assertions) {
+func writeJSONToAnnotationsService(t *testing.T, service annotations.Service, contentUUID string, pathToJSONFile string) {
 	f, err := os.Open(pathToJSONFile)
-	assert.NoError(err)
+	assert.NoError(t, err)
 	dec := json.NewDecoder(f)
 	inst, errr := service.DecodeJSON(dec)
-	assert.NoError(errr, "Error parsing file %s", pathToJSONFile)
+	assert.NoError(t, errr, "Error parsing file %s", pathToJSONFile)
 	errrr := service.Write(contentUUID, inst)
-	assert.NoError(errrr)
+	assert.NoError(t, errrr)
 }
 
-func writeJSONToService(service baseftrwapp.Service, pathToJSONFile string, assert *assert.Assertions) {
+func writeJSONToService(t *testing.T, service baseftrwapp.Service, pathToJSONFile string) {
 	f, err := os.Open(pathToJSONFile)
-	assert.NoError(err)
+	assert.NoError(t, err)
 	dec := json.NewDecoder(f)
 	inst, _, errr := service.DecodeJSON(dec)
-	assert.NoError(errr)
+	assert.NoError(t, errr)
 	errrr := service.Write(inst)
-	assert.NoError(errrr)
+	assert.NoError(t, errrr)
 }
 
-func getIdentifierValue(assert *assert.Assertions, uuid string, label string) string {
+func getIdentifierValue(t *testing.T, uuidPropertyName string,  uuid string, label string) string {
 	results := []struct {
 		Value string `json:"i.value"`
 	}{}
 
 	query := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`
-			match (c:Concept {uuid :{uuid}})-[r:IDENTIFIES]-(i:%s) return i.value
-		`, label),
+			match (c:Concept {%s :{uuid}})-[r:IDENTIFIES]-(i:%s) return i.value
+		`, uuidPropertyName, label),
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
 		Result: &results,
 	}
-
 	err := db.CypherBatch([]*neoism.CypherQuery{query})
-	assert.NoError(err, fmt.Sprintf("Error while retrieving %s", label))
-	return results[0].Value
+	assert.NoError(t, err, fmt.Sprintf("Error while retrieving %s", label))
+
+	if (len(results) > 0) {
+		return results[0].Value
+	}
+	return ""
 }

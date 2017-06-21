@@ -1,7 +1,7 @@
 package concepts
 
 type AggregatedConcept struct {
-	UUID                  string    `json:"uuid"`
+	PrefUUID              string    `json:prefUUID`
 	PrefLabel             string    `json:"prefLabel"`
 	Type                  string    `json:"type"`
 	SourceRepresentations []Concept `json:"sourceRepresentations"`

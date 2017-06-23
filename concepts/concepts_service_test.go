@@ -18,7 +18,6 @@ import (
 
 	"github.com/jmcvetta/neoism"
 
-	"log"
 	"reflect"
 )
 
@@ -39,13 +38,20 @@ var conceptsDriver Service
 // currently missing validation around this
 func getFullLoneAggregatedConcept() AggregatedConcept {
 	return AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "Concept PrefLabel",
-		Type:      "Section",
+		PrefUUID:       basicConceptUUID,
+		PrefLabel:      "Concept PrefLabel",
+		Type:           "Section",
+		Strapline:      "Some strapline",
+		DescriptionXML: "Some description",
+		ImageURL:       "Some image url",
+		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 		SourceRepresentations: []Concept{{
 			UUID:           basicConceptUUID,
 			PrefLabel:      "Concept PrefLabel",
 			Type:           "Section",
+			Strapline:      "Some strapline",
+			DescriptionXML: "Some description",
+			ImageURL:       "Some image url",
 			Authority:      "TME",
 			AuthorityValue: "1234",
 			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
@@ -71,15 +77,22 @@ func getAnotherFullLoneAggregatedConcept() AggregatedConcept {
 
 func getFullConcordedAggregatedConcept() AggregatedConcept {
 	return AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "Concept PrefLabel",
-		Type:      "Section",
+		PrefUUID:       basicConceptUUID,
+		PrefLabel:      "Concept PrefLabel",
+		Type:           "Section",
+		Strapline:      "Some strapline",
+		DescriptionXML: "Some description",
+		ImageURL:       "Some image url",
+		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 		SourceRepresentations: []Concept{{
 			UUID:           anotherBasicConceptUUID,
 			PrefLabel:      "Another Concept PrefLabel",
 			Type:           "Section",
-			Authority:      "UPP",
+			Authority:      "Smartlogic",
 			AuthorityValue: anotherBasicConceptUUID,
+			Strapline:      "Some strapline",
+			DescriptionXML: "Some description",
+			ImageURL:       "Some image url",
 			Aliases:        []string{"anotheroneLabel", "anothersecondLabel"},
 		}, {
 			UUID:           basicConceptUUID,
@@ -97,6 +110,7 @@ func updateLoneSourceSystemPrefLabel(prefLabel string) AggregatedConcept {
 		PrefUUID:  basicConceptUUID,
 		PrefLabel: prefLabel,
 		Type:      "Section",
+		Aliases:   []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 		SourceRepresentations: []Concept{{
 			UUID:           basicConceptUUID,
 			PrefLabel:      prefLabel,
@@ -145,8 +159,6 @@ func getUnknownAuthority() AggregatedConcept {
 		}}}
 }
 
-
-
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
@@ -170,7 +182,7 @@ func TestConnectivityCheck(t *testing.T) {
 }
 
 func TestWriteService(t *testing.T) {
-	defer cleanDB(t, basicConceptUUID, anotherBasicConceptUUID)
+	//defer cleanDB(t, basicConceptUUID, anotherBasicConceptUUID)
 	tests := []struct {
 		testName          string
 		aggregatedConcept AggregatedConcept
@@ -194,18 +206,18 @@ func TestWriteService(t *testing.T) {
 
 				// Check lone nodes and leaf nodes for identifiers nodes
 				// lone node
-				if (len(test.aggregatedConcept.SourceRepresentations) == 1) {
+				if len(test.aggregatedConcept.SourceRepresentations) == 1 {
 
 				} else {
 					// Check leaf nodes for Identifiers
 					for _, leaf := range test.aggregatedConcept.SourceRepresentations {
 						actualValue := getIdentifierValue(t, "uuid", leaf.UUID, fmt.Sprintf("%vIdentifier", leaf.Authority))
-						assert.Equal(t, leaf.AuthorityValue, actualValue,"Identifier value incorrect")
+						assert.Equal(t, leaf.AuthorityValue, actualValue, "Identifier value incorrect")
 					}
 
 					// Check Canonical node doesn't have a Identifier node
 					actualValue := getIdentifierValue(t, "prefUUID", test.aggregatedConcept.PrefUUID, "UPPIdentifier")
-					assert.Equal(t, "", actualValue,"Identifier nodes should not be related to Canonical Nodes")
+					assert.Equal(t, "", actualValue, "Identifier nodes should not be related to Canonical Nodes")
 				}
 
 			} else {
@@ -257,7 +269,7 @@ func TestDeleteWithRelationshipsMaintainsRelationshipsButDumbsDownToThing(t *tes
 
 func TestCount(t *testing.T) {
 	assert := assert.New(t)
-	cleanDB(t, basicConceptUUID, anotherBasicConceptUUID)
+	defer cleanDB(t, basicConceptUUID, anotherBasicConceptUUID)
 
 	basicAggregatedConcept := getFullLoneAggregatedConcept()
 	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
@@ -303,12 +315,12 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation has been supplied for: %s", basicConceptUUID))
 
 	yetAnotherBasicConcept := Concept{
-			UUID:           basicConceptUUID,
-			PrefLabel:      "Concept PrefLabel",
-			Type:           "Section",
-			Authority:      "TME",
-			AuthorityValue: "1234",
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		UUID:           basicConceptUUID,
+		PrefLabel:      "Concept PrefLabel",
+		Type:           "Section",
+		Authority:      "TME",
+		AuthorityValue: "1234",
+		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 	}
 	yetAnotherBasicConcept.PrefLabel = ""
 	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
@@ -360,24 +372,32 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 	assert.NoError(t, err, "Unexpected Error occurred")
 	assert.True(t, found, "Concept has not been found")
 
-	assert.Equal(t, expected.PrefLabel, actualConcept.PrefLabel, "Actual concept pref label differs from expected")
-	assert.Equal(t, expected.Type, actualConcept.Type, "Actual concept type differs from expected")
-	assert.Equal(t, expected.PrefUUID, actualConcept.PrefUUID, "Actual concept uuid differs from expected")
+	assert.Equal(t, expected.PrefLabel, actualConcept.PrefLabel, "Actual aggregated concept pref label differs from expected")
+	assert.Equal(t, expected.Type, actualConcept.Type, "Actual aggregated  concept type differs from expected")
+	assert.Equal(t, expected.PrefUUID, actualConcept.PrefUUID, "Actual aggregated  concept uuid differs from expected")
+	assert.Equal(t, expected.DescriptionXML, actualConcept.DescriptionXML, "Actual aggregated concept descriptionXML differs from expected")
+	assert.Equal(t, expected.ImageURL, actualConcept.ImageURL, "Actual aggregated image url differs from expected")
+	assert.Equal(t, expected.Strapline, actualConcept.Strapline, "Actual aggregated strapline differs from expected")
 
 	if len(expected.SourceRepresentations) > 0 && len(actualConcept.SourceRepresentations) > 0 {
 		var concepts []Concept
-		for _, concept := range actualConcept.SourceRepresentations {
+		for i, concept := range actualConcept.SourceRepresentations {
 			assert.NotEqual(t, 0, concept.LastModifiedEpoch, "Actual concept lastModifiedEpoch differs from expected")
 
 			// Remove the last modified date time now that we have checked it so we can compare the rest of the model
 			concept.LastModifiedEpoch = 0
 			concepts = append(concepts, concept)
+			assert.Equal(t, expected.SourceRepresentations[i].PrefLabel, concept.PrefLabel, fmt.Sprintf("Actual concept pref label differs from expected: ConceptId: %s", concept.UUID))
+			assert.Equal(t, expected.SourceRepresentations[i].Type, concept.Type, fmt.Sprintf("Actual concept type differs from expected: ConceptId: %s", concept.UUID))
+			assert.Equal(t, expected.SourceRepresentations[i].UUID, concept.UUID, fmt.Sprintf("Actual concept uuid differs from expected: ConceptId: %s", concept.UUID))
+			assert.Equal(t, expected.SourceRepresentations[i].DescriptionXML, concept.DescriptionXML, fmt.Sprintf("Actual concept descriptionXML differs from expected: ConceptId: %s", concept.UUID))
+			assert.Equal(t, expected.SourceRepresentations[i].ImageURL, concept.ImageURL, fmt.Sprintf("Actual concept image url differs from expected: ConceptId: %s", concept.UUID))
+			assert.Equal(t, expected.SourceRepresentations[i].Strapline, concept.Strapline, fmt.Sprintf("Actual concept strapline differs from expected: ConceptId: %s", concept.UUID))
+			assert.True(t, reflect.DeepEqual(expected.SourceRepresentations[i], concept), fmt.Sprintf("Actual concept differs from expected: ConceptId: %s", concept.UUID))
 		}
 		actualConcept.SourceRepresentations = concepts
 	}
-	log.Printf("Expected concept: %v", expected)
-	log.Printf("Actual: %v", actualConcept)
-	assert.True(t, reflect.DeepEqual(expected, actualConcept), "Actual concept differs from expected")
+	assert.True(t, reflect.DeepEqual(expected, actualConcept), "Actual agrregated concept differs from expected")
 }
 
 func neoUrl() string {
@@ -497,7 +517,7 @@ func writeJSONToService(t *testing.T, service baseftrwapp.Service, pathToJSONFil
 	assert.NoError(t, errrr)
 }
 
-func getIdentifierValue(t *testing.T, uuidPropertyName string,  uuid string, label string) string {
+func getIdentifierValue(t *testing.T, uuidPropertyName string, uuid string, label string) string {
 	results := []struct {
 		Value string `json:"i.value"`
 	}{}
@@ -514,7 +534,7 @@ func getIdentifierValue(t *testing.T, uuidPropertyName string,  uuid string, lab
 	err := db.CypherBatch([]*neoism.CypherQuery{query})
 	assert.NoError(t, err, fmt.Sprintf("Error while retrieving %s", label))
 
-	if (len(results) > 0) {
+	if len(results) > 0 {
 		return results[0].Value
 	}
 	return ""

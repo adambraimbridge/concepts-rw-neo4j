@@ -1,21 +1,29 @@
 package concepts
 
 type AggregatedConcept struct {
-	PrefUUID              string    `json:prefUUID`
+	PrefUUID              string    `json:"prefUUID"`
 	PrefLabel             string    `json:"prefLabel"`
 	Type                  string    `json:"type"`
+	Aliases               []string  `json:"aliases,omitempty"`
+	Strapline             string    `json:"strapline,omitempty"`
+	DescriptionXML        string    `json:"descriptionXML,omitempty"`
+	ImageURL              string    `json:"_imageUrl,omitempty"`
 	SourceRepresentations []Concept `json:"sourceRepresentations"`
 }
 
 // Concept - could be any concept genre, subject etc
 type Concept struct {
-	UUID              string   `json:"uuid"`
+	UUID              string   `json:"uuid,omitempty"`
 	PrefLabel         string   `json:"prefLabel"`
 	Type              string   `json:"type"`
 	Authority         string   `json:"authority"`
 	AuthorityValue    string   `json:"authorityValue"`
 	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`
 	Aliases           []string `json:"aliases,omitempty"`
+	ParentUUIDs       []string `json:"parentUUIDs,omitempty"`
+	Strapline         string   `json:"strapline,omitempty"`
+	DescriptionXML    string   `json:"descriptionXML,omitempty"`
+	ImageURL          string   `json:"_imageUrl,omitempty"`
 }
 
 // Map of all the possible node types so we can ensure they all have
@@ -48,6 +56,7 @@ var conceptLabels = [...]string{
 var authorityToIdentifierLabelMap = map[string]string{
 	"TME": "TMEIdentifier",
 	"UPP": "UPPIdentifier",
+	"Smartlogic": "SmartlogicIdentifier",
 }
 
-var BasicTmePaths = []string{"topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people"}
+var BasicTmePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people"}

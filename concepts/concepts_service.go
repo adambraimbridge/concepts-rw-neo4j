@@ -79,11 +79,12 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 	if isConcordedNode {
 		query = &neoism.CypherQuery{
 			Statement: `	MATCH (canonical:Concept {prefUUID:{prefUUID}})<-[:EQUIVALENT_TO]-(node:Concept)
+					OPTIONAL MATCH (node)-[HAS_PARENT]->(parent:Thing)
 					WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
 					canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
 					{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue,
 					types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, aliases: node.aliases, descriptionXML: node.descriptionXML,
-					imageUrl: node.imageUrl, strapline: node.strapline} as sources
+					imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid)} as sources
 					RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, collect(sources) as sourceRepresentations `,
 			Parameters: map[string]interface{}{
 				"prefUUID": uuid,
@@ -93,9 +94,10 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 	} else {
 		query = &neoism.CypherQuery{
 			Statement: `MATCH (n:Concept {uuid:{uuid}})
+			OPTIONAL MATCH (n)-[HAS_PARENT]->(parent:Thing)
 			return distinct n.uuid as uuid, n.prefUUID as prefUUID, n.prefLabel as prefLabel, labels(n) as types, n.authority as authority,
 			n.authorityValue as authorityValue, n.lastModifiedEpoch as lastModifiedEpoch, n.aliases as aliases, n.imageUrl as imageUrl,
-			n.strapline as strapline, n.descriptionXML as descriptionXML`,
+			n.strapline as strapline, n.descriptionXML as descriptionXML, collect(parent.uuid) as parentUUIDs`,
 			Parameters: map[string]interface{}{
 				"uuid": uuid,
 			},
@@ -142,6 +144,19 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 			if len(srcConcept.Aliases) > 0 {
 				concept.Aliases = srcConcept.Aliases
 			}
+
+			uuids := []string{}
+			if len(srcConcept.ParentUUIDs) > 0 {
+				//TODO do this differently but I get a "" back from the cypher!
+				for _, uuid := range srcConcept.ParentUUIDs {
+					if (uuid != "") {
+						uuids = append(uuids, uuid)
+					}
+				}
+			}
+			if len(uuids) > 0 {
+				concept.ParentUUIDs = uuids
+			}
 			concept.UUID = srcConcept.UUID
 			concept.PrefLabel = srcConcept.PrefLabel
 			concept.Authority = srcConcept.Authority
@@ -151,6 +166,7 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 			concept.ImageURL = srcConcept.ImageURL
 			concept.Strapline = srcConcept.Strapline
 			concept.DescriptionXML = srcConcept.DescriptionXML
+
 			sourceConcepts = append(sourceConcepts, concept)
 		}
 	} else {
@@ -166,6 +182,22 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 		concept.DescriptionXML = results[0].DescriptionXML
 		if len(results[0].Aliases) > 0 {
 			concept.Aliases = results[0].Aliases
+		}
+
+		uuids := []string{}
+		if len(results[0].SourceRepresentations[0].ParentUUIDs) > 0 {
+			//TODO do this differently but I get a "" back from the cypher!
+			for _, uuid := range results[0].SourceRepresentations[0].ParentUUIDs {
+				if (uuid != "") {
+					uuids = append(uuids, uuid)
+				}
+			}
+
+			concept.ParentUUIDs = uuids
+		}
+
+		if len(uuids) > 0 {
+			concept.ParentUUIDs = uuids
 		}
 		sourceConcepts = append(sourceConcepts, concept)
 	}
@@ -384,6 +416,23 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			},
 		}
 
+	}
+
+	if len(concept.ParentUUIDs) > 0 {
+		for _, parentUUID := range concept.ParentUUIDs {
+			writeParent := &neoism.CypherQuery{
+				Statement: `
+                                MERGE (o:Thing {uuid: {uuid}})
+		  	   	MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})
+                            	MERGE (parentupp)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {paUuid}
+		            	MERGE (o)-[:HAS_PARENT]->(p)	`,
+				Parameters: neoism.Props{
+					"paUuid": parentUUID,
+					"uuid":   concept.UUID,
+				},
+			}
+			queryBatch = append(queryBatch, writeParent)
+		}
 	}
 
 	queryBatch = append(queryBatch, createConceptQuery)

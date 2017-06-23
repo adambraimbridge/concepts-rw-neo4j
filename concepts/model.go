@@ -16,8 +16,8 @@ type Concept struct {
 	UUID              string   `json:"uuid,omitempty"`
 	PrefLabel         string   `json:"prefLabel"`
 	Type              string   `json:"type"`
-	Authority         string   `json:"authority"`
-	AuthorityValue    string   `json:"authorityValue"`
+	Authority         string   `json:"authority,omitempty"`
+	AuthorityValue    string   `json:"authorityValue,omitempty"`
 	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`
 	Aliases           []string `json:"aliases,omitempty"`
 	ParentUUIDs       []string `json:"parentUUIDs,omitempty"`

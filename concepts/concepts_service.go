@@ -26,6 +26,7 @@ func NewConceptService(cypherRunner neoutils.NeoConnection) Service {
 func (s Service) Initialise() error {
 	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
+		"Thing": "prefUUID",
 	})
 
 	if err != nil {
@@ -211,7 +212,7 @@ func (s Service) isConcordedConcept(uuid string) (bool, error) {
 		uuid string
 	}{}
 	query := &neoism.CypherQuery{
-		Statement: `MATCH (n:Concept {uuid:{uuid}})-[:EQUIVALENT_TO]-(c) return n.uuid`,
+		Statement: `MATCH (n:Thing {uuid:{uuid}})-[:EQUIVALENT_TO]-(c) return n.uuid`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -223,12 +224,35 @@ func (s Service) isConcordedConcept(uuid string) (bool, error) {
 		return false, err
 	}
 
-	return (len(results) > 0), nil
+	if len(results) > 0 {
+		return true, nil
+	} else {
+		results = []struct {
+			uuid string
+		}{}
+		query := &neoism.CypherQuery{
+			Statement: `MATCH (n:Thing {prefUUID:{uuid}})-[:EQUIVALENT_TO]-(c) return n.uuid`,
+			Parameters: map[string]interface{}{
+				"uuid": uuid,
+			},
+			Result: &results,
+		}
+
+		err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
+		if err != nil {
+			return false, err
+		}
+
+		if len(results) > 0 {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 //Write - write method
 func (s Service) Write(thing interface{}) error {
-
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
 	aggregatedConcept := thing.(AggregatedConcept)
@@ -246,6 +270,11 @@ func (s Service) Write(thing interface{}) error {
 	if len(aggregatedConcept.SourceRepresentations) > 1 {
 		// Does the canonical node exist already?
 		// Clear down and delete any equivilent-to relationship
+		err := s.clearDownExistingNodes(aggregatedConcept)
+
+		if err != nil {
+			return err
+		}
 
 		// Create a concept from the canonical information - WITH NO UUID
 		concept := Concept{
@@ -256,6 +285,7 @@ func (s Service) Write(thing interface{}) error {
 			ImageURL:       aggregatedConcept.ImageURL,
 			Type:           aggregatedConcept.Type,
 		}
+
 		// Create the canonical node
 		queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
 
@@ -364,37 +394,62 @@ func getLabelsToRemove() string {
 	return labelsToRemove
 }
 
-func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.CypherQuery {
+func (s Service) clearDownExistingNodes(ac AggregatedConcept) error {
+	acUUID := ac.PrefUUID
+	sourceUuids := getSourceIds(ac.SourceRepresentations)
+
+
 	//cleanUP all the previous IDENTIFIERS referring to that uuid
-	deletePreviousIdentifiersAndLabelsQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{uuid}})
-			OPTIONAL MATCH (t)<-[iden:IDENTIFIES]-(i)
+	deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`MATCH (t:Thing {prefUUID:{acUUID}})
+			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
 			REMOVE t:%s
-			DELETE iden, i`, getLabelsToRemove()),
+			SET t={prefUUID:{acUUID}}
+			DELETE rel`, getLabelsToRemove()),
 		Parameters: map[string]interface{}{
-			"uuid": concept.UUID,
+			"acUUID": acUUID,
 		},
 	}
 
-	queryBatch := []*neoism.CypherQuery{deletePreviousIdentifiersAndLabelsQuery}
+	queryBatch := []*neoism.CypherQuery{deletePreviousIdentifiersLabelsAndPropertiesQuery}
 
-	allProps := map[string]interface{}{
-		"prefUUID":          prefUUID,
-		"uuid":              uuid,
-		"prefLabel":         concept.PrefLabel,
-		"authority":         concept.Authority,
-		"authorityValue":    concept.AuthorityValue,
-		"lastModifiedEpoch": time.Now().Unix(),
-		"aliases":           concept.Aliases,
-		"descriptionXML":    concept.DescriptionXML,
-		"strapline":         concept.Strapline,
-		"imageUrl":          concept.ImageURL,
+	for _, id := range sourceUuids {
+		deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
+			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
+			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
+			REMOVE t:%s
+			SET t={uuid:{id}}
+			DELETE rel, i`, getLabelsToRemove()),
+			Parameters: map[string]interface{}{
+				"id": id,
+			},
+		}
+		queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
 	}
 
+	err := s.conn.CypherBatch(queryBatch)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getSourceIds(sourceConcepts []Concept) []string {
+	var idList []string
+	for _, concept := range sourceConcepts {
+		idList = append(idList, concept.UUID)
+	}
+	return idList
+}
+
+func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.CypherQuery {
+	queryBatch := []*neoism.CypherQuery{}
 	var createConceptQuery *neoism.CypherQuery
 
 	// Leaf or Lone Node
 	if uuid != "" {
+		allProps := setProps(concept, uuid, true)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
 								set n={allprops}
@@ -406,6 +461,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		}
 	} else {
 		// Canonical node that doesn't have UUID
+		allProps := setProps(concept, prefUUID, false)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
 								set n={allprops}
@@ -444,6 +500,38 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 
 	return queryBatch
 
+}
+
+func setProps(concept Concept, id string, isSource bool) map[string]interface{} {
+	nodeProps := map[string]interface{}{}
+
+	nodeProps["prefLabel"] = concept.PrefLabel
+	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
+
+	if len(concept.Aliases) > 0 {
+		nodeProps["aliases"] = concept.Aliases
+	}
+
+	if concept.DescriptionXML != "" {
+		nodeProps["descriptionXML"] = concept.DescriptionXML
+	}
+	if concept.ImageURL != "" {
+		nodeProps["imageUrl"] = concept.ImageURL
+	}
+	if concept.Strapline != "" {
+		nodeProps["strapline"] = concept.Strapline
+	}
+
+	if isSource {
+		nodeProps["uuid"] = id
+		nodeProps["authority"] = concept.Authority
+		nodeProps["authorityValue"] = concept.AuthorityValue
+
+	} else {
+		nodeProps["prefUUID"] = id
+	}
+
+	return nodeProps
 }
 
 func addIdentifierNodes(UUID string, authority string, authorityValue string) []*neoism.CypherQuery {

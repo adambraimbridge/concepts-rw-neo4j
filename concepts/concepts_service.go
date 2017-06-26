@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
 )
@@ -66,20 +67,10 @@ type neoConcept struct {
 
 //Read - read service
 func (s Service) Read(uuid string) (interface{}, bool, error) {
-	// TODO should we allow to come in from any UUID not only the canonical one
 	results := []neoAggregatedConcept{}
 
-	// Is the UUID a concorded concept
-	isConcordedNode, errs := s.isConcordedConcept(uuid)
-	if errs != nil {
-		return AggregatedConcept{}, false, errs
-	}
-
-	var query *neoism.CypherQuery
-
-	if isConcordedNode {
-		query = &neoism.CypherQuery{
-			Statement: `	MATCH (canonical:Concept {prefUUID:{prefUUID}})<-[:EQUIVALENT_TO]-(node:Concept)
+		query := &neoism.CypherQuery{
+			Statement: `	MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
 					OPTIONAL MATCH (node)-[HAS_PARENT]->(parent:Thing)
 					WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
 					canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
@@ -88,23 +79,11 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 					imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid)} as sources
 					RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, collect(sources) as sourceRepresentations `,
 			Parameters: map[string]interface{}{
-				"prefUUID": uuid,
-			},
-			Result: &results,
-		}
-	} else {
-		query = &neoism.CypherQuery{
-			Statement: `MATCH (n:Concept {uuid:{uuid}})
-			OPTIONAL MATCH (n)-[HAS_PARENT]->(parent:Thing)
-			return distinct n.uuid as uuid, n.prefUUID as prefUUID, n.prefLabel as prefLabel, labels(n) as types, n.authority as authority,
-			n.authorityValue as authorityValue, n.lastModifiedEpoch as lastModifiedEpoch, n.aliases as aliases, n.imageUrl as imageUrl,
-			n.strapline as strapline, n.descriptionXML as descriptionXML, collect(parent.uuid) as parentUUIDs`,
-			Parameters: map[string]interface{}{
 				"uuid": uuid,
 			},
 			Result: &results,
 		}
-	}
+
 
 	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
 
@@ -115,15 +94,13 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 	if len(results) == 0 {
 		return AggregatedConcept{}, false, nil
 	}
+	typeName, err := mapper.MostSpecificType(results[0].Types)
 
-	typeName, error := mapper.MostSpecificType(results[0].Types)
-	if error != nil {
+	if err != nil {
 		return AggregatedConcept{}, false, err
 	}
 
 	var sourceConcepts []Concept
-	var concept Concept
-
 	aggregatedConcept := AggregatedConcept{
 		PrefUUID:       results[0].PrefUUID,
 		PrefLabel:      results[0].PrefLabel,
@@ -134,124 +111,48 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 		Aliases:        results[0].Aliases,
 	}
 
-	if isConcordedNode {
+	for _, srcConcept := range results[0].SourceRepresentations {
+		var concept Concept
+		conceptType, error := mapper.MostSpecificType(srcConcept.Types)
+		if error != nil {
+			return AggregatedConcept{}, false, err
+		}
+		if len(srcConcept.Aliases) > 0 {
+			concept.Aliases = srcConcept.Aliases
+		}
 
-		for _, srcConcept := range results[0].SourceRepresentations {
+		uuids := []string{}
 
-			conceptType, error := mapper.MostSpecificType(srcConcept.Types)
-			if error != nil {
-				return AggregatedConcept{}, false, err
-			}
-			if len(srcConcept.Aliases) > 0 {
-				concept.Aliases = srcConcept.Aliases
-			}
-
-			uuids := []string{}
-			if len(srcConcept.ParentUUIDs) > 0 {
-				//TODO do this differently but I get a "" back from the cypher!
-				for _, uuid := range srcConcept.ParentUUIDs {
-					if (uuid != "") {
-						uuids = append(uuids, uuid)
-					}
+		if len(srcConcept.ParentUUIDs) > 0 {
+			//TODO do this differently but I get a "" back from the cypher!
+			for _, uuid := range srcConcept.ParentUUIDs {
+				if (uuid != "") {
+					uuids = append(uuids, uuid)
 				}
 			}
 			if len(uuids) > 0 {
 				concept.ParentUUIDs = uuids
 			}
-			concept.UUID = srcConcept.UUID
-			concept.PrefLabel = srcConcept.PrefLabel
-			concept.Authority = srcConcept.Authority
-			concept.AuthorityValue = srcConcept.AuthorityValue
-			concept.Type = conceptType
-			concept.LastModifiedEpoch = srcConcept.LastModifiedEpoch
-			concept.ImageURL = srcConcept.ImageURL
-			concept.Strapline = srcConcept.Strapline
-			concept.DescriptionXML = srcConcept.DescriptionXML
-
-			sourceConcepts = append(sourceConcepts, concept)
 		}
-	} else {
-		concept.UUID = aggregatedConcept.PrefUUID
-		concept.PrefLabel = aggregatedConcept.PrefLabel
-		concept.Authority = results[0].Authority
-		concept.AuthorityValue = results[0].AuthorityValue
-		concept.Type = typeName
-		concept.LastModifiedEpoch = results[0].LastModifiedEpoch
-		concept.Aliases = results[0].Aliases
-		concept.ImageURL = results[0].ImageURL
-		concept.Strapline = results[0].Strapline
-		concept.DescriptionXML = results[0].DescriptionXML
-		if len(results[0].Aliases) > 0 {
-			concept.Aliases = results[0].Aliases
-		}
+		concept.UUID = srcConcept.UUID
+		concept.PrefLabel = srcConcept.PrefLabel
+		concept.Authority = srcConcept.Authority
+		concept.AuthorityValue = srcConcept.AuthorityValue
+		concept.Type = conceptType
+		concept.LastModifiedEpoch = srcConcept.LastModifiedEpoch
+		concept.ImageURL = srcConcept.ImageURL
+		concept.Strapline = srcConcept.Strapline
+		concept.DescriptionXML = srcConcept.DescriptionXML
 
-		uuids := []string{}
-		if len(results[0].SourceRepresentations[0].ParentUUIDs) > 0 {
-			//TODO do this differently but I get a "" back from the cypher!
-			for _, uuid := range results[0].SourceRepresentations[0].ParentUUIDs {
-				if (uuid != "") {
-					uuids = append(uuids, uuid)
-				}
-			}
-
-			concept.ParentUUIDs = uuids
-		}
-
-		if len(uuids) > 0 {
-			concept.ParentUUIDs = uuids
-		}
 		sourceConcepts = append(sourceConcepts, concept)
 	}
+
 	aggregatedConcept.SourceRepresentations = sourceConcepts
+
 
 	return aggregatedConcept, true, nil
 }
 
-func (s Service) isConcordedConcept(uuid string) (bool, error) {
-	results := []struct {
-		uuid string
-	}{}
-	query := &neoism.CypherQuery{
-		Statement: `MATCH (n:Thing {uuid:{uuid}})-[:EQUIVALENT_TO]-(c) return n.uuid`,
-		Parameters: map[string]interface{}{
-			"uuid": uuid,
-		},
-		Result: &results,
-	}
-
-	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
-	if err != nil {
-		return false, err
-	}
-
-	if len(results) > 0 {
-		return true, nil
-	} else {
-		results = []struct {
-			uuid string
-		}{}
-		query := &neoism.CypherQuery{
-			Statement: `MATCH (n:Thing {prefUUID:{uuid}})-[:EQUIVALENT_TO]-(c) return n.uuid`,
-			Parameters: map[string]interface{}{
-				"uuid": uuid,
-			},
-			Result: &results,
-		}
-
-		err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
-		if err != nil {
-			return false, err
-		}
-
-		if len(results) > 0 {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-//Write - write method
 func (s Service) Write(thing interface{}) error {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
@@ -266,76 +167,45 @@ func (s Service) Write(thing interface{}) error {
 
 	var queryBatch []*neoism.CypherQuery
 
-	// If canonical node is needed create it i.e more than one source and link each node to it
-	if len(aggregatedConcept.SourceRepresentations) > 1 {
-		// Does the canonical node exist already?
-		// Clear down and delete any equivilent-to relationship
-		err := s.clearDownExistingNodes(aggregatedConcept)
+	clearDownQuery := s.clearDownExistingNodes(aggregatedConcept)
 
-		if err != nil {
-			return err
+	for _, query := range clearDownQuery {
+		queryBatch = append(queryBatch, query)
+	}
+
+	// Create a concept from the canonical information - WITH NO UUID
+	concept := Concept{
+		PrefLabel:      aggregatedConcept.PrefLabel,
+		Aliases:        aggregatedConcept.Aliases,
+		Strapline:      aggregatedConcept.Strapline,
+		DescriptionXML: aggregatedConcept.DescriptionXML,
+		ImageURL:       aggregatedConcept.ImageURL,
+		Type:           aggregatedConcept.Type,
+	}
+
+	// Create the canonical node
+	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
+
+	for _, concept := range aggregatedConcept.SourceRepresentations {
+		queryBatch = append(queryBatch, createNodeQueries(concept, "", concept.UUID)...)
+
+
+		equivQuery := &neoism.CypherQuery{
+			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+			MERGE (t)-[:EQUIVALENT_TO]->(c)`,
+			Parameters: map[string]interface{}{
+				"uuid":     concept.UUID,
+				"prefUUID": aggregatedConcept.PrefUUID,
+			},
 		}
+		queryBatch = append(queryBatch, equivQuery)
 
-		// Create a concept from the canonical information - WITH NO UUID
-		concept := Concept{
-			PrefLabel:      aggregatedConcept.PrefLabel,
-			Aliases:        aggregatedConcept.Aliases,
-			Strapline:      aggregatedConcept.Strapline,
-			DescriptionXML: aggregatedConcept.DescriptionXML,
-			ImageURL:       aggregatedConcept.ImageURL,
-			Type:           aggregatedConcept.Type,
-		}
-
-		// Create the canonical node
-		queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
-
-		for _, concept := range aggregatedConcept.SourceRepresentations {
-			queryBatch = append(queryBatch, createNodeQueries(concept, "", concept.UUID)...)
-
-			if len(aggregatedConcept.SourceRepresentations) > 1 {
-				equivQuery := &neoism.CypherQuery{
-					Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
-					MERGE (t)-[:EQUIVALENT_TO]->(c)`,
-					Parameters: map[string]interface{}{
-						"uuid":     concept.UUID,
-						"prefUUID": aggregatedConcept.PrefUUID,
-					},
-				}
-				queryBatch = append(queryBatch, equivQuery)
-			}
-		}
-	} else {
-		// TODO Check if there is already a canonical node with this prefUUID - This might be unconcord operation
-
-		// Lone node with no concordance created first
-		// Assuming that there is 1 source system. Also assuming that if there is only one source system then the
-		// preflabel and uuid should be the same as the aggregated level. However TODO add validation of this
-		queryBatch = append(queryBatch, createNodeQueries(aggregatedConcept.SourceRepresentations[0], aggregatedConcept.SourceRepresentations[0].UUID, aggregatedConcept.SourceRepresentations[0].UUID)...)
 	}
 
 	// TODO Compare original neo model and set prefUUID if needed
 
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
 	return s.conn.CypherBatch(queryBatch)
-}
-
-func returnNewlyOrphanedLoneNodes(originalLeaves []Concept, futureLeaves []Concept) []Concept {
-	conceptMap := make(map[string]Concept)
-	for _, originalLeaf := range originalLeaves {
-		conceptMap[originalLeaf.UUID] = originalLeaf
-		for _, futureLeaf := range futureLeaves {
-			if futureLeaf.UUID == originalLeaf.UUID {
-				delete(conceptMap, originalLeaf.UUID)
-			}
-		}
-	}
-
-	orpahanNodes := make([]Concept, 0, len(conceptMap))
-
-	for _, value := range conceptMap {
-		orpahanNodes = append(orpahanNodes, value)
-	}
-	return orpahanNodes
 }
 
 func validateObject(aggConcept AggregatedConcept) error {
@@ -394,10 +264,26 @@ func getLabelsToRemove() string {
 	return labelsToRemove
 }
 
-func (s Service) clearDownExistingNodes(ac AggregatedConcept) error {
+func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
 	acUUID := ac.PrefUUID
 	sourceUuids := getSourceIds(ac.SourceRepresentations)
 
+	queryBatch := []*neoism.CypherQuery{}
+
+	for _, id := range sourceUuids {
+		deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
+			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
+			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
+			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
+			REMOVE t:%s
+			SET t={uuid:{id}}
+			DELETE x, rel, i`, getLabelsToRemove()),
+			Parameters: map[string]interface{}{
+				"id": id,
+			},
+		}
+		queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
+	}
 
 	//cleanUP all the previous IDENTIFIERS referring to that uuid
 	deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
@@ -411,28 +297,9 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) error {
 		},
 	}
 
-	queryBatch := []*neoism.CypherQuery{deletePreviousIdentifiersLabelsAndPropertiesQuery}
+	queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
 
-	for _, id := range sourceUuids {
-		deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
-			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
-			REMOVE t:%s
-			SET t={uuid:{id}}
-			DELETE rel, i`, getLabelsToRemove()),
-			Parameters: map[string]interface{}{
-				"id": id,
-			},
-		}
-		queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
-	}
-
-	err := s.conn.CypherBatch(queryBatch)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return queryBatch
 }
 
 func getSourceIds(sourceConcepts []Concept) []string {
@@ -545,6 +412,7 @@ func addIdentifierNodes(UUID string, authority string, authorityValue string) []
 	}
 
 	if authority != "UPP" {
+		//TODO Remove this when things no longer matches on UppIdentifier
 		// Add UPPIdentififer
 		uppIdentifierQuery := createNewIdentifierQuery(UUID,
 			authorityToIdentifierLabelMap["UPP"], UUID)
@@ -571,61 +439,8 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 
 //Delete - Delete method
 func (s Service) Delete(uuid string) (bool, error) {
-	// TODO: We need to establish what are the bounds of this service, how much of a concorded concept should be deleted
-
-	// We don't know what labels there are so we need to loop through all the types
-	// so we can try and remove all the possibilities for this taxonomy
-	var labelsToRemove string
-	for i, conceptType := range conceptLabels {
-		labelsToRemove += conceptType
-		if i+1 < len(conceptLabels) {
-			labelsToRemove += ":"
-		}
-	}
-
-	clearNode := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`
-			MATCH (t:Thing {uuid: {uuid}})
-			REMOVE t:%s
-			SET t:Thing
-			SET t = {uuid:{uuid}}`, labelsToRemove),
-		Parameters: map[string]interface{}{
-			"uuid": uuid,
-		},
-		IncludeStats: true,
-	}
-
-	removeNodeIfUnused := &neoism.CypherQuery{
-		Statement: `
-			MATCH (thing:Thing {uuid: {uuid}})
- 			OPTIONAL MATCH (thing)-[ir:IDENTIFIES]-(id:Identifier)
- 			OPTIONAL MATCH (thing)-[a]-(x:Thing)
- 			WITH ir, id, thing, count(a) AS relCount
-  			WHERE relCount = 0
- 			DELETE ir, id, thing
-		`,
-		Parameters: map[string]interface{}{
-			"uuid": uuid,
-		},
-	}
-
-	err := s.conn.CypherBatch([]*neoism.CypherQuery{clearNode, removeNodeIfUnused})
-
-	if err != nil {
-		return false, err
-	}
-
-	s1, err := clearNode.Stats()
-	if err != nil {
-		return false, err
-	}
-
-	var deleted bool
-	if s1.ContainsUpdates && s1.LabelsRemoved > 0 {
-		deleted = true
-	}
-
-	return deleted, err
+	log.WithField("uuid", uuid).Info("Delete endpoint is currently non-functional")
+	return false, nil
 }
 
 //DecodeJSON - decode json

@@ -1,7 +1,6 @@
 package concepts
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -10,21 +9,16 @@ import (
 
 	"sort"
 
-	"github.com/Financial-Times/annotations-rw-neo4j/annotations"
-	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
-	"github.com/Financial-Times/content-rw-neo4j/content"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jmcvetta/neoism"
 
 	"reflect"
-	"log"
 )
 
 //all uuids to be cleaned from DB
 const (
-	contentUUID             = "3fc9fe3e-af8c-4f7f-961a-e5065392bb31"
 	basicConceptUUID        = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
 	anotherBasicConceptUUID = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
 	parentUuid              = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
@@ -185,7 +179,8 @@ func TestConnectivityCheck(t *testing.T) {
 }
 
 func TestWriteService(t *testing.T) {
-	defer cleanDB(t, basicConceptUUID, anotherBasicConceptUUID, parentUuid)
+	defer cleanDB(t)
+
 	tests := []struct {
 		testName          string
 		aggregatedConcept AggregatedConcept
@@ -193,14 +188,14 @@ func TestWriteService(t *testing.T) {
 	}{
 		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), ""},
 		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), ""},
-		//{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), ""},
-		//{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), "already exists with label TMEIdentifier and property \"value\"=[1234]"},
-		//	{"Unknown Authority Should Fail", getUnknownAuthority(), "Invalid Request"},
+		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), ""},
+		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), "already exists with label TMEIdentifier and property \"value\"=[1234]"},
+		{"Unknown Authority Should Fail", getUnknownAuthority(), "Invalid Request"},
 	}
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			cleanDB(t, basicConceptUUID, anotherBasicConceptUUID, parentUuid)
+			defer cleanDB(t)
 			err := conceptsDriver.Write(test.aggregatedConcept)
 
 			if test.errStr == "" {
@@ -232,65 +227,27 @@ func TestWriteService(t *testing.T) {
 	}
 }
 
-func TestDeleteWillDeleteEntireNodeIfNoRelationship(t *testing.T) {
-	defer cleanDB(t, basicConceptUUID)
-	basicAggregatedConcept := getFullLoneAggregatedConcept()
-	assert.NoError(t, conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
-
-	found, err := conceptsDriver.Delete(basicConceptUUID)
-	assert.True(t, found, "Didn't manage to delete concept for uuid %s", basicConceptUUID)
-	assert.NoError(t, err, "Error deleting concept for uuid %s", basicAggregatedConcept)
-
-	concept, found, err := conceptsDriver.Read(basicConceptUUID)
-
-	assert.Equal(t, AggregatedConcept{}, concept, "Found concept %s who should have been deleted", concept)
-	assert.False(t, found, "Found concept for uuid %s who should have been deleted", basicConceptUUID)
-	assert.NoError(t, err, "Error trying to find concept for uuid %s", basicConceptUUID)
-	assert.Equal(t, false, doesThingExistAtAll(t, basicConceptUUID), "Found thing who should have been deleted uuid: %s", basicConceptUUID)
-}
-
-func TestDeleteWithRelationshipsMaintainsRelationshipsButDumbsDownToThing(t *testing.T) {
-	defer cleanDB(t, basicConceptUUID)
-	basicAggregatedConcept := getFullLoneAggregatedConcept()
-	assert.NoError(t, conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
-
-	writeContent(t)
-	writeAnnotation(t)
-
-	found, err := conceptsDriver.Delete(basicConceptUUID)
-
-	assert.True(t, found, "Didn't manage to delete concept for uuid %", basicConceptUUID)
-	assert.NoError(t, err, "Error deleting concept for uuid %s", basicConceptUUID)
-
-	concept, found, err := conceptsDriver.Read(basicConceptUUID)
-
-	assert.Equal(t, AggregatedConcept{}, concept, "Found concept %s who should have been deleted", concept)
-	assert.False(t, found, "Found concept for uuid %s who should have been deleted", basicConceptUUID)
-	assert.NoError(t, err, "Error trying to find concept for uuid %s", basicConceptUUID)
-	assert.Equal(t, true, doesThingExistWithIdentifiers(t, basicConceptUUID), "Unable to find a Thing with any Identifiers, uuid: %s", basicConceptUUID)
-}
-
 func TestCount(t *testing.T) {
 	assert := assert.New(t)
-	defer cleanDB(t, basicConceptUUID, anotherBasicConceptUUID)
+	defer cleanDB(t)
 
 	basicAggregatedConcept := getFullLoneAggregatedConcept()
 	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
 
 	nr, err := conceptsDriver.Count()
-	assert.Equal(1, nr, "Should be 1 concept in Neo4j - count differs")
+	assert.Equal(2, nr, "Should be 2 concepts in Neo4j - count differs")
 	assert.NoError(err, "An unexpected error occurred during count")
 
 	assert.NoError(conceptsDriver.Write(getAnotherFullLoneAggregatedConcept()), "Failed to write concept")
 
 	nr, err = conceptsDriver.Count()
-	assert.Equal(2, nr, "Should be 2 subjects in Neo4j - count differs")
+	assert.Equal(4, nr, "Should be 4 subjects in Neo4j - count differs")
 	assert.NoError(err, "An unexpected error occurred during count")
 }
 
 // TODO do these tests in a loop
 func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
-	defer cleanDB(t, basicConceptUUID)
+	defer cleanDB(t)
 
 	anotherObj := getFullLoneAggregatedConcept()
 
@@ -412,7 +369,7 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 		}
 		actualConcept.SourceRepresentations = concepts
 	}
-	assert.True(t, reflect.DeepEqual(expected, actualConcept), "Actual agrregated concept differs from expected")
+	assert.True(t, reflect.DeepEqual(expected, actualConcept), "Actual aggregated concept differs from expected")
 }
 
 func neoUrl() string {
@@ -433,103 +390,50 @@ func getConceptService(t *testing.T) Service {
 	return service
 }
 
-func cleanDB(t *testing.T, uuids ...string) {
+func cleanDB(t *testing.T) {
+	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID)
+	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID)
+	cleanConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID)
+}
+
+func deleteSourceNodes(t *testing.T, uuids ...string) {
 	qs := make([]*neoism.CypherQuery, len(uuids))
 	for i, uuid := range uuids {
 		qs[i] = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`
 			MATCH (a:Thing {uuid: "%s"})
 			OPTIONAL MATCH (a)-[rel]-(i)
-			DELETE rel, i
-			DETACH DELETE i, a`, uuid)}
+			DETACH DELETE rel, i, a`, uuid)}
 	}
 	err := db.CypherBatch(qs)
 	assert.NoError(t, err, "Error executing clean up cypher")
 }
 
-func doesThingExistAtAll(t *testing.T, uuid string) bool {
-	result := []struct {
-		Uuid string `json:"thing.uuid"`
-	}{}
-
-	checkGraph := neoism.CypherQuery{
-		Statement: `
-			MATCH (a:Thing {uuid: "%s"}) return a.uuid
-		`,
-		Parameters: neoism.Props{
-			"uuid": uuid,
-		},
-		Result: &result,
+func cleanSourceNodes(t *testing.T, uuids ...string) {
+	qs := make([]*neoism.CypherQuery, len(uuids))
+	for i, uuid := range uuids {
+		qs[i] = &neoism.CypherQuery{
+			Statement: fmt.Sprintf(`
+			MATCH (a:Thing {uuid: "%s"})
+			OPTIONAL MATCH (a)-[rel:IDENTIFIES]-(i)
+			OPTIONAL MATCH (a)-[hp:HAS_PARENT]-(p)
+			DELETE rel, hp, i`, uuid)}
 	}
+	err := db.CypherBatch(qs)
+	assert.NoError(t, err, "Error executing clean up cypher")
+}
 
-	err := db.CypherBatch([]*neoism.CypherQuery{&checkGraph})
-	assert.NoError(t, err)
-
-	if len(result) == 0 {
-		return false
+func cleanConcordedNodes(t *testing.T, uuids ...string) {
+	qs := make([]*neoism.CypherQuery, len(uuids))
+	for i, uuid := range uuids {
+		qs[i] = &neoism.CypherQuery{
+			Statement: fmt.Sprintf(`
+			MATCH (a:Thing {prefUUID: "%s"})
+			OPTIONAL MATCH (a)-[rel]-(i)
+			DELETE rel, i, a`, uuid)}
 	}
-
-	return true
-}
-
-func doesThingExistWithIdentifiers(t *testing.T, uuid string) bool {
-	result := []struct {
-		uuid string
-	}{}
-
-	checkGraph := neoism.CypherQuery{
-		Statement: `
-			MATCH (a:Thing {uuid: "%s"})-[:IDENTIFIES]-(:Identifier)
-			WITH collect(distinct a.uuid) as uuid
-			RETURN uuid
-		`,
-		Parameters: neoism.Props{
-			"uuid": uuid,
-		},
-		Result: &result,
-	}
-
-	err := db.CypherBatch([]*neoism.CypherQuery{&checkGraph})
-	assert.NoError(t, err)
-
-	if len(result) == 0 {
-		return false
-	}
-	return true
-}
-
-func writeAnnotation(t *testing.T) annotations.Service {
-	annotationsRW := annotations.NewCypherAnnotationsService(db, "v1", "annotations-v1")
-	assert.NoError(t, annotationsRW.Initialise())
-	writeJSONToAnnotationsService(t, annotationsRW, contentUUID, "./fixtures/Annotations-3fc9fe3e-af8c-4f7f-961a-e5065392bb31-v2.json")
-	return annotationsRW
-}
-
-func writeContent(t *testing.T) baseftrwapp.Service {
-	contentRW := content.NewCypherContentService(db)
-	assert.NoError(t, contentRW.Initialise())
-	writeJSONToService(t, contentRW, "./fixtures/Content-3fc9fe3e-af8c-4f7f-961a-e5065392bb31.json")
-	return contentRW
-}
-
-func writeJSONToAnnotationsService(t *testing.T, service annotations.Service, contentUUID string, pathToJSONFile string) {
-	f, err := os.Open(pathToJSONFile)
-	assert.NoError(t, err)
-	dec := json.NewDecoder(f)
-	inst, errr := service.DecodeJSON(dec)
-	assert.NoError(t, errr, "Error parsing file %s", pathToJSONFile)
-	errrr := service.Write(contentUUID, inst)
-	assert.NoError(t, errrr)
-}
-
-func writeJSONToService(t *testing.T, service baseftrwapp.Service, pathToJSONFile string) {
-	f, err := os.Open(pathToJSONFile)
-	assert.NoError(t, err)
-	dec := json.NewDecoder(f)
-	inst, _, errr := service.DecodeJSON(dec)
-	assert.NoError(t, errr)
-	errrr := service.Write(inst)
-	assert.NoError(t, errrr)
+	err := db.CypherBatch(qs)
+	assert.NoError(t, err, "Error executing clean up cypher")
 }
 
 func getIdentifierValue(t *testing.T, uuidPropertyName string, uuid string, label string) string {

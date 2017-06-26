@@ -54,8 +54,8 @@ var conceptLabels = [...]string{
 // Map of authority and nodelabel for identifiers - we should be removing
 // Identifiers after all the concepts have been migrated to the new model
 var authorityToIdentifierLabelMap = map[string]string{
-	"TME": "TMEIdentifier",
-	"UPP": "UPPIdentifier",
+	"TME":        "TMEIdentifier",
+	"UPP":        "UPPIdentifier",
 	"Smartlogic": "SmartlogicIdentifier",
 }
 

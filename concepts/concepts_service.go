@@ -265,7 +265,6 @@ func getLabelsToRemove() string {
 }
 
 func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
-	acUUID := ac.PrefUUID
 	sourceUuids := getSourceIds(ac.SourceRepresentations)
 
 	queryBatch := []*neoism.CypherQuery{}
@@ -275,29 +274,16 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
 			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
+			OPTIONAL MATCH (t)-[rel2:EQUIVALENT_TO]->(canonical)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i`, getLabelsToRemove()),
+			DELETE x, rel, i, rel2, canonical`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": id,
 			},
 		}
 		queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
 	}
-
-	//cleanUP all the previous IDENTIFIERS referring to that uuid
-	deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MATCH (t:Thing {prefUUID:{acUUID}})
-			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
-			REMOVE t:%s
-			SET t={prefUUID:{acUUID}}
-			DELETE rel`, getLabelsToRemove()),
-		Parameters: map[string]interface{}{
-			"acUUID": acUUID,
-		},
-	}
-
-	queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
 
 	return queryBatch
 }

@@ -149,25 +149,35 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 
 	aggregatedConcept.SourceRepresentations = sourceConcepts
 
-
 	return aggregatedConcept, true, nil
 }
 
 func (s Service) Write(thing interface{}) error {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
-	aggregatedConcept := thing.(AggregatedConcept)
+	updatedAggregatedConcept := thing.(AggregatedConcept)
 
 	// TODO: Compare: existingNeoRepresentation, _, _ := s.Read(aggregatedConcept.PrefUUID)
+	existingConcept, exists, err := s.Read(updatedAggregatedConcept.PrefUUID)
+	if err != nil {
+		return err
+	}
 
-	error := validateObject(aggregatedConcept)
+	error := validateObject(updatedAggregatedConcept)
 	if error != nil {
 		return error
 	}
 
+	var listToUnconcord []Concept
+
+	existingAggregateConcept := existingConcept.(AggregatedConcept)
+	if exists {
+		listToUnconcord = handleUnconcordance(updatedAggregatedConcept, existingAggregateConcept)
+	}
+
 	var queryBatch []*neoism.CypherQuery
 
-	clearDownQuery := s.clearDownExistingNodes(aggregatedConcept)
+	clearDownQuery := s.clearDownExistingNodes(updatedAggregatedConcept)
 
 	for _, query := range clearDownQuery {
 		queryBatch = append(queryBatch, query)
@@ -175,18 +185,18 @@ func (s Service) Write(thing interface{}) error {
 
 	// Create a concept from the canonical information - WITH NO UUID
 	concept := Concept{
-		PrefLabel:      aggregatedConcept.PrefLabel,
-		Aliases:        aggregatedConcept.Aliases,
-		Strapline:      aggregatedConcept.Strapline,
-		DescriptionXML: aggregatedConcept.DescriptionXML,
-		ImageURL:       aggregatedConcept.ImageURL,
-		Type:           aggregatedConcept.Type,
+		PrefLabel:      updatedAggregatedConcept.PrefLabel,
+		Aliases:        updatedAggregatedConcept.Aliases,
+		Strapline:      updatedAggregatedConcept.Strapline,
+		DescriptionXML: updatedAggregatedConcept.DescriptionXML,
+		ImageURL:       updatedAggregatedConcept.ImageURL,
+		Type:           updatedAggregatedConcept.Type,
 	}
 
 	// Create the canonical node
-	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
+	queryBatch = append(queryBatch, createNodeQueries(concept, updatedAggregatedConcept.PrefUUID, "")...)
 
-	for _, concept := range aggregatedConcept.SourceRepresentations {
+	for _, concept := range updatedAggregatedConcept.SourceRepresentations {
 		queryBatch = append(queryBatch, createNodeQueries(concept, "", concept.UUID)...)
 
 
@@ -195,17 +205,70 @@ func (s Service) Write(thing interface{}) error {
 			MERGE (t)-[:EQUIVALENT_TO]->(c)`,
 			Parameters: map[string]interface{}{
 				"uuid":     concept.UUID,
-				"prefUUID": aggregatedConcept.PrefUUID,
+				"prefUUID": updatedAggregatedConcept.PrefUUID,
 			},
 		}
 		queryBatch = append(queryBatch, equivQuery)
 
 	}
 
+	if s.conn.CypherBatch(queryBatch) != err {
+		return err
+	} else if len(listToUnconcord) > 0 {
+		for _, concept := range listToUnconcord {
+			err := s.writeConcordedNodeForUnconcordedConcepts(concept)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	// TODO Compare original neo model and set prefUUID if needed
 
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
-	return s.conn.CypherBatch(queryBatch)
+	return nil
+}
+
+func handleUnconcordance(updatedAggConcept AggregatedConcept, existingAggregateConcept AggregatedConcept) []Concept {
+	var updatedSourceIds []string
+	for _, src := range updatedAggConcept.SourceRepresentations {
+		updatedSourceIds = append(updatedSourceIds, src.UUID)
+	}
+
+	var hasBeenUnconcorded = true
+	needToBeUnconcorded := []Concept{}
+	for _, src := range existingAggregateConcept.SourceRepresentations {
+		for _, id := range updatedSourceIds {
+			if id == src.UUID {
+				hasBeenUnconcorded = false
+			}
+		}
+		if hasBeenUnconcorded == true {
+			needToBeUnconcorded = append(needToBeUnconcorded, src)
+		}
+		hasBeenUnconcorded = true
+	}
+	return needToBeUnconcorded
+}
+
+func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) error {
+	allProps := setProps(concept, concept.UUID, false)
+	var queryBatch []*neoism.CypherQuery
+	createCanonicalNodeQuery := &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`MATCH (t:Thing{uuid:{prefUUID}) MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
+								set n={allprops}
+								set n :%s`, getAllLabels(concept.Type)),
+		Parameters: map[string]interface{}{
+			"prefUUID": concept.UUID,
+			"allprops": allProps,
+		},
+	}
+	queryBatch = append(queryBatch, createCanonicalNodeQuery)
+	err := s.conn.CypherBatch(queryBatch)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func validateObject(aggConcept AggregatedConcept) error {

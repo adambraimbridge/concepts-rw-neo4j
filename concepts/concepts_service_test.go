@@ -22,6 +22,10 @@ const (
 	basicConceptUUID        = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
 	anotherBasicConceptUUID = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
 	parentUuid              = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
+
+	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
+	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
+	sourceId_3 = "5b1d8c31-dfe4-4326-b6a9-6227cb59af1f"
 )
 
 //Reusable Neo4J connection
@@ -219,11 +223,39 @@ func TestWriteService(t *testing.T) {
 				}
 
 			} else {
+				if err != nil {
+					assert.Error(t, err, "Error was expected")
+					assert.Contains(t, err.Error(), test.errStr, "Error message is not correct")
+				}
 				// TODO: Check these errors better
-				assert.Error(t, err, "Error was expected")
-				assert.Contains(t, err.Error(), test.errStr, "Error message is not correct")
 			}
 		})
+	}
+}
+
+func TestHandleUnconcordance(t *testing.T) {
+	aggConcept_1 := AggregatedConcept{ PrefUUID:  sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}}}
+	aggConcept_2 := AggregatedConcept{ PrefUUID:  sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}, {UUID: sourceId_2}}}
+	aggConcept_3 := AggregatedConcept{ PrefUUID:  sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}, {UUID: sourceId_2}, {UUID: sourceId_3}}}
+	aggConcept_4 := AggregatedConcept{ PrefUUID:  sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_3}, {UUID: sourceId_1}, {UUID: sourceId_2}}}
+
+	type testStruct struct {
+		testName 		string
+		updatedAggConcept 	AggregatedConcept
+		existingAggConcept 	AggregatedConcept
+		listToUnconcord 	[]Concept
+	}
+
+	emptyWhenAggConceptsAreTheSame := testStruct{testName: "emptyWhenAggConceptsAreTheSame", updatedAggConcept: aggConcept_1, existingAggConcept: aggConcept_1, listToUnconcord: []Concept{}}
+	emptyWhenAggConceptsAreTheSameButInDifferentOrder := testStruct{testName: "emptyWhenAggConceptsAreTheSameButInDifferentOrder", updatedAggConcept: aggConcept_3, existingAggConcept: aggConcept_4, listToUnconcord: []Concept{}}
+	hasSource2WhenSource2IsUnconcorded := testStruct{testName: "listToUnconcordIsEmptyWhenAggConceptsAreTheSame", updatedAggConcept: aggConcept_1, existingAggConcept: aggConcept_2, listToUnconcord: []Concept{{UUID: sourceId_2}}}
+	hasSource2And3WhenSource2And3AreUnconcorded := testStruct{testName: "hasSource2And3WhenSource2And3AreUnconcorded", updatedAggConcept: aggConcept_1, existingAggConcept: aggConcept_3, listToUnconcord: []Concept{{UUID: sourceId_2}, {UUID: sourceId_3}}}
+
+	Scenarios := []testStruct{emptyWhenAggConceptsAreTheSame, emptyWhenAggConceptsAreTheSameButInDifferentOrder, hasSource2WhenSource2IsUnconcorded, hasSource2And3WhenSource2And3AreUnconcorded}
+
+	for _, scenario := range Scenarios {
+		returnedList := handleUnconcordance(scenario.updatedAggConcept, scenario.existingAggConcept)
+		assert.Equal(t, scenario.listToUnconcord, returnedList, "Failure")
 	}
 }
 

@@ -212,21 +212,17 @@ func (s Service) Write(thing interface{}) error {
 
 	}
 
-	if s.conn.CypherBatch(queryBatch) != err {
-		return err
-	} else if len(listToUnconcord) > 0 {
+	if len(listToUnconcord) > 0 {
 		for _, concept := range listToUnconcord {
-			err := s.writeConcordedNodeForUnconcordedConcepts(concept)
-			if err != nil {
-				return err
-			}
+			unconcordQuery := s.writeConcordedNodeForUnconcordedConcepts(concept)
+			queryBatch = append(queryBatch, unconcordQuery)
 		}
 	}
 
 	// TODO Compare original neo model and set prefUUID if needed
 
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
-	return nil
+	return s.conn.CypherBatch(queryBatch)
 }
 
 func handleUnconcordance(updatedAggConcept AggregatedConcept, existingAggregateConcept AggregatedConcept) []Concept {
@@ -251,11 +247,10 @@ func handleUnconcordance(updatedAggConcept AggregatedConcept, existingAggregateC
 	return needToBeUnconcorded
 }
 
-func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) error {
+func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
 	allProps := setProps(concept, concept.UUID, false)
-	var queryBatch []*neoism.CypherQuery
 	createCanonicalNodeQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MATCH (t:Thing{uuid:{prefUUID}) MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
+		Statement: fmt.Sprintf(`MATCH (t:Thing{uuid:{prefUUID}}) MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
 								set n={allprops}
 								set n :%s`, getAllLabels(concept.Type)),
 		Parameters: map[string]interface{}{
@@ -263,12 +258,7 @@ func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) error
 			"allprops": allProps,
 		},
 	}
-	queryBatch = append(queryBatch, createCanonicalNodeQuery)
-	err := s.conn.CypherBatch(queryBatch)
-	if err != nil {
-		return err
-	}
-	return nil
+	return createCanonicalNodeQuery
 }
 
 func validateObject(aggConcept AggregatedConcept) error {
@@ -328,6 +318,7 @@ func getLabelsToRemove() string {
 }
 
 func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
+	acUUID := ac.PrefUUID
 	sourceUuids := getSourceIds(ac.SourceRepresentations)
 
 	queryBatch := []*neoism.CypherQuery{}
@@ -336,17 +327,30 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 		deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
+			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
 			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
-			OPTIONAL MATCH (t)-[rel2:EQUIVALENT_TO]->(canonical)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, rel2, canonical`, getLabelsToRemove()),
+			DELETE x, rel, i, eq`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": id,
 			},
 		}
 		queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
 	}
+
+	//cleanUP all the previous IDENTIFIERS referring to that uuid
+	deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`MATCH (t:Thing {prefUUID:{acUUID}})
+			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
+			REMOVE t:%s
+			SET t={prefUUID:{acUUID}}
+			DELETE rel`, getLabelsToRemove()),
+		Parameters: map[string]interface{}{
+			"acUUID": acUUID,
+		},
+	}
+	queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
 
 	return queryBatch
 }
@@ -387,7 +391,6 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 				"allprops": allProps,
 			},
 		}
-
 	}
 
 	if len(concept.ParentUUIDs) > 0 {
@@ -405,6 +408,8 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			}
 			queryBatch = append(queryBatch, writeParent)
 		}
+
+
 	}
 
 	queryBatch = append(queryBatch, createConceptQuery)

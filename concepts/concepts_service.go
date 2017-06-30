@@ -11,6 +11,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
+	"errors"
 )
 
 //Service - CypherDriver - CypherDriver
@@ -31,6 +32,7 @@ func (s Service) Initialise() error {
 	})
 
 	if err != nil {
+		log.WithError(err).Error("Could not run db index")
 		return err
 	}
 	return s.conn.EnsureConstraints(constraintMap)
@@ -66,37 +68,37 @@ type neoConcept struct {
 }
 
 //Read - read service
-func (s Service) Read(uuid string) (interface{}, bool, error) {
+func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 	results := []neoAggregatedConcept{}
 
-		query := &neoism.CypherQuery{
-			Statement: `	MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
-					OPTIONAL MATCH (node)-[HAS_PARENT]->(parent:Thing)
-					WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
-					canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
-					{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue,
-					types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, aliases: node.aliases, descriptionXML: node.descriptionXML,
-					imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid)} as sources
-					RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, collect(sources) as sourceRepresentations `,
-			Parameters: map[string]interface{}{
-				"uuid": uuid,
-			},
-			Result: &results,
-		}
-
+	query := &neoism.CypherQuery{
+		Statement: `	MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
+				OPTIONAL MATCH (node)-[HAS_PARENT]->(parent:Thing)
+				WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
+				canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
+				{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue,
+				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, aliases: node.aliases, descriptionXML: node.descriptionXML,
+				imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid)} as sources
+				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, collect(sources) as sourceRepresentations `,
+		Parameters: map[string]interface{}{
+			"uuid": uuid,
+		},
+		Result: &results,
+	}
 
 	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
-
 	if err != nil {
+		log.WithError(err).WithFields(log.Fields{"UUID":uuid, "trans_id": transId}).Error("Error executing neo4j read query")
 		return AggregatedConcept{}, false, err
 	}
 
 	if len(results) == 0 {
+		log.WithFields(log.Fields{"UUID":uuid, "trans_id": transId}).Info("Brand not found")
 		return AggregatedConcept{}, false, nil
 	}
 	typeName, err := mapper.MostSpecificType(results[0].Types)
-
 	if err != nil {
+		log.WithError(err).WithFields(log.Fields{"UUID":uuid, "trans_id": transId}).Error("Returned brand had no recognized type")
 		return AggregatedConcept{}, false, err
 	}
 
@@ -113,8 +115,9 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 
 	for _, srcConcept := range results[0].SourceRepresentations {
 		var concept Concept
-		conceptType, error := mapper.MostSpecificType(srcConcept.Types)
-		if error != nil {
+		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{"UUID":srcConcept.UUID, "trans_id": transId}).Error("Returned source had no recognized type")
 			return AggregatedConcept{}, false, err
 		}
 		if len(srcConcept.Aliases) > 0 {
@@ -152,32 +155,44 @@ func (s Service) Read(uuid string) (interface{}, bool, error) {
 	return aggregatedConcept, true, nil
 }
 
-func (s Service) Write(thing interface{}) error {
+func (s Service) Write(thing interface{}, transId string) error {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
-	updatedAggregatedConcept := thing.(AggregatedConcept)
+	aggregatedConceptToWrite := thing.(AggregatedConcept)
 
-	// TODO: Compare: existingNeoRepresentation, _, _ := s.Read(aggregatedConcept.PrefUUID)
-	existingConcept, exists, err := s.Read(updatedAggregatedConcept.PrefUUID)
+	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, "")
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{"UUID":aggregatedConceptToWrite.PrefUUID, "trans_id": transId}).Error("Read request for existing concordance resulted in error")
+		return err
+	}
+
+	err = validateObject(aggregatedConceptToWrite, transId)
 	if err != nil {
 		return err
 	}
 
-	error := validateObject(updatedAggregatedConcept)
-	if error != nil {
-		return error
+	var updatedSourceIds []string
+	for _, src := range aggregatedConceptToWrite.SourceRepresentations {
+		updatedSourceIds = append(updatedSourceIds, src.UUID)
 	}
 
 	var listToUnconcord []Concept
 
 	existingAggregateConcept := existingConcept.(AggregatedConcept)
 	if exists {
-		listToUnconcord = handleUnconcordance(updatedAggregatedConcept, existingAggregateConcept)
+		//Collect concepts left behind by unconcordance
+		listToUnconcord = handleUnconcordance(updatedSourceIds, existingAggregateConcept)
+	}
+
+	//Handle scenarios for transferring source id from an existing concordance to this concordance
+	prefUUIDsToBeDeletedQueryBatch, err := s.handleTransferConcordance(updatedSourceIds, aggregatedConceptToWrite.PrefUUID, transId)
+	if err != nil {
+		return err
 	}
 
 	var queryBatch []*neoism.CypherQuery
 
-	clearDownQuery := s.clearDownExistingNodes(updatedAggregatedConcept)
+	clearDownQuery := s.clearDownExistingNodes(aggregatedConceptToWrite)
 
 	for _, query := range clearDownQuery {
 		queryBatch = append(queryBatch, query)
@@ -185,27 +200,27 @@ func (s Service) Write(thing interface{}) error {
 
 	// Create a concept from the canonical information - WITH NO UUID
 	concept := Concept{
-		PrefLabel:      updatedAggregatedConcept.PrefLabel,
-		Aliases:        updatedAggregatedConcept.Aliases,
-		Strapline:      updatedAggregatedConcept.Strapline,
-		DescriptionXML: updatedAggregatedConcept.DescriptionXML,
-		ImageURL:       updatedAggregatedConcept.ImageURL,
-		Type:           updatedAggregatedConcept.Type,
+		PrefLabel:      aggregatedConceptToWrite.PrefLabel,
+		Aliases:        aggregatedConceptToWrite.Aliases,
+		Strapline:      aggregatedConceptToWrite.Strapline,
+		DescriptionXML: aggregatedConceptToWrite.DescriptionXML,
+		ImageURL:       aggregatedConceptToWrite.ImageURL,
+		Type:           aggregatedConceptToWrite.Type,
 	}
 
 	// Create the canonical node
-	queryBatch = append(queryBatch, createNodeQueries(concept, updatedAggregatedConcept.PrefUUID, "")...)
+	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConceptToWrite.PrefUUID, "")...)
 
-	for _, concept := range updatedAggregatedConcept.SourceRepresentations {
+	// Repoplulate
+	for _, concept := range aggregatedConceptToWrite.SourceRepresentations {
 		queryBatch = append(queryBatch, createNodeQueries(concept, "", concept.UUID)...)
-
 
 		equivQuery := &neoism.CypherQuery{
 			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
 			MERGE (t)-[:EQUIVALENT_TO]->(c)`,
 			Parameters: map[string]interface{}{
 				"uuid":     concept.UUID,
-				"prefUUID": updatedAggregatedConcept.PrefUUID,
+				"prefUUID": aggregatedConceptToWrite.PrefUUID,
 			},
 		}
 		queryBatch = append(queryBatch, equivQuery)
@@ -219,18 +234,55 @@ func (s Service) Write(thing interface{}) error {
 		}
 	}
 
-	// TODO Compare original neo model and set prefUUID if needed
+	if len(prefUUIDsToBeDeletedQueryBatch) > 0 {
+		for _, query := range prefUUIDsToBeDeletedQueryBatch {
+			queryBatch = append(queryBatch, query)
+		}
+	}
 
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
 	return s.conn.CypherBatch(queryBatch)
 }
 
-func handleUnconcordance(updatedAggConcept AggregatedConcept, existingAggregateConcept AggregatedConcept) []Concept {
-	var updatedSourceIds []string
-	for _, src := range updatedAggConcept.SourceRepresentations {
-		updatedSourceIds = append(updatedSourceIds, src.UUID)
+func validateObject(aggConcept AggregatedConcept, transId string) error {
+	if aggConcept.PrefLabel == "" {
+		return formatError("prefLabel", aggConcept.PrefUUID, transId)
 	}
+	if aggConcept.Type == "" {
+		return formatError("type", aggConcept.PrefUUID, transId)
+	}
+	if aggConcept.SourceRepresentations == nil {
+		return formatError("sourceRepresentation", aggConcept.PrefUUID, transId)
+	}
+	for _, concept := range aggConcept.SourceRepresentations {
+		// Is Authority recognised?
+		if _, ok := authorityToIdentifierLabelMap[concept.Authority]; !ok {
+			log.WithField("UUID", aggConcept.PrefUUID).Debug("Unknown authority, therefore unable to add the relevant Identifier node: %s", concept.Authority)
+		}
+		if concept.PrefLabel == "" {
+			return formatError("sourceRepresentation.prefLabel", concept.UUID, transId)
+		}
+		if concept.Type == "" {
+			return formatError("sourceRepresentation.type", concept.UUID, transId)
+		}
+		if concept.AuthorityValue == "" {
+			return formatError("sourceRepresentation.authorityValue", concept.UUID, transId)
+		}
+		if _, ok := constraintMap[concept.Type]; !ok {
+			log.WithField("UUID", aggConcept.PrefUUID).Debug("Source representation has an unknown type of: " + concept.Authority)
+		}
+	}
+	return nil
+}
 
+func formatError(field string, uuid string, transId string) error {
+	err := errors.New("Invalid request, no " + field + " has been supplied")
+	log.WithError(err).WithFields(log.Fields{"UUID": uuid, "trans_id": transId}).Error("Validation of payload failed")
+	return err
+}
+
+func handleUnconcordance(updatedSourceIds []string, existingAggregateConcept AggregatedConcept) []Concept {
+	//Loop through existing to find source concepts that have been unconcorded from the current aggregate concept
 	var hasBeenUnconcorded = true
 	needToBeUnconcorded := []Concept{}
 	for _, src := range existingAggregateConcept.SourceRepresentations {
@@ -247,74 +299,69 @@ func handleUnconcordance(updatedAggConcept AggregatedConcept, existingAggregateC
 	return needToBeUnconcorded
 }
 
-func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
-	allProps := setProps(concept, concept.UUID, false)
-	createCanonicalNodeQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MATCH (t:Thing{uuid:{prefUUID}}) MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUuid string, transId string) ([]*neoism.CypherQuery, error) {
+	results := []struct {
+		SourceUuid   string  `json:"sourceUuid"`
+		PrefUuid     string  `json:"prefUuid"`
+		Equivalence  int     `json:"count"`
+	}{}
+
+	var queryBatch []*neoism.CypherQuery
+	for _, updatedSourceId := range updatedSourceIds {
+		equivQuery := &neoism.CypherQuery{
+			Statement: `MATCH (t:Thing {uuid:{uuid}}) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c) OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing) RETURN t.uuid as sourceUuid, c.prefUUID as prefUuid, COUNT(DISTINCT eq) as count`,
+			Parameters: map[string]interface{}{
+				"uuid":     updatedSourceId,
+			},
+			Result: &results,
+		}
+		queryBatch = append(queryBatch, equivQuery)
+
+	}
+	err := s.conn.CypherBatch(queryBatch)
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{"UUID":prefUuid, "trans_id": transId}).Error("Requests for source nodes canonical information resulted in error")
+		return queryBatch, err
+	}
+
+	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
+
+	for _, result := range results {
+		// Source has no existing concordance and will be handled by clearDownExistingNodes function
+		if result.Equivalence == 0 {
+			break
+		} else if result.Equivalence == 1 {
+			if result.SourceUuid == result.PrefUuid {
+				deleteLonePrefUuidQueries = append(deleteLonePrefUuidQueries, deleteLonePrefUuid(result.PrefUuid))
+				break
+			} else {
+				err := errors.New("This source id: " + result.SourceUuid + " the only concordance to a non-matching node with prefUuid: " + result.PrefUuid)
+				log.WithFields(log.Fields{"UUID":prefUuid, "trans_id": transId}).Error(err)
+				return deleteLonePrefUuidQueries, err
+			}
+		} else {
+			if result.SourceUuid == result.PrefUuid {
+				err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result.PrefUuid)
+				log.WithFields(log.Fields{"UUID":prefUuid, "trans_id": transId}).Error(err)
+				return deleteLonePrefUuidQueries, err
+			} else {
+				err := errors.New("Need to re-write concordance with prefUuid: " + result.PrefUuid + " as removing source " + result.SourceUuid + " may change canonical fields")
+				log.WithFields(log.Fields{"UUID":prefUuid, "trans_id": transId}).Error(err)
+				return deleteLonePrefUuidQueries, err
+			}
+		}
+	}
+	return deleteLonePrefUuidQueries, nil
+}
+
+func deleteLonePrefUuid(prefUuid string) *neoism.CypherQuery {
+	equivQuery := &neoism.CypherQuery{
+		Statement: `MATCH (t:Thing {prefUUID:{prefUuid}}) OPTIONAL MATCH (t)-[rel]-(a:Thing) WITH COUNT(DISTINCT rel) as count, t WHERE count = 0 DELETE t`,
 		Parameters: map[string]interface{}{
-			"prefUUID": concept.UUID,
-			"allprops": allProps,
+			"prefUuid":     prefUuid,
 		},
 	}
-	return createCanonicalNodeQuery
-}
-
-func validateObject(aggConcept AggregatedConcept) error {
-	if aggConcept.PrefLabel == "" {
-		return requestError{formatErrorString("prefLabel", aggConcept.PrefUUID)}
-	}
-	if aggConcept.Type == "" {
-		return requestError{formatErrorString("type", aggConcept.PrefUUID)}
-	}
-	if aggConcept.SourceRepresentations == nil {
-		return requestError{formatErrorString("sourceRepresentation", aggConcept.PrefUUID)}
-	}
-	for _, concept := range aggConcept.SourceRepresentations {
-		// Is Authority recognised?
-		if _, ok := authorityToIdentifierLabelMap[concept.Authority]; !ok {
-			return requestError{(fmt.Sprintf("Unknown authority, therefore unable to add the relevant Identifier node: %s", concept.Authority))}
-		}
-		if concept.PrefLabel == "" {
-			return requestError{formatErrorString("sourceRepresentation.prefLabel", concept.UUID)}
-		}
-		if concept.Type == "" {
-			return requestError{formatErrorString("sourceRepresentation.type", concept.UUID)}
-		}
-		if concept.AuthorityValue == "" {
-			return requestError{formatErrorString("sourceRepresentation.authorityValue", concept.UUID)}
-		}
-		if _, ok := constraintMap[concept.Type]; !ok {
-			return requestError{fmt.Sprintf("The source representation of uuid: %s has an unknown type of: %s", concept.UUID, concept.Type)}
-		}
-	}
-	return nil
-}
-
-func formatErrorString(field string, uuid string) string {
-	return fmt.Sprintf("Invalid request, no %s has been supplied for: %s", field, uuid)
-}
-
-func getAllLabels(conceptType string) string {
-	labels := conceptType
-	parentType := mapper.ParentType(conceptType)
-	for parentType != "" {
-		labels += ":" + parentType
-		parentType = mapper.ParentType(parentType)
-	}
-	return labels
-}
-
-func getLabelsToRemove() string {
-	var labelsToRemove string
-	for i, conceptType := range conceptLabels {
-		labelsToRemove += conceptType
-		if i+1 < len(conceptLabels) {
-			labelsToRemove += ":"
-		}
-	}
-	return labelsToRemove
+	return equivQuery
 }
 
 func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
@@ -353,14 +400,6 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 	queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
 
 	return queryBatch
-}
-
-func getSourceIds(sourceConcepts []Concept) []string {
-	var idList []string
-	for _, concept := range sourceConcepts {
-		idList = append(idList, concept.UUID)
-	}
-	return idList
 }
 
 func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.CypherQuery {
@@ -421,6 +460,49 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 
 	return queryBatch
 
+}
+
+func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
+	allProps := setProps(concept, concept.UUID, false)
+	createCanonicalNodeQuery := &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`MATCH (t:Thing{uuid:{prefUUID}}) MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
+								set n={allprops}
+								set n :%s`, getAllLabels(concept.Type)),
+		Parameters: map[string]interface{}{
+			"prefUUID": concept.UUID,
+			"allprops": allProps,
+		},
+	}
+	return createCanonicalNodeQuery
+}
+
+func getAllLabels(conceptType string) string {
+	labels := conceptType
+	parentType := mapper.ParentType(conceptType)
+	for parentType != "" {
+		labels += ":" + parentType
+		parentType = mapper.ParentType(parentType)
+	}
+	return labels
+}
+
+func getLabelsToRemove() string {
+	var labelsToRemove string
+	for i, conceptType := range conceptLabels {
+		labelsToRemove += conceptType
+		if i+1 < len(conceptLabels) {
+			labelsToRemove += ":"
+		}
+	}
+	return labelsToRemove
+}
+
+func getSourceIds(sourceConcepts []Concept) []string {
+	var idList []string
+	for _, concept := range sourceConcepts {
+		idList = append(idList, concept.UUID)
+	}
+	return idList
 }
 
 func setProps(concept Concept, id string, isSource bool) map[string]interface{} {
@@ -492,8 +574,8 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 }
 
 //Delete - Delete method
-func (s Service) Delete(uuid string) (bool, error) {
-	log.WithField("uuid", uuid).Info("Delete endpoint is currently non-functional")
+func (s Service) Delete(uuid string, transId string) (bool, error) {
+	log.WithFields(log.Fields{"UUID": uuid, "trans_id": transId}).Info("Delete endpoint is currently non-functional")
 	return false, nil
 }
 
@@ -530,18 +612,4 @@ func (s Service) Count() (int, error) {
 	}
 
 	return results[0].Count, nil
-}
-
-type requestError struct {
-	details string
-}
-
-//Error - Error
-func (re requestError) Error() string {
-	return "Invalid Request"
-}
-
-//InvalidRequestDetails - Specific error for providing bad request (400) back
-func (re requestError) InvalidRequestDetails() string {
-	return re.details
 }

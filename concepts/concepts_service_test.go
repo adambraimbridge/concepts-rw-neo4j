@@ -15,6 +15,7 @@ import (
 	"github.com/jmcvetta/neoism"
 
 	"reflect"
+	"errors"
 )
 
 //all uuids to be cleaned from DB
@@ -200,7 +201,7 @@ func TestWriteService(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			defer cleanDB(t)
-			err := conceptsDriver.Write(test.aggregatedConcept)
+			err := conceptsDriver.Write(test.aggregatedConcept, "")
 
 			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
@@ -241,21 +242,92 @@ func TestHandleUnconcordance(t *testing.T) {
 
 	type testStruct struct {
 		testName 		string
-		updatedAggConcept 	AggregatedConcept
+		uuidsToUpdateList 	[]string
 		existingAggConcept 	AggregatedConcept
 		listToUnconcord 	[]Concept
 	}
 
-	emptyWhenAggConceptsAreTheSame := testStruct{testName: "emptyWhenAggConceptsAreTheSame", updatedAggConcept: aggConcept_1, existingAggConcept: aggConcept_1, listToUnconcord: []Concept{}}
-	emptyWhenAggConceptsAreTheSameButInDifferentOrder := testStruct{testName: "emptyWhenAggConceptsAreTheSameButInDifferentOrder", updatedAggConcept: aggConcept_3, existingAggConcept: aggConcept_4, listToUnconcord: []Concept{}}
-	hasSource2WhenSource2IsUnconcorded := testStruct{testName: "listToUnconcordIsEmptyWhenAggConceptsAreTheSame", updatedAggConcept: aggConcept_1, existingAggConcept: aggConcept_2, listToUnconcord: []Concept{{UUID: sourceId_2}}}
-	hasSource2And3WhenSource2And3AreUnconcorded := testStruct{testName: "hasSource2And3WhenSource2And3AreUnconcorded", updatedAggConcept: aggConcept_1, existingAggConcept: aggConcept_3, listToUnconcord: []Concept{{UUID: sourceId_2}, {UUID: sourceId_3}}}
+	emptyWhenAggConceptsAreTheSame := testStruct{testName: "emptyWhenAggConceptsAreTheSame", uuidsToUpdateList: []string{sourceId_1}, existingAggConcept: aggConcept_1, listToUnconcord: []Concept{}}
+	emptyWhenAggConceptsAreTheSameButInDifferentOrder := testStruct{testName: "emptyWhenAggConceptsAreTheSameButInDifferentOrder", uuidsToUpdateList: []string{sourceId_1, sourceId_2, sourceId_3}, existingAggConcept: aggConcept_4, listToUnconcord: []Concept{}}
+	hasSource2WhenSource2IsUnconcorded := testStruct{testName: "listToUnconcordIsEmptyWhenAggConceptsAreTheSame", uuidsToUpdateList: []string{sourceId_1}, existingAggConcept: aggConcept_2, listToUnconcord: []Concept{{UUID: sourceId_2}}}
+	hasSource2And3WhenSource2And3AreUnconcorded := testStruct{testName: "hasSource2And3WhenSource2And3AreUnconcorded", uuidsToUpdateList: []string{sourceId_1}, existingAggConcept: aggConcept_3, listToUnconcord: []Concept{{UUID: sourceId_2}, {UUID: sourceId_3}}}
 
 	Scenarios := []testStruct{emptyWhenAggConceptsAreTheSame, emptyWhenAggConceptsAreTheSameButInDifferentOrder, hasSource2WhenSource2IsUnconcorded, hasSource2And3WhenSource2And3AreUnconcorded}
 
 	for _, scenario := range Scenarios {
-		returnedList := handleUnconcordance(scenario.updatedAggConcept, scenario.existingAggConcept)
+		returnedList := handleUnconcordance(scenario.uuidsToUpdateList, scenario.existingAggConcept)
 		assert.Equal(t, scenario.listToUnconcord, returnedList, "Failure")
+	}
+}
+
+func TestTransferConcordance(t *testing.T) {
+	statement := `MERGE (a:Thing{prefUUID:"1"}) MERGE (b:Thing{uuid:"1"}) MERGE (c:Thing{uuid:"2"}) MERGE (d:Thing{uuid:"3"}) MERGE (w:Thing{prefUUID:"4"}) MERGE (y:Thing{uuid:"5"}) MERGE (j:Thing{prefUUID:"6"}) MERGE (k:Thing{uuid:"6"}) MERGE (c)-[:EQUIVALENT_TO]->(a)<-[:EQUIVALENT_TO]-(b) MERGE (w)<-[:EQUIVALENT_TO]-(d) MERGE (j)<-[:EQUIVALENT_TO]-(k)`
+	db.CypherBatch([]*neoism.CypherQuery{{Statement: statement}})
+	emptyQuery := []*neoism.CypherQuery{}
+
+	type testStruct struct {
+		testName 		string
+		updatedSourceIds 	[]string
+		returnResult            bool
+		returnedError 		error
+	}
+
+	nodeHasNoConconcordance := testStruct{testName: "nodeHasNoConconcordance", updatedSourceIds: []string{"5"}, returnedError: nil}
+	nodeHasExistingConcordanceWhichNeedsToBeReWritten := testStruct{testName: "nodeHasExistingConcordanceWhichNeedsToBeReWritten", updatedSourceIds: []string{"2"}, returnedError: errors.New("Need to re-write concordance with prefUuid: 1 as removing source 2 may change canonical fields")}
+	nodeHasInvalidConcordance := testStruct{testName: "nodeHasInvalidConcordance", updatedSourceIds: []string{"3"}, returnedError: errors.New("This source id: 3 the only concordance to a non-matching node with prefUuid: 4")}
+	nodeIsPrefUuidForExistingConcordance := testStruct{testName: "nodeIsPrefUuidForExistingConcordance", updatedSourceIds: []string{"1"}, returnedError: errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: 1")}
+	nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted := testStruct{testName: "nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted", updatedSourceIds: []string{"6"}, returnResult: true, returnedError: nil}
+
+	scenarios := []testStruct{nodeHasNoConconcordance, nodeHasExistingConcordanceWhichNeedsToBeReWritten, nodeHasInvalidConcordance, nodeIsPrefUuidForExistingConcordance, nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted}
+
+	for _, scenario := range scenarios {
+		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "", "")
+		assert.Equal(t, scenario.returnedError, err, "Scenario " + scenario.testName + " returned unexpected error")
+		if scenario.returnResult == true {
+			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario " + scenario.testName + " results do not match")
+			break
+		}
+		assert.Equal(t, emptyQuery, returnedQueryList, "Scenario " + scenario.testName + " results do not match")
+	}
+
+	defer deleteSourceNodes(t, "1", "2", "3", "5", "6")
+	defer deleteConcordedNodes(t, "1", "4", "6")
+}
+
+func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
+	defer cleanDB(t)
+
+	type testStruct struct {
+		testName 		string
+		aggConcept 		AggregatedConcept
+		returnedError 		string
+	}
+
+	aggregateConceptNoPrefLabel := AggregatedConcept{PrefUUID: basicConceptUUID}
+	aggregateConceptNoType := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label"}
+	aggregateConceptNoSourceReps := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand"}
+	sourceRepNoPrefLabel := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand", SourceRepresentations: []Concept{{UUID: basicConceptUUID}}}
+	sourceRepNoType := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand", SourceRepresentations: []Concept{{UUID: basicConceptUUID, PrefLabel: "The Best Label"}}}
+	sourceRepNoAuthorityValue := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand", SourceRepresentations: []Concept{{UUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand"}}}
+	returnNoError := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand", SourceRepresentations: []Concept{{UUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand", AuthorityValue: "123456-UPP"}}}
+
+	testAggregateConceptNoPrefLabel := testStruct{testName: "testAggregateConceptNoPrefLabel", aggConcept: aggregateConceptNoPrefLabel, returnedError: "Invalid request, no prefLabel has been supplied"}
+	testAggregateConceptNoType := testStruct{testName: "testAggregateConceptNoType", aggConcept: aggregateConceptNoType, returnedError: "Invalid request, no type has been supplied"}
+	testAggregateConceptNoSourceReps := testStruct{testName: "testAggregateConceptNoSourceReps", aggConcept: aggregateConceptNoSourceReps, returnedError: "Invalid request, no sourceRepresentation has been supplied"}
+	testSourceRepNoPrefLabel := testStruct{testName: "testSourceRepNoPrefLabel", aggConcept: sourceRepNoPrefLabel, returnedError: "Invalid request, no sourceRepresentation.prefLabel has been supplied"}
+	testSourceRepNoType := testStruct{testName: "testSourceRepNoType", aggConcept: sourceRepNoType, returnedError: "Invalid request, no sourceRepresentation.type has been supplied"}
+	testSourceRepNoAuthorityValue := testStruct{testName: "testSourceRepNoAuthorityValue", aggConcept: sourceRepNoAuthorityValue, returnedError: "Invalid request, no sourceRepresentation.authorityValue has been supplied"}
+	returnNoErrorTest := testStruct{testName: "returnNoErrorTest", aggConcept: returnNoError, returnedError: ""}
+
+	scenarios := []testStruct{testAggregateConceptNoPrefLabel, testAggregateConceptNoType, testAggregateConceptNoSourceReps, testSourceRepNoPrefLabel, testSourceRepNoType, testSourceRepNoAuthorityValue, returnNoErrorTest}
+
+	for _, scenario := range scenarios {
+		err := validateObject(scenario.aggConcept, "trans_id")
+		if err != nil {
+			assert.Contains(t, err.Error(), scenario.returnedError, scenario.testName)
+		} else {
+			assert.NoError(t, err, scenario.testName)
+		}
 	}
 }
 
@@ -264,94 +336,21 @@ func TestCount(t *testing.T) {
 	defer cleanDB(t)
 
 	basicAggregatedConcept := getFullLoneAggregatedConcept()
-	assert.NoError(conceptsDriver.Write(basicAggregatedConcept), "Failed to write concept")
+	assert.NoError(conceptsDriver.Write(basicAggregatedConcept, ""), "Failed to write concept")
 
 	nr, err := conceptsDriver.Count()
 	assert.Equal(2, nr, "Should be 2 concepts in Neo4j - count differs")
 	assert.NoError(err, "An unexpected error occurred during count")
 
-	assert.NoError(conceptsDriver.Write(getAnotherFullLoneAggregatedConcept()), "Failed to write concept")
+	assert.NoError(conceptsDriver.Write(getAnotherFullLoneAggregatedConcept(), ""), "Failed to write concept")
 
 	nr, err = conceptsDriver.Count()
 	assert.Equal(4, nr, "Should be 4 subjects in Neo4j - count differs")
 	assert.NoError(err, "An unexpected error occurred during count")
 }
 
-// TODO do these tests in a loop
-func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
-	defer cleanDB(t)
-
-	anotherObj := getFullLoneAggregatedConcept()
-
-	anotherObj.PrefLabel = ""
-	err := conceptsDriver.Write(anotherObj)
-	assert.Error(t, err)
-	assert.IsType(t, requestError{}, err)
-	assert.EqualError(t, err, "Invalid Request")
-	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no prefLabel has been supplied for: %s", basicConceptUUID))
-
-	anotherObj.PrefLabel = "Pref Label"
-	anotherObj.Type = ""
-	err = conceptsDriver.Write(anotherObj)
-	assert.Error(t, err)
-	assert.IsType(t, requestError{}, err)
-	assert.EqualError(t, err, "Invalid Request")
-	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no type has been supplied for: %s", basicConceptUUID))
-
-	anotherObj.Type = "Type"
-	anotherObj.SourceRepresentations = nil
-	err = conceptsDriver.Write(anotherObj)
-	assert.Error(t, err)
-	assert.IsType(t, requestError{}, err)
-	assert.EqualError(t, err, "Invalid Request")
-	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation has been supplied for: %s", basicConceptUUID))
-
-	yetAnotherBasicConcept := Concept{
-		UUID:           basicConceptUUID,
-		PrefLabel:      "Concept PrefLabel",
-		Type:           "Section",
-		Authority:      "TME",
-		AuthorityValue: "1234",
-		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-	}
-	yetAnotherBasicConcept.PrefLabel = ""
-	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
-	err = conceptsDriver.Write(anotherObj)
-	assert.Error(t, err)
-	assert.IsType(t, requestError{}, err)
-	assert.EqualError(t, err, "Invalid Request")
-	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation.prefLabel has been supplied for: %s", yetAnotherBasicConcept.UUID))
-
-	yetAnotherBasicConcept.PrefLabel = "Pref Label"
-	yetAnotherBasicConcept.Type = ""
-	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
-	err = conceptsDriver.Write(anotherObj)
-	assert.Error(t, err)
-	assert.IsType(t, requestError{}, err)
-	assert.EqualError(t, err, "Invalid Request")
-	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation.type has been supplied for: %s", yetAnotherBasicConcept.UUID))
-
-	yetAnotherBasicConcept.Type = "Section"
-	yetAnotherBasicConcept.AuthorityValue = ""
-	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
-	err = conceptsDriver.Write(anotherObj)
-	assert.Error(t, err)
-	assert.IsType(t, requestError{}, err)
-	assert.EqualError(t, err, "Invalid Request")
-	assert.Equal(t, err.(requestError).details, fmt.Sprintf("Invalid request, no sourceRepresentation.authorityValue has been supplied for: %s", yetAnotherBasicConcept.UUID))
-
-	yetAnotherBasicConcept.AuthorityValue = "UPP"
-	yetAnotherBasicConcept.Type = "TEST_TYPE"
-	anotherObj.SourceRepresentations = []Concept{yetAnotherBasicConcept}
-	err = conceptsDriver.Write(anotherObj)
-	assert.Error(t, err)
-	assert.IsType(t, requestError{}, err)
-	assert.EqualError(t, err, "Invalid Request")
-	assert.Equal(t, err.(requestError).details, fmt.Sprintf("The source representation of uuid: %s has an unknown type of: %s", yetAnotherBasicConcept.UUID, yetAnotherBasicConcept.Type))
-}
-
 func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName string) {
-	actual, found, err := conceptsDriver.Read(expected.PrefUUID)
+	actual, found, err := conceptsDriver.Read(expected.PrefUUID, "")
 	actualConcept := actual.(AggregatedConcept)
 	sort.Slice(expected.SourceRepresentations, func(i, j int) bool {
 		return expected.SourceRepresentations[i].UUID < expected.SourceRepresentations[j].UUID
@@ -425,7 +424,7 @@ func getConceptService(t *testing.T) Service {
 func cleanDB(t *testing.T) {
 	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID)
 	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID)
-	cleanConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID)
+	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID)
 }
 
 func deleteSourceNodes(t *testing.T, uuids ...string) {
@@ -455,7 +454,7 @@ func cleanSourceNodes(t *testing.T, uuids ...string) {
 	assert.NoError(t, err, "Error executing clean up cypher")
 }
 
-func cleanConcordedNodes(t *testing.T, uuids ...string) {
+func deleteConcordedNodes(t *testing.T, uuids ...string) {
 	qs := make([]*neoism.CypherQuery, len(uuids))
 	for i, uuid := range uuids {
 		qs[i] = &neoism.CypherQuery{

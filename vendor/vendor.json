@@ -3,22 +3,27 @@
 	"ignore": "test",
 	"package": [
 		{
-			"path": "appengine",
-			"revision": ""
-		},
-		{
-			"path": "appengine/aetest",
-			"revision": ""
-		},
-		{
-			"path": "appengine/urlfetch",
-			"revision": ""
+			"path": "github.com/Financial-Times/base-ft-rw-app-go",
+			"revision": "93cb56aeefc5df7928703d6f5684d5529d3a1648",
+			"revisionTime": "2017-06-30T12:20:09Z"
 		},
 		{
 			"checksumSHA1": "fg1dZ/MIpnMKoW0vJE2y5HpHXXc=",
 			"path": "github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp",
 			"revision": "01975d9da464dc2b864f1a5cf603827fdaa8e661",
 			"revisionTime": "2016-09-09T09:52:18Z"
+		},
+		{
+			"checksumSHA1": "8pXdzFmu5T55O787VXzDlTIRTbg=",
+			"path": "github.com/Financial-Times/concepts-rw-neo4j",
+			"revision": "82a45379040c4b7926453eb0e50e4f50dfdc1eaa",
+			"revisionTime": "2017-05-19T10:33:15Z"
+		},
+		{
+			"checksumSHA1": "cduvwFb3/aboOBGukgrrDGH+7pk=",
+			"path": "github.com/Financial-Times/concepts-rw-neo4j/concepts",
+			"revision": "82a45379040c4b7926453eb0e50e4f50dfdc1eaa",
+			"revisionTime": "2017-05-19T10:33:15Z"
 		},
 		{
 			"checksumSHA1": "6U1V2xI8bHaR95+gN+VfO9TqClE=",

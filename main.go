@@ -56,6 +56,19 @@ func main() {
 		Value: "local",
 		Desc:  "environment this app is running in",
 	})
+	logLevel := app.String(cli.StringOpt{
+		Name:   "logLevel",
+		Value:  "info",
+		Desc:   "Level of logging to be shown",
+		EnvVar: "LOG_LEVEL",
+	})
+
+	lvl, err := log.ParseLevel(*logLevel)
+	if err != nil {
+		log.Warnf("Log level %s could not be parsed, defaulting to info")
+		lvl = log.InfoLevel
+	}
+	log.SetLevel(lvl)
 
 	app.Action = func() {
 		conf := neoutils.DefaultConnectionConfig()
@@ -91,8 +104,6 @@ func main() {
 			EnableReqLog:  true,
 		})
 	}
-
-	log.SetLevel(log.InfoLevel)
 	log.Infof("Application started with args %s", os.Args)
 	app.Run(os.Args)
 }

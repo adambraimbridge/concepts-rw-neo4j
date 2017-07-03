@@ -29,21 +29,22 @@ type Concept struct {
 // Map of all the possible node types so we can ensure they all have
 // constraints on the uuid
 var constraintMap = map[string]string{
-	"Thing":             "uuid",
-	"Concept":           "uuid",
-	"Classification":    "uuid",
-	"Section":           "uuid",
-	"Subject":           "uuid",
-	"SpecialReport":     "uuid",
-	"Location":          "uuid",
-	"Topic":             "uuid",
-	"Genre":             "uuid",
-	"Brand":             "uuid",
-	"AlphavilleSeries":  "uuid",
-	"UPPIdentifier":     "value",
-	"TMEIdentifier":     "value",
-	"FactsetIdentifier": "value",
-	"Person":            "value",
+	"Thing":                "uuid",
+	"Concept":              "uuid",
+	"Classification":       "uuid",
+	"Section":              "uuid",
+	"Subject":              "uuid",
+	"SpecialReport":        "uuid",
+	"Location":             "uuid",
+	"Topic":                "uuid",
+	"Genre":                "uuid",
+	"Brand":                "uuid",
+	"AlphavilleSeries":     "uuid",
+	"UPPIdentifier":        "value",
+	"TMEIdentifier":        "value",
+	"FactsetIdentifier":    "value",
+	"SmartlogicIdentifier": "value",
+	"Person":               "value",
 }
 
 var conceptLabels = [...]string{

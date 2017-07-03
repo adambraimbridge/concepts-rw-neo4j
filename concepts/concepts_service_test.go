@@ -14,10 +14,10 @@ import (
 
 	"github.com/jmcvetta/neoism"
 
-	"reflect"
+	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"encoding/json"
+	"reflect"
 )
 
 //all uuids to be cleaned from DB
@@ -185,32 +185,6 @@ func TestConnectivityCheck(t *testing.T) {
 	assert.NoError(t, err, "Unexpected error on connectivity check")
 }
 
-func TestInvalidTypesThrowError(t *testing.T) {
-	invalidPrefConceptType := `MERGE (t:Thing{prefUUID:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}) SET t={prefUUID:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea", prefLabel:"The Best Label"} SET t:Concept:Brand:Unknown MERGE (s:Thing{uuid:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}) SET s={uuid:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"} SET t:Concept:Brand MERGE (t)<-[:EQUIVALENT_TO]-(s)`
-	invalidSourceConceptType := `MERGE (t:Thing{prefUUID:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"}) SET t={prefUUID:"4c41f314-4548-4fb6-ac48-4618fcbfa84c", prefLabel:"The Best Label"} SET t:Concept:Brand MERGE (s:Thing{uuid:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"}) SET s={uuid:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"} SET t:Concept:Brand:Unknown MERGE (t)<-[:EQUIVALENT_TO]-(s)`
-
-	type testStruct struct {
-		testName 		string
-		statementToWrite 	string
-		returnedError 		error
-	}
-
-	invalidPrefConceptTypeTest := testStruct{testName: "invalidPrefConceptTypeTest", statementToWrite: invalidPrefConceptType, returnedError: nil}
-	invalidSourceConceptTypeTest := testStruct{testName: "invalidSourceConceptTypeTest", statementToWrite: invalidSourceConceptType, returnedError: nil}
-
-	scenarios := []testStruct{invalidPrefConceptTypeTest, invalidSourceConceptTypeTest}
-
-	for _, scenario := range scenarios {
-		db.CypherBatch([]*neoism.CypherQuery{{Statement: scenario.statementToWrite}})
-		aggConcept, found, err := conceptsDriver.Read(basicConceptUUID, "")
-		assert.Equal(t, AggregatedConcept{}, aggConcept, "Scenario " + scenario.testName + " failed; aggregate concept should be empty")
-		assert.Equal(t, false, found, "Scenario " + scenario.testName + " failed; aggregate concept should not be returned from read")
-		assert.Error(t, err, "Scenario " + scenario.testName + " failed; read of concept should return error")
-		assert.Contains(t, err.Error(), "provided types are not a consistent hierarchy", "Scenario " + scenario.testName + " failed; should throw error from mapper.MostSpecificType function")
-	}
-	defer cleanDB(t)
-}
-
 func TestWriteService(t *testing.T) {
 	defer cleanDB(t)
 
@@ -274,11 +248,11 @@ func readFileReturnAggConcept(fileName string, t *testing.T) AggregatedConcept {
 func TestWriteService_HandlingConcordance(t *testing.T) {
 	tid := "test_tid"
 	type testStruct struct {
-		testName 	string
-		setUpFile 	string
-		testFile 	string
-		uuidsToCheck	[]string
-		returnedError 	string
+		testName      string
+		setUpFile     string
+		testFile      string
+		uuidsToCheck  []string
+		returnedError string
 	}
 
 	writeHandlesUnconcordanceGracefully := testStruct{testName: "writeHandlesUnconcordanceGracefully", setUpFile: "fixtures/dualConcordance.json", testFile: "fixtures/singleConcordance.json", uuidsToCheck: []string{basicConceptUUID, sourceId_1}}
@@ -291,24 +265,24 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		//Write data into db, to set up test scenario
 		setUpConcepts := readFileReturnAggConcept(scenario.setUpFile, t)
 		err := conceptsDriver.Write(setUpConcepts, tid)
-		assert.NoError(t, err, "Scenario " + scenario.testName + " failed; returned unexpected error")
+		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 
 		//Overwrite data with update
 		updatedConcept := readFileReturnAggConcept(scenario.testFile, t)
 		err = conceptsDriver.Write(updatedConcept, tid)
 		if err != nil {
-			assert.Contains(t, err.Error(), scenario.returnedError, "Scenario " + scenario.testName + " failed; returned unexpected error")
+			assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unexpected error")
 		}
 
 		for _, id := range scenario.uuidsToCheck {
 			concept, found, err := conceptsDriver.Read(id, tid)
 			if found {
-				assert.NotNil(t, concept, "Scenario " + scenario.testName + " failed; id: " + id + " should return a valid concept")
-				assert.True(t, found, "Scenario " + scenario.testName + " failed; id: " + id + " should return a valid concept")
-				assert.NoError(t, err, "Scenario " + scenario.testName + " failed; returned unexpected error")
+				assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
+				assert.True(t, found, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
+				assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 			} else {
-				assert.Equal(t, AggregatedConcept{}, concept, "Scenario " + scenario.testName + " failed; id: " + id + " should return a valid concept")
-				assert.NoError(t, err, "Scenario " + scenario.testName + " failed; returned unexpected error")
+				assert.Equal(t, AggregatedConcept{}, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
+				assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 			}
 		}
 
@@ -317,17 +291,45 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 
 }
 
-func TestHandleUnconcordance(t *testing.T) {
-	aggConcept_1 := AggregatedConcept{ PrefUUID:  sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}}}
-	aggConcept_2 := AggregatedConcept{ PrefUUID:  sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}, {UUID: sourceId_2}}}
-	aggConcept_3 := AggregatedConcept{ PrefUUID:  sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}, {UUID: sourceId_2}, {UUID: sourceId_3}}}
-	aggConcept_4 := AggregatedConcept{ PrefUUID:  sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_3}, {UUID: sourceId_1}, {UUID: sourceId_2}}}
+func TestInvalidTypesThrowError(t *testing.T) {
+	invalidPrefConceptType := `MERGE (t:Thing{prefUUID:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}) SET t={prefUUID:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea", prefLabel:"The Best Label"} SET t:Concept:Brand:Unknown MERGE (s:Thing{uuid:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}) SET s={uuid:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"} SET t:Concept:Brand MERGE (t)<-[:EQUIVALENT_TO]-(s)`
+	invalidSourceConceptType := `MERGE (t:Thing{prefUUID:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"}) SET t={prefUUID:"4c41f314-4548-4fb6-ac48-4618fcbfa84c", prefLabel:"The Best Label"} SET t:Concept:Brand MERGE (s:Thing{uuid:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"}) SET s={uuid:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"} SET t:Concept:Brand:Unknown MERGE (t)<-[:EQUIVALENT_TO]-(s)`
 
 	type testStruct struct {
-		testName 		string
-		uuidsToUpdateList 	[]string
-		existingAggConcept 	AggregatedConcept
-		listToUnconcord 	[]Concept
+		testName         string
+		prefUuid         string
+		statementToWrite string
+		returnedError    error
+	}
+
+	invalidPrefConceptTypeTest := testStruct{testName: "invalidPrefConceptTypeTest", prefUuid: basicConceptUUID, statementToWrite: invalidPrefConceptType, returnedError: nil}
+	invalidSourceConceptTypeTest := testStruct{testName: "invalidSourceConceptTypeTest", prefUuid: anotherBasicConceptUUID, statementToWrite: invalidSourceConceptType, returnedError: nil}
+
+	scenarios := []testStruct{invalidPrefConceptTypeTest, invalidSourceConceptTypeTest}
+
+	for _, scenario := range scenarios {
+		db.CypherBatch([]*neoism.CypherQuery{{Statement: scenario.statementToWrite}})
+		aggConcept, found, err := conceptsDriver.Read(scenario.prefUuid, "")
+		assert.Equal(t, AggregatedConcept{}, aggConcept, "Scenario "+scenario.testName+" failed; aggregate concept should be empty")
+		assert.Equal(t, false, found, "Scenario "+scenario.testName+" failed; aggregate concept should not be returned from read")
+		assert.Error(t, err, "Scenario "+scenario.testName+" failed; read of concept should return error")
+		assert.Contains(t, err.Error(), "provided types are not a consistent hierarchy", "Scenario "+scenario.testName+" failed; should throw error from mapper.MostSpecificType function")
+	}
+
+	defer cleanDB(t)
+}
+
+func TestHandleUnconcordance(t *testing.T) {
+	aggConcept_1 := AggregatedConcept{PrefUUID: sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}}}
+	aggConcept_2 := AggregatedConcept{PrefUUID: sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}, {UUID: sourceId_2}}}
+	aggConcept_3 := AggregatedConcept{PrefUUID: sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}, {UUID: sourceId_2}, {UUID: sourceId_3}}}
+	aggConcept_4 := AggregatedConcept{PrefUUID: sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_3}, {UUID: sourceId_1}, {UUID: sourceId_2}}}
+
+	type testStruct struct {
+		testName           string
+		uuidsToUpdateList  []string
+		existingAggConcept AggregatedConcept
+		listToUnconcord    []Concept
 	}
 
 	emptyWhenAggConceptsAreTheSame := testStruct{testName: "emptyWhenAggConceptsAreTheSame", uuidsToUpdateList: []string{sourceId_1}, existingAggConcept: aggConcept_1, listToUnconcord: []Concept{}}
@@ -349,10 +351,10 @@ func TestTransferConcordance(t *testing.T) {
 	emptyQuery := []*neoism.CypherQuery{}
 
 	type testStruct struct {
-		testName 		string
-		updatedSourceIds 	[]string
-		returnResult            bool
-		returnedError 		error
+		testName         string
+		updatedSourceIds []string
+		returnResult     bool
+		returnedError    error
 	}
 
 	nodeHasNoConconcordance := testStruct{testName: "nodeHasNoConconcordance", updatedSourceIds: []string{"5"}, returnedError: nil}
@@ -366,12 +368,12 @@ func TestTransferConcordance(t *testing.T) {
 
 	for _, scenario := range scenarios {
 		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "", "")
-		assert.Equal(t, scenario.returnedError, err, "Scenario " + scenario.testName + " returned unexpected error")
+		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
-			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario " + scenario.testName + " results do not match")
+			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 			break
 		}
-		assert.Equal(t, emptyQuery, returnedQueryList, "Scenario " + scenario.testName + " results do not match")
+		assert.Equal(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 	}
 
 	defer deleteSourceNodes(t, "1", "2", "3", "5", "6")
@@ -382,9 +384,9 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	defer cleanDB(t)
 
 	type testStruct struct {
-		testName 		string
-		aggConcept 		AggregatedConcept
-		returnedError 		string
+		testName      string
+		aggConcept    AggregatedConcept
+		returnedError string
 	}
 
 	aggregateConceptNoPrefLabel := AggregatedConcept{PrefUUID: basicConceptUUID}

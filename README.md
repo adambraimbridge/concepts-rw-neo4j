@@ -1,6 +1,8 @@
 # Concept Reader/Writer for Neo4j (concept-rw-neo4j)
 
-[![Circle CI](https://circleci.com/gh/Financial-Times/concepts-rw-neo4j.svg?style=shield)](https://circleci.com/gh/Financial-Times/concepts-rw-neo4j)[![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/concepts-rw-neo4j)](https://goreportcard.com/report/github.com/Financial-Times/concepts-rw-neo4j) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/concepts-rw-neo4j/badge.svg)](https://coveralls.io/github/Financial-Times/concepts-rw-neo4j)
+[![Circle CI](https://circleci.com/gh/Financial-Times/concepts-rw-neo4j.svg?style=shield)](https://circleci.com/gh/Financial-Times/concepts-rw-neo4j)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/concepts-rw-neo4j)](https://goreportcard.com/report/github.com/Financial-Times/concepts-rw-neo4j)
+[![Coverage Status](https://coveralls.io/repos/github/Financial-Times/concepts-rw-neo4j/badge.svg)](https://coveralls.io/github/Financial-Times/concepts-rw-neo4j)
 __An API for reading/writing concepts into Neo4j. 
 
 ## Installation
@@ -31,7 +33,8 @@ Coming soon more complex taxonomies including concorded people and orgs
 
 ### PUT /{taxonomy}/{uuid}
 
-The only mandatory field is the uuid
+The mandatory fields are the prefUUID, prefLabel, type, and sourceRepresentations. Inside each sourceRepresentation uuid, prefLabel, type, authority and authorityValue. 
+Failure to provide mandatory fields will return 400 bad request.
 
 Every request results in an attempt to update that concept
 
@@ -45,7 +48,7 @@ Example PUT request:
          -H "X-Request-Id: 123" \
          -H "Content-Type: application/json" \
          -d '{
-             	"uuid": "4c41f314-4548-4fb6-ac48-4618fcbfa84c",
+             	"prefUUID": "4c41f314-4548-4fb6-ac48-4618fcbfa84c",
              	"prefLabel": "Some pref label",
              	"type": "Section",
              	"sourceRepresentations": [{
@@ -59,12 +62,12 @@ Example PUT request:
 
 The type field is not currently validated against the path
 
-For this first phase "TME" and "UPP" are the only valid authorities, any other Authority will result in a 400 bad request response
+"TME", "UPP" and "Smartlogic" are the only valid authorities, any other Authority will result in a 400 bad request response.
 
 Invalid json body input, or uuids that don't match between the path and the body will result in a 400 bad request response.
 
 ### GET /{taxonomy}/{uuid}
-Thie internal read should return what got written 
+The internal read should return what got written 
 
 If not found, you'll get a 404 response.
 
@@ -72,8 +75,7 @@ Empty fields are omitted from the response.
 `curl -H "X-Request-Id: 123" localhost:8080/sections/3fa70485-3a57-3b9b-9449-774b001cd965`
 
 ### DELETE
-Will return 204 if successful, 404 if not found
-`curl -XDELETE -H "X-Request-Id: 123" localhost:8080/sections/3fa70485-3a57-3b9b-9449-774b001cd965`
+Not currently supported
 
 ### COUNT
 *This functionality is not currently correct and needs to return the specific taxonomy but at the moment it only returns the count of the number of concepts in Neo4J"

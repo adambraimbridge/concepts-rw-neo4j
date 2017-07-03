@@ -3,9 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "59Q/nQ0hy76Vw6Ly2lPfm5ptQQs=",
 			"path": "github.com/Financial-Times/base-ft-rw-app-go",
-			"revision": "93cb56aeefc5df7928703d6f5684d5529d3a1648",
-			"revisionTime": "2017-06-30T12:20:09Z"
+			"revision": "2af0e504e7010d4cf3a91dd198b024ed5b8cf9d8",
+			"revisionTime": "2017-07-03T08:19:56Z"
 		},
 		{
 			"checksumSHA1": "fg1dZ/MIpnMKoW0vJE2y5HpHXXc=",

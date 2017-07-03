@@ -241,7 +241,13 @@ func (s Service) Write(thing interface{}, transId string) error {
 	}
 
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
-	return s.conn.CypherBatch(queryBatch)
+	if s.conn.CypherBatch(queryBatch); err != nil {
+		return err
+	} else {
+		log.WithFields(log.Fields{"UUID":aggregatedConceptToWrite.PrefUUID, "trans_id": transId}).Info("Concept written to db")
+		return nil
+	}
+	return nil
 }
 
 func validateObject(aggConcept AggregatedConcept, transId string) error {
@@ -331,23 +337,33 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUuid s
 		if result.Equivalence == 0 {
 			break
 		} else if result.Equivalence == 1 {
+			// Source has existing concordance to itself, after transfer old pref uuid node will need to be cleaned up
 			if result.SourceUuid == result.PrefUuid {
 				deleteLonePrefUuidQueries = append(deleteLonePrefUuidQueries, deleteLonePrefUuid(result.PrefUuid))
 				break
 			} else {
+				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := errors.New("This source id: " + result.SourceUuid + " the only concordance to a non-matching node with prefUuid: " + result.PrefUuid)
 				log.WithFields(log.Fields{"UUID":prefUuid, "trans_id": transId}).Error(err)
 				return deleteLonePrefUuidQueries, err
 			}
 		} else {
 			if result.SourceUuid == result.PrefUuid {
-				err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result.PrefUuid)
-				log.WithFields(log.Fields{"UUID":prefUuid, "trans_id": transId}).Error(err)
-				return deleteLonePrefUuidQueries, err
+				if result.SourceUuid != prefUuid {
+					//TODO ???
+					// Source is prefUUID for a different concordance
+					err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result.SourceUuid)
+					log.WithFields(log.Fields{"UUID":prefUuid, "trans_id": transId}).Error(err)
+					return deleteLonePrefUuidQueries, err
+				} else {
+					// Source is prefUUID for a current concordance
+					break
+				}
 			} else {
-				err := errors.New("Need to re-write concordance with prefUuid: " + result.PrefUuid + " as removing source " + result.SourceUuid + " may change canonical fields")
-				log.WithFields(log.Fields{"UUID":prefUuid, "trans_id": transId}).Error(err)
-				return deleteLonePrefUuidQueries, err
+				//TODO Re-ingest old prefUUID?
+				// Source was concorded to different concordance. Data on existing concordance is now out of data
+				log.WithFields(log.Fields{"UUID":prefUuid, "trans_id": transId}).Info("Need to re-write concordance with prefUuid: " + result.PrefUuid + " as removing source " + result.SourceUuid + " may change canonical fields")
+				break
 			}
 		}
 	}

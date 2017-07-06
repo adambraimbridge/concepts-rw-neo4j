@@ -58,7 +58,6 @@ func main() {
 	})
 	logLevel := app.String(cli.StringOpt{
 		Name:   "logLevel",
-		Value:  "info",
 		Desc:   "Level of logging to be shown",
 		EnvVar: "LOG_LEVEL",
 	})
@@ -69,6 +68,7 @@ func main() {
 		lvl = log.InfoLevel
 	}
 	log.SetLevel(lvl)
+	log.Info(lvl.String() + ": log level set")
 
 	app.Action = func() {
 		conf := neoutils.DefaultConnectionConfig()

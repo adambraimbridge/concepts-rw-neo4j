@@ -1,21 +1,21 @@
 package concepts
 
 type AggregatedConcept struct {
-	PrefUUID              string    `json:"prefUUID"`
-	PrefLabel             string    `json:"prefLabel"`
-	Type                  string    `json:"type"`
+	PrefUUID              string    `json:"prefUUID,omitempty"`
+	PrefLabel             string    `json:"prefLabel,omitempty"`
+	Type                  string    `json:"type,omitempty"`
 	Aliases               []string  `json:"aliases,omitempty"`
 	Strapline             string    `json:"strapline,omitempty"`
 	DescriptionXML        string    `json:"descriptionXML,omitempty"`
 	ImageURL              string    `json:"_imageUrl,omitempty"`
-	SourceRepresentations []Concept `json:"sourceRepresentations"`
+	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
 }
 
 // Concept - could be any concept genre, subject etc
 type Concept struct {
 	UUID              string   `json:"uuid,omitempty"`
-	PrefLabel         string   `json:"prefLabel"`
-	Type              string   `json:"type"`
+	PrefLabel         string   `json:"prefLabel,omitempty"`
+	Type              string   `json:"type,omitempty"`
 	Authority         string   `json:"authority,omitempty"`
 	AuthorityValue    string   `json:"authorityValue,omitempty"`
 	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`

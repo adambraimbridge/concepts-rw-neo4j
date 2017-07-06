@@ -55,10 +55,10 @@ type neoAggregatedConcept struct {
 type neoConcept struct {
 	UUID              string   `json:"uuid,omitempty"`
 	PrefUUID          string   `json:"prefUUID,omitempty"`
-	Types             []string `json:"types"`
-	PrefLabel         string   `json:"prefLabel"`
-	Authority         string   `json:"authority"`
-	AuthorityValue    string   `json:"authorityValue"`
+	Types             []string `json:"types,omitempty"`
+	PrefLabel         string   `json:"prefLabel,omitempty"`
+	Authority         string   `json:"authority,omitempty"`
+	AuthorityValue    string   `json:"authorityValue,omitempty"`
 	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`
 	Aliases           []string `json:"aliases,omitempty"`
 	ParentUUIDs       []string `json:"parentUUIDs,omitempty"`
@@ -88,17 +88,17 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 
 	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"UUID": uuid, "trans_id": transId}).Error("Error executing neo4j read query")
+		log.WithError(err).WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Error("Error executing neo4j read query")
 		return AggregatedConcept{}, false, err
 	}
 
 	if len(results) == 0 {
-		log.WithFields(log.Fields{"UUID": uuid, "trans_id": transId}).Info("Brand not found")
+		log.WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Info("Brand not found")
 		return AggregatedConcept{}, false, nil
 	}
 	typeName, err := mapper.MostSpecificType(results[0].Types)
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"UUID": uuid, "trans_id": transId}).Error("Returned brand had no recognized type")
+		log.WithError(err).WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Error("Returned brand had no recognized type")
 		return AggregatedConcept{}, false, err
 	}
 
@@ -117,7 +117,7 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 		var concept Concept
 		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"UUID": srcConcept.UUID, "trans_id": transId}).Error("Returned source had no recognized type")
+			log.WithError(err).WithFields(log.Fields{"UUID": srcConcept.UUID, "transaction_id": transId}).Error("Returned source had no recognized type")
 			return AggregatedConcept{}, false, err
 		}
 		if len(srcConcept.Aliases) > 0 {
@@ -162,7 +162,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 
 	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, "")
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "trans_id": transId}).Error("Read request for existing concordance resulted in error")
+		log.WithError(err).WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Error("Read request for existing concordance resulted in error")
 		return err
 	}
 
@@ -211,7 +211,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 	// Create the canonical node
 	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConceptToWrite.PrefUUID, "")...)
 
-	// Repoplulate
+	// Repopulate
 	for _, concept := range aggregatedConceptToWrite.SourceRepresentations {
 		queryBatch = append(queryBatch, createNodeQueries(concept, "", concept.UUID)...)
 
@@ -244,7 +244,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 	if s.conn.CypherBatch(queryBatch); err != nil {
 		return err
 	} else {
-		log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "trans_id": transId}).Info("Concept written to db")
+		log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Info("Concept written to db")
 		return nil
 	}
 	return nil
@@ -283,7 +283,7 @@ func validateObject(aggConcept AggregatedConcept, transId string) error {
 
 func formatError(field string, uuid string, transId string) string {
 	err := errors.New("Invalid request, no " + field + " has been supplied")
-	log.WithError(err).WithFields(log.Fields{"UUID": uuid, "trans_id": transId}).Error("Validation of payload failed")
+	log.WithError(err).WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Error("Validation of payload failed")
 	return err.Error()
 }
 
@@ -305,7 +305,7 @@ func handleUnconcordance(updatedSourceIds []string, existingAggregateConcept Agg
 	return needToBeUnconcorded
 }
 
-func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUuid string, transId string) ([]*neoism.CypherQuery, error) {
+func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transId string) ([]*neoism.CypherQuery, error) {
 	results := []struct {
 		SourceUuid  string `json:"sourceUuid"`
 		PrefUuid    string `json:"prefUuid"`
@@ -326,7 +326,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUuid s
 	}
 	err := s.conn.CypherBatch(queryBatch)
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"UUID": prefUuid, "trans_id": transId}).Error("Requests for source nodes canonical information resulted in error")
+		log.WithError(err).WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error("Requests for source nodes canonical information resulted in error")
 		return queryBatch, err
 	}
 
@@ -344,16 +344,16 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUuid s
 			} else {
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := errors.New("This source id: " + result.SourceUuid + " the only concordance to a non-matching node with prefUuid: " + result.PrefUuid)
-				log.WithFields(log.Fields{"UUID": prefUuid, "trans_id": transId}).Error(err)
+				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error(err)
 				return deleteLonePrefUuidQueries, err
 			}
 		} else {
 			if result.SourceUuid == result.PrefUuid {
-				if result.SourceUuid != prefUuid {
+				if result.SourceUuid != prefUUID {
 					//TODO ???
 					// Source is prefUUID for a different concordance
 					err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result.SourceUuid)
-					log.WithFields(log.Fields{"UUID": prefUuid, "trans_id": transId}).Error(err)
+					log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error(err)
 					return deleteLonePrefUuidQueries, err
 				} else {
 					// Source is prefUUID for a current concordance
@@ -362,7 +362,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUuid s
 			} else {
 				//TODO Re-ingest old prefUUID?
 				// Source was concorded to different concordance. Data on existing concordance is now out of data
-				log.WithFields(log.Fields{"UUID": prefUuid, "trans_id": transId}).Info("Need to re-write concordance with prefUuid: " + result.PrefUuid + " as removing source " + result.SourceUuid + " may change canonical fields")
+				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Info("Need to re-write concordance with prefUuid: " + result.PrefUuid + " as removing source " + result.SourceUuid + " may change canonical fields")
 				break
 			}
 		}
@@ -370,11 +370,11 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUuid s
 	return deleteLonePrefUuidQueries, nil
 }
 
-func deleteLonePrefUuid(prefUuid string) *neoism.CypherQuery {
+func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 	equivQuery := &neoism.CypherQuery{
 		Statement: `MATCH (t:Thing {prefUUID:{prefUuid}}) OPTIONAL MATCH (t)-[rel]-(a:Thing) WITH COUNT(DISTINCT rel) as count, t WHERE count = 0 DELETE t`,
 		Parameters: map[string]interface{}{
-			"prefUuid": prefUuid,
+			"prefUuid": prefUUID,
 		},
 	}
 	return equivQuery
@@ -590,7 +590,7 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 
 //Delete - Delete method
 func (s Service) Delete(uuid string, transId string) (bool, error) {
-	log.WithFields(log.Fields{"UUID": uuid, "trans_id": transId}).Info("Delete endpoint is currently non-functional")
+	log.WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Info("Delete endpoint is currently non-functional")
 	return false, nil
 }
 

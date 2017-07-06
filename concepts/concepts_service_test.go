@@ -408,7 +408,7 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	scenarios := []testStruct{testAggregateConceptNoPrefLabel, testAggregateConceptNoType, testAggregateConceptNoSourceReps, testSourceRepNoPrefLabel, testSourceRepNoType, testSourceRepNoAuthorityValue, returnNoErrorTest}
 
 	for _, scenario := range scenarios {
-		err := validateObject(scenario.aggConcept, "trans_id")
+		err := validateObject(scenario.aggConcept, "transaction_id")
 		if err != nil {
 			assert.Contains(t, err.Error(), scenario.returnedError, scenario.testName)
 		} else {

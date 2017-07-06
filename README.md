@@ -64,7 +64,7 @@ The type field is not currently validated against the path
 
 "TME", "UPP" and "Smartlogic" are the only valid authorities, any other Authority will result in a 400 bad request response.
 
-Invalid json body input, or uuids that don't match between the path and the body will result in a 400 bad request response.
+Invalid JSON body input or UUIDs that don't match between the path and the body will result in a 400 bad request response.
 
 ### GET /{taxonomy}/{uuid}
 The internal read should return what got written 

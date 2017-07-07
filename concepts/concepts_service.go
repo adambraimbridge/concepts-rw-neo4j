@@ -242,7 +242,8 @@ func (s Service) Write(thing interface{}, transId string) error {
 	}
 
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
-	if s.conn.CypherBatch(queryBatch); err != nil {
+	err = s.conn.CypherBatch(queryBatch)
+	if err != nil {
 		return err
 	} else {
 		log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Info("Concept written to db")

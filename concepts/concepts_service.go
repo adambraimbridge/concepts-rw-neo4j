@@ -377,9 +377,9 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 
 func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 	equivQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {prefUUID:{prefUuid}})<-[rel:EQUIVALENT_TO]-(a:Thing{prefUUID}) WITH COUNT(DISTINCT rel) as count, t WHERE count = 1 DELETE rel, t`,
+		Statement: `MATCH (t:Thing {prefUUID:{id}})<-[rel:EQUIVALENT_TO]-(a:Thing{uuid:{id}}) DELETE rel, t`,
 		Parameters: map[string]interface{}{
-			"prefUuid": prefUUID,
+			"id": prefUUID,
 		},
 	}
 	return equivQuery

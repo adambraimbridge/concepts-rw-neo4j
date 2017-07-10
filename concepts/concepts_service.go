@@ -312,12 +312,13 @@ func handleUnconcordance(updatedSourceIds []string, existingAggregateConcept Agg
 }
 
 func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transId string) ([]*neoism.CypherQuery, error) {
-	results := []struct {
+	type result struct {
 		SourceUuid  string `json:"sourceUuid"`
 		PrefUuid    string `json:"prefUuid"`
 		Equivalence int    `json:"count"`
-	}{}
+	}
 
+	var results []result
 	fmt.Printf("Handling Transfer concordance. Updated source ids has length %s\n", len(updatedSourceIds))
 
 	var queryBatch []*neoism.CypherQuery
@@ -327,13 +328,15 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 			Parameters: map[string]interface{}{
 				"uuid": updatedSourceId,
 			},
-			Result: &results,
+			Result: result{},
 		}
 		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error("Requests for source nodes canonical information resulted in error")
 			return queryBatch, err
 		}
+
+		results = append(results, result{})
 	}
 
 	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}

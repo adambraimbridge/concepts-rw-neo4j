@@ -267,7 +267,6 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		//Write data into db, to set up test scenario
 		setUpConcepts := readFileReturnAggConcept(scenario.setUpFile, t)
 		err := conceptsDriver.Write(setUpConcepts, tid)
-		fmt.Printf("Error is %v\n", err)
 		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 
 		//Overwrite data with update

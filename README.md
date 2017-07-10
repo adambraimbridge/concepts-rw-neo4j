@@ -1,4 +1,4 @@
-# Concept Reader/Writer for Neo4j (concept-rw-neo4j)
+# Concept Reader/Writer for Neo4j (concept-rw-neo4j) 
 
 [![Circle CI](https://circleci.com/gh/Financial-Times/concepts-rw-neo4j.svg?style=shield)](https://circleci.com/gh/Financial-Times/concepts-rw-neo4j)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/concepts-rw-neo4j)](https://goreportcard.com/report/github.com/Financial-Times/concepts-rw-neo4j)

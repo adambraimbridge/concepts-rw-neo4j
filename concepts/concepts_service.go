@@ -12,6 +12,7 @@ import (
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
+	"strconv"
 )
 
 //Service - CypherDriver - CypherDriver
@@ -241,7 +242,8 @@ func (s Service) Write(thing interface{}, transId string) error {
 	}
 
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
-	if s.conn.CypherBatch(queryBatch); err != nil {
+	err = s.conn.CypherBatch(queryBatch)
+	if err != nil {
 		return err
 	} else {
 		log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Info("Concept written to db")
@@ -298,6 +300,7 @@ func handleUnconcordance(updatedSourceIds []string, existingAggregateConcept Agg
 			}
 		}
 		if hasBeenUnconcorded == true {
+			log.WithField("UUID", src.UUID).Debug("Concept removed from existing concordance with uuid " + existingAggregateConcept.PrefUUID)
 			needToBeUnconcorded = append(needToBeUnconcorded, src)
 		}
 		hasBeenUnconcorded = true
@@ -333,12 +336,14 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
 
 	for _, result := range results {
+		log.WithField("UUID", result.SourceUuid).Debug("Existing prefUUID is " + result.PrefUuid + " equivalence count is " + strconv.Itoa(result.Equivalence))
 		// Source has no existing concordance and will be handled by clearDownExistingNodes function
 		if result.Equivalence == 0 {
 			break
 		} else if result.Equivalence == 1 {
 			// Source has existing concordance to itself, after transfer old pref uuid node will need to be cleaned up
 			if result.SourceUuid == result.PrefUuid {
+				log.WithField("UUID", result.SourceUuid).Debug("Pref uuid node will need to be deleted")
 				deleteLonePrefUuidQueries = append(deleteLonePrefUuidQueries, deleteLonePrefUuid(result.PrefUuid))
 				break
 			} else {
@@ -372,9 +377,9 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 
 func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 	equivQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {prefUUID:{prefUuid}}) OPTIONAL MATCH (t)-[rel]-(a:Thing) WITH COUNT(DISTINCT rel) as count, t WHERE count = 0 DELETE t`,
+		Statement: `MATCH (t:Thing {prefUUID:{id}})<-[rel:EQUIVALENT_TO]-(a:Thing{uuid:{id}}) DELETE rel, t`,
 		Parameters: map[string]interface{}{
-			"prefUuid": prefUUID,
+			"id": prefUUID,
 		},
 	}
 	return equivQuery

@@ -13,6 +13,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
 	"strconv"
+	"github.com/Financial-Times/aggregate-concept-transformer/concept"
 )
 
 //Service - CypherDriver - CypherDriver
@@ -312,14 +313,14 @@ func handleUnconcordance(updatedSourceIds []string, existingAggregateConcept Agg
 }
 
 func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transId string) ([]*neoism.CypherQuery, error) {
-	type result struct {
+	result := struct {
 		SourceUuid  string `json:"sourceUuid"`
 		PrefUuid    string `json:"prefUuid"`
 		Equivalence int    `json:"count"`
-	}
+	}{}
 
-	var results []result
 	fmt.Printf("Handling Transfer concordance. Updated source ids has length %s\n", len(updatedSourceIds))
+	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
 
 	var queryBatch []*neoism.CypherQuery
 	for _, updatedSourceId := range updatedSourceIds {
@@ -328,21 +329,16 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 			Parameters: map[string]interface{}{
 				"uuid": updatedSourceId,
 			},
-			Result: result{},
+			Result: &result,
 		}
-		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
+		queryBatch = append(queryBatch, equivQuery)
+
+		err := s.conn.CypherBatch(queryBatch)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error("Requests for source nodes canonical information resulted in error")
 			return queryBatch, err
 		}
 
-		results = append(results, result{})
-	}
-
-	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
-	fmt.Printf("Results have length: %s\n",len(results))
-
-	for _, result := range results {
 		fmt.Printf("Result: sourceUuid %s, prefUuid %s, equivalenceCount %d\n", result.SourceUuid, result.PrefUuid, result.Equivalence)
 		log.WithField("UUID", result.SourceUuid).Info("Existing prefUUID is " + result.PrefUuid + " equivalence count is " + strconv.Itoa(result.Equivalence))
 		// Source has no existing concordance and will be handled by clearDownExistingNodes function

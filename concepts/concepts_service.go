@@ -13,7 +13,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
 	"strconv"
-	"github.com/Financial-Times/aggregate-concept-transformer/concept"
 )
 
 //Service - CypherDriver - CypherDriver

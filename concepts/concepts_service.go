@@ -329,14 +329,11 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 			},
 			Result: &results,
 		}
-		queryBatch = append(queryBatch, equivQuery)
-
-	}
-	fmt.Printf("Query batch has length: %s\n", len(queryBatch))
-	err := s.conn.CypherBatch(queryBatch)
-	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error("Requests for source nodes canonical information resulted in error")
-		return queryBatch, err
+		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error("Requests for source nodes canonical information resulted in error")
+			return queryBatch, err
+		}
 	}
 
 	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}

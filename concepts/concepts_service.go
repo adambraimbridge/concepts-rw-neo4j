@@ -161,6 +161,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
 
+	log.Infof("Reading brand\n")
 	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, "")
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Error("Read request for existing concordance resulted in error")

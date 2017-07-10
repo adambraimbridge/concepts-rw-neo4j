@@ -161,7 +161,6 @@ func (s Service) Write(thing interface{}, transId string) error {
 	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
 
-	log.Infof("Reading brand\n")
 	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, "")
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Error("Read request for existing concordance resulted in error")
@@ -243,10 +242,6 @@ func (s Service) Write(thing interface{}, transId string) error {
 		for _, query := range prefUUIDsToBeDeletedQueryBatch {
 			queryBatch = append(queryBatch, query)
 		}
-	}
-
-	for _, query := range queryBatch {
-		fmt.Printf("Query is %s\n", query)
 	}
 
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
@@ -337,6 +332,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 		queryBatch = append(queryBatch, equivQuery)
 
 	}
+	fmt.Printf("Query batch has length: %s\n", len(queryBatch))
 	err := s.conn.CypherBatch(queryBatch)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error("Requests for source nodes canonical information resulted in error")
@@ -344,6 +340,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 	}
 
 	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
+	fmt.Printf("Results have length: %s\n",len(results))
 
 	for _, result := range results {
 		fmt.Printf("Result: sourceUuid %s, prefUuid %s, equivalenceCount %d\n", result.SourceUuid, result.PrefUuid, result.Equivalence)

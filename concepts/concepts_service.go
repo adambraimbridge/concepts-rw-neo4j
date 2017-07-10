@@ -68,6 +68,12 @@ type neoConcept struct {
 	DescriptionXML    string   `json:"descriptionXML,omitempty"`
 }
 
+type equivalenceResult struct {
+	SourceUuid  string  `json:"sourceUuid"`
+	PrefUuid    string  `json:"prefUuid"`
+	Equivalence int  `json:"count"`
+}
+
 //Read - read service
 func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 	results := []neoAggregatedConcept{}
@@ -312,16 +318,11 @@ func handleUnconcordance(updatedSourceIds []string, existingAggregateConcept Agg
 }
 
 func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transId string) ([]*neoism.CypherQuery, error) {
-	result := struct {
-		SourceUuid  string `json:"sourceUuid"`
-		PrefUuid    string `json:"prefUuid"`
-		Equivalence int    `json:"count"`
-	}{}
+	result := []equivalenceResult{}
 
 	fmt.Printf("Handling Transfer concordance. Updated source ids has length %s\n", len(updatedSourceIds))
 	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
 
-	var queryBatch []*neoism.CypherQuery
 	for _, updatedSourceId := range updatedSourceIds {
 		equivQuery := &neoism.CypherQuery{
 			Statement: `MATCH (t:Thing {uuid:{uuid}}) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c) OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing) RETURN t.uuid as sourceUuid, c.prefUUID as prefUuid, COUNT(DISTINCT eq) as count`,
@@ -330,37 +331,46 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 			},
 			Result: &result,
 		}
-		queryBatch = append(queryBatch, equivQuery)
 
-		err := s.conn.CypherBatch(queryBatch)
+		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error("Requests for source nodes canonical information resulted in error")
-			return queryBatch, err
+			return deleteLonePrefUuidQueries, err
 		}
 
-		fmt.Printf("Result: sourceUuid %s, prefUuid %s, equivalenceCount %d\n", result.SourceUuid, result.PrefUuid, result.Equivalence)
-		log.WithField("UUID", result.SourceUuid).Info("Existing prefUUID is " + result.PrefUuid + " equivalence count is " + strconv.Itoa(result.Equivalence))
-		// Source has no existing concordance and will be handled by clearDownExistingNodes function
-		if result.Equivalence == 0 {
+		if len(result) == 0 {
 			break
-		} else if result.Equivalence == 1 {
+		} else if len(result) > 1 {
+			err = errors.New("Multiple concepts found with matching uuid!")
+			log.WithError(err).WithField("UUID", updatedSourceId)
+			return deleteLonePrefUuidQueries, err
+		}
+
+		fmt.Printf("Results are %s\n", result)
+
+		fmt.Printf("Result: sourceUuid %s, prefUuid %s, equivalenceCount %d\n", result[0].SourceUuid, result[0].PrefUuid, result[0].Equivalence)
+		log.WithField("UUID", result[0].SourceUuid).Info("Existing prefUUID is " + result[0].PrefUuid + " equivalence count is " + strconv.Itoa(result[0].Equivalence))
+		// Source has no existing concordance and will be handled by clearDownExistingNodes function
+		if result[0].Equivalence == 0 {
+			break
+		} else if result[0].Equivalence == 1 {
 			// Source has existing concordance to itself, after transfer old pref uuid node will need to be cleaned up
-			if result.SourceUuid == result.PrefUuid {
-				log.WithField("UUID", result.SourceUuid).Debug("Pref uuid node will need to be deleted")
-				deleteLonePrefUuidQueries = append(deleteLonePrefUuidQueries, deleteLonePrefUuid(result.PrefUuid))
+			if result[0].SourceUuid == result[0].PrefUuid {
+				log.WithField("UUID", result[0].SourceUuid).Debug("Pref uuid node will need to be deleted")
+				deleteLonePrefUuidQueries = append(deleteLonePrefUuidQueries, deleteLonePrefUuid(result[0].PrefUuid))
 				break
 			} else {
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
-				err := errors.New("This source id: " + result.SourceUuid + " the only concordance to a non-matching node with prefUuid: " + result.PrefUuid)
+				err := errors.New("This source id: " + result[0].SourceUuid + " the only concordance to a non-matching node with prefUuid: " + result[0].PrefUuid)
 				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error(err)
 				return deleteLonePrefUuidQueries, err
 			}
 		} else {
-			if result.SourceUuid == result.PrefUuid {
-				if result.SourceUuid != prefUUID {
+			if result[0].SourceUuid == result[0].PrefUuid {
+				if result[0].SourceUuid != prefUUID {
 					//TODO ???
 					// Source is prefUUID for a different concordance
-					err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result.SourceUuid)
+					err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result[0].SourceUuid)
 					log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error(err)
 					return deleteLonePrefUuidQueries, err
 				} else {
@@ -370,7 +380,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 			} else {
 				//TODO Re-ingest old prefUUID?
 				// Source was concorded to different concordance. Data on existing concordance is now out of data
-				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Info("Need to re-write concordance with prefUuid: " + result.PrefUuid + " as removing source " + result.SourceUuid + " may change canonical fields")
+				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Info("Need to re-write concordance with prefUuid: " + result[0].PrefUuid + " as removing source " + result[0].SourceUuid + " may change canonical fields")
 				break
 			}
 		}

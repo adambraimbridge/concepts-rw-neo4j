@@ -260,11 +260,14 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	writeHandlesOrphanedPrefUuids := testStruct{testName: "writeHandlesOrphanedPrefUuids", setUpFile: "fixtures/singleConcordance.json", testFile: "fixtures/prefUuidAsSource.json", uuidsToCheck: []string{anotherBasicConceptUUID, basicConceptUUID}}
 
 	scenarios := []testStruct{writeHandlesUnconcordanceGracefully, writeTransferConcordanceErrorsOnTransferringPrefUuid, writeHandlesOrphanedPrefUuids}
+	//scenarios := []testStruct{writeTransferConcordanceErrorsOnTransferringPrefUuid}
 
 	for _, scenario := range scenarios {
+		cleanDB(t)
 		//Write data into db, to set up test scenario
 		setUpConcepts := readFileReturnAggConcept(scenario.setUpFile, t)
 		err := conceptsDriver.Write(setUpConcepts, tid)
+		fmt.Printf("Error is %v\n", err)
 		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 
 		//Overwrite data with update

@@ -346,7 +346,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 
 	for _, result := range results {
 		fmt.Printf("Result: sourceUuid %s, prefUuid %s, equivalenceCount %d\n", result.SourceUuid, result.PrefUuid, result.Equivalence)
-		log.WithField("UUID", result.SourceUuid).Debug("Existing prefUUID is " + result.PrefUuid + " equivalence count is " + strconv.Itoa(result.Equivalence))
+		log.WithField("UUID", result.SourceUuid).Info("Existing prefUUID is " + result.PrefUuid + " equivalence count is " + strconv.Itoa(result.Equivalence))
 		// Source has no existing concordance and will be handled by clearDownExistingNodes function
 		if result.Equivalence == 0 {
 			break
@@ -388,7 +388,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 	fmt.Printf("Deleting lone prefUuid: %s\n", prefUUID)
 	equivQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {prefUUID:{id}})<-[rel:EQUIVALENT_TO]-(a:Thing{uuid:{id}}) DELETE rel, t`,
+		Statement: `MATCH (t:Thing {prefUUID:{id}}) DELETE t`,
 		Parameters: map[string]interface{}{
 			"id": prefUUID,
 		},

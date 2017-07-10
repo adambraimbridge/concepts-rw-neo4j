@@ -171,9 +171,11 @@ func (s Service) Write(thing interface{}, transId string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Printf("Validated brand\n")
 
 	var updatedSourceIds []string
 	for _, src := range aggregatedConceptToWrite.SourceRepresentations {
+		fmt.Printf("Adding %s to updated source ids\n", src.UUID)
 		updatedSourceIds = append(updatedSourceIds, src.UUID)
 	}
 
@@ -181,6 +183,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 
 	existingAggregateConcept := existingConcept.(AggregatedConcept)
 	if exists {
+		fmt.Printf("Handling unconcordance\n")
 		//Collect concepts left behind by unconcordance
 		listToUnconcord = handleUnconcordance(updatedSourceIds, existingAggregateConcept)
 	}
@@ -239,6 +242,10 @@ func (s Service) Write(thing interface{}, transId string) error {
 		for _, query := range prefUUIDsToBeDeletedQueryBatch {
 			queryBatch = append(queryBatch, query)
 		}
+	}
+
+	for _, query := range queryBatch {
+		fmt.Printf("Query is %s\n", query)
 	}
 
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
@@ -315,6 +322,8 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 		Equivalence int    `json:"count"`
 	}{}
 
+	fmt.Printf("Handling Transfer concordance. Updated source ids has length %s\n", len(updatedSourceIds))
+
 	var queryBatch []*neoism.CypherQuery
 	for _, updatedSourceId := range updatedSourceIds {
 		equivQuery := &neoism.CypherQuery{
@@ -336,6 +345,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
 
 	for _, result := range results {
+		fmt.Printf("Result: sourceUuid %s, prefUuid %s, equivalenceCount %d\n", result.SourceUuid, result.PrefUuid, result.Equivalence)
 		log.WithField("UUID", result.SourceUuid).Debug("Existing prefUUID is " + result.PrefUuid + " equivalence count is " + strconv.Itoa(result.Equivalence))
 		// Source has no existing concordance and will be handled by clearDownExistingNodes function
 		if result.Equivalence == 0 {
@@ -376,6 +386,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 }
 
 func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
+	fmt.Printf("Deleting lone prefUuid: %s\n", prefUUID)
 	equivQuery := &neoism.CypherQuery{
 		Statement: `MATCH (t:Thing {prefUUID:{id}})<-[rel:EQUIVALENT_TO]-(a:Thing{uuid:{id}}) DELETE rel, t`,
 		Parameters: map[string]interface{}{
@@ -392,6 +403,7 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 	queryBatch := []*neoism.CypherQuery{}
 
 	for _, id := range sourceUuids {
+		fmt.Printf("Clearing down existing source node with uuid %s\n", id)
 		deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
@@ -408,6 +420,7 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 	}
 
 	//cleanUP all the previous IDENTIFIERS referring to that uuid
+	fmt.Printf("Clearing down existing pref node with uuid: %s\n", acUUID)
 	deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`MATCH (t:Thing {prefUUID:{acUUID}})
 			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
@@ -424,6 +437,7 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 }
 
 func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.CypherQuery {
+	fmt.Printf("Result: sourceUuid %s, prefUuid %s, concept is %s\n", uuid, prefUUID, concept)
 	queryBatch := []*neoism.CypherQuery{}
 	var createConceptQuery *neoism.CypherQuery
 
@@ -484,6 +498,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 
 func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
 	allProps := setProps(concept, concept.UUID, false)
+	fmt.Printf("Adding pref node for unconcorded concept: %s\n", concept.UUID)
 	createCanonicalNodeQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`MATCH (t:Thing{uuid:{prefUUID}}) MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
 								set n={allprops}

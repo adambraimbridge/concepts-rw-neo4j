@@ -247,6 +247,11 @@ func (s Service) Write(thing interface{}, transId string) error {
 		}
 	}
 
+	log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
+	for _, query := range queryBatch {
+		log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Debug(fmt.Sprintf("Query: %s", query))
+	}
+
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
 	err = s.conn.CypherBatch(queryBatch)
 	if err != nil {
@@ -356,7 +361,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 			} else {
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := errors.New("This source id: " + result[0].SourceUuid + " the only concordance to a non-matching node with prefUuid: " + result[0].PrefUuid)
-				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error(err)
+				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoading"}).Error(err)
 				return deleteLonePrefUuidQueries, err
 			}
 		} else {
@@ -365,16 +370,15 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 					//TODO ???
 					// Source is prefUUID for a different concordance
 					err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result[0].SourceUuid)
-					log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error(err)
+					log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoading"}).Error(err)
 					return deleteLonePrefUuidQueries, err
 				} else {
 					// Source is prefUUID for a current concordance
 					break
 				}
 			} else {
-				//TODO Re-ingest old prefUUID?
 				// Source was concorded to different concordance. Data on existing concordance is now out of data
-				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Info("Need to re-write concordance with prefUuid: " + result[0].PrefUuid + " as removing source " + result[0].SourceUuid + " may change canonical fields")
+				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoading"}).Info("Need to re-ingest concordance record for prefUuid: " + result[0].PrefUuid + " as source: " + result[0].SourceUuid + " has been removed.")
 				break
 			}
 		}

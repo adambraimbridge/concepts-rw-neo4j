@@ -100,12 +100,12 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 	}
 
 	if len(results) == 0 {
-		log.WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Info("Brand not found")
+		log.WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Info("Concept not found in db")
 		return AggregatedConcept{}, false, nil
 	}
 	typeName, err := mapper.MostSpecificType(results[0].Types)
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Error("Returned brand had no recognized type")
+		log.WithError(err).WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Error("Returned concept had no recognized type")
 		return AggregatedConcept{}, false, err
 	}
 
@@ -124,7 +124,7 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 		var concept Concept
 		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"UUID": srcConcept.UUID, "transaction_id": transId}).Error("Returned source had no recognized type")
+			log.WithError(err).WithFields(log.Fields{"UUID": srcConcept.UUID, "transaction_id": transId}).Error("Returned source concept had no recognized type")
 			return AggregatedConcept{}, false, err
 		}
 		if len(srcConcept.Aliases) > 0 {
@@ -361,7 +361,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 			} else {
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := errors.New("This source id: " + result[0].SourceUuid + " the only concordance to a non-matching node with prefUuid: " + result[0].PrefUuid)
-				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoading"}).Error(err)
+				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoadingDodgyData"}).Error(err)
 				return deleteLonePrefUuidQueries, err
 			}
 		} else {
@@ -370,7 +370,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 					//TODO ???
 					// Source is prefUUID for a different concordance
 					err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result[0].SourceUuid)
-					log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoading"}).Error(err)
+					log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoadingInvalidConcordance"}).Error(err)
 					return deleteLonePrefUuidQueries, err
 				} else {
 					// Source is prefUUID for a current concordance
@@ -378,7 +378,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 				}
 			} else {
 				// Source was concorded to different concordance. Data on existing concordance is now out of data
-				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoading"}).Info("Need to re-ingest concordance record for prefUuid: " + result[0].PrefUuid + " as source: " + result[0].SourceUuid + " has been removed.")
+				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoadingStaleData"}).Info("Need to re-ingest concordance record for prefUuid: " + result[0].PrefUuid + " as source: " + result[0].SourceUuid + " has been removed.")
 				break
 			}
 		}

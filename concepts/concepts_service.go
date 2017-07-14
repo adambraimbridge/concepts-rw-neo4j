@@ -159,6 +159,8 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 
 	aggregatedConcept.SourceRepresentations = sourceConcepts
 
+	log.WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Debug("Returned concept is " + aggregatedConcept)
+
 	return aggregatedConcept, true, nil
 }
 
@@ -180,7 +182,9 @@ func (s Service) Write(thing interface{}, transId string) error {
 
 	var updatedSourceIds []string
 	for _, src := range aggregatedConceptToWrite.SourceRepresentations {
-		updatedSourceIds = append(updatedSourceIds, src.UUID)
+		if src.UUID != aggregatedConceptToWrite.PrefUUID {
+			updatedSourceIds = append(updatedSourceIds, src.UUID)
+		}
 	}
 
 	var listToUnconcord []Concept
@@ -341,6 +345,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 		}
 
 		if len(result) == 0 {
+			log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Debug("No existing concordance found")
 			break
 		} else if len(result) > 1 {
 			err = errors.New("Multiple concepts found with matching uuid!")

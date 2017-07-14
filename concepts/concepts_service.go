@@ -159,7 +159,7 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 
 	aggregatedConcept.SourceRepresentations = sourceConcepts
 
-	log.WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Debug("Returned concept is " + aggregatedConcept)
+	log.WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Debugf("Returned concept is %v", aggregatedConcept)
 
 	return aggregatedConcept, true, nil
 }

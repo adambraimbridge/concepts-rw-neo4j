@@ -321,29 +321,27 @@ func TestInvalidTypesThrowError(t *testing.T) {
 	defer cleanDB(t)
 }
 
-func TestHandleUnconcordance(t *testing.T) {
-	aggConcept_1 := AggregatedConcept{PrefUUID: sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}}}
-	aggConcept_2 := AggregatedConcept{PrefUUID: sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}, {UUID: sourceId_2}}}
-	aggConcept_3 := AggregatedConcept{PrefUUID: sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_1}, {UUID: sourceId_2}, {UUID: sourceId_3}}}
-	aggConcept_4 := AggregatedConcept{PrefUUID: sourceId_1, SourceRepresentations: []Concept{{UUID: sourceId_3}, {UUID: sourceId_1}, {UUID: sourceId_2}}}
-
+func TestFilteringOfUniqueIds(t *testing.T) {
 	type testStruct struct {
-		testName           string
-		uuidsToUpdateList  []string
-		existingAggConcept AggregatedConcept
-		listToUnconcord    []Concept
+		testName        string
+		firstList       []string
+		secondList      []string
+		filteredList	[]string
 	}
 
-	emptyWhenAggConceptsAreTheSame := testStruct{testName: "emptyWhenAggConceptsAreTheSame", uuidsToUpdateList: []string{sourceId_1}, existingAggConcept: aggConcept_1, listToUnconcord: []Concept{}}
-	emptyWhenAggConceptsAreTheSameButInDifferentOrder := testStruct{testName: "emptyWhenAggConceptsAreTheSameButInDifferentOrder", uuidsToUpdateList: []string{sourceId_1, sourceId_2, sourceId_3}, existingAggConcept: aggConcept_4, listToUnconcord: []Concept{}}
-	hasSource2WhenSource2IsUnconcorded := testStruct{testName: "listToUnconcordIsEmptyWhenAggConceptsAreTheSame", uuidsToUpdateList: []string{sourceId_1}, existingAggConcept: aggConcept_2, listToUnconcord: []Concept{{UUID: sourceId_2}}}
-	hasSource2And3WhenSource2And3AreUnconcorded := testStruct{testName: "hasSource2And3WhenSource2And3AreUnconcorded", uuidsToUpdateList: []string{sourceId_1}, existingAggConcept: aggConcept_3, listToUnconcord: []Concept{{UUID: sourceId_2}, {UUID: sourceId_3}}}
+	emptyWhenBothListsAreEmpty := testStruct{testName: "emptyWhenBothListsAreEmpty", firstList: []string{}, secondList: []string{}, filteredList: []string{}}
+	emptyWhenListsAreTheIdentical := testStruct{testName: "emptyWhenListsAreTheIdentical", firstList: []string{"1", "2", "3"}, secondList: []string{"1", "2", "3"}, filteredList: []string{}}
+	emptyWhenListsHaveSameIdsInDifferentOrder := testStruct{testName: "emptyWhenListsHaveSameIdsInDifferentOrder", firstList: []string{"1", "2", "3"}, secondList: []string{"2", "3", "1"}, filteredList: []string{}}
+	hasCompleteFirstListWhenSecondListIsEmpty := testStruct{testName: "hasCompleteSecondListWhenFirstListIsEmpty", firstList: []string{"1", "2", "3"}, secondList: []string{}, filteredList: []string{"1", "2", "3"}}
+	properlyFiltersWhen1IdIsUnique := testStruct{testName: "properlyFiltersWhen1IdIsUnique", firstList: []string{"1", "2", "3"}, secondList: []string{"1", "2"}, filteredList: []string{"3"}}
+	properlyFiltersWhen2IdsAreUnique := testStruct{testName: "properlyFiltersWhen2IdsAreUnique", firstList: []string{"1", "2", "3"}, secondList: []string{"2"}, filteredList: []string{"1", "3"}}
 
-	Scenarios := []testStruct{emptyWhenAggConceptsAreTheSame, emptyWhenAggConceptsAreTheSameButInDifferentOrder, hasSource2WhenSource2IsUnconcorded, hasSource2And3WhenSource2And3AreUnconcorded}
+
+	Scenarios := []testStruct{emptyWhenBothListsAreEmpty, emptyWhenListsAreTheIdentical, emptyWhenListsHaveSameIdsInDifferentOrder, hasCompleteFirstListWhenSecondListIsEmpty, properlyFiltersWhen1IdIsUnique, properlyFiltersWhen2IdsAreUnique}
 
 	for _, scenario := range Scenarios {
-		returnedList := handleUnconcordance(scenario.uuidsToUpdateList, scenario.existingAggConcept)
-		assert.Equal(t, scenario.listToUnconcord, returnedList, "Failure")
+		returnedList := filterIdsThatAreUniqueToFirstList(scenario.firstList, scenario.secondList)
+		assert.Equal(t, scenario.filteredList, returnedList, "Scenario: " + scenario.testName + " returned unexpected results")
 	}
 }
 

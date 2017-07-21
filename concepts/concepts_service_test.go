@@ -323,10 +323,10 @@ func TestInvalidTypesThrowError(t *testing.T) {
 
 func TestFilteringOfUniqueIds(t *testing.T) {
 	type testStruct struct {
-		testName        string
-		firstList       []string
-		secondList      []string
-		filteredList	[]string
+		testName     string
+		firstList    []string
+		secondList   []string
+		filteredList []string
 	}
 
 	emptyWhenBothListsAreEmpty := testStruct{testName: "emptyWhenBothListsAreEmpty", firstList: []string{}, secondList: []string{}, filteredList: []string{}}
@@ -336,12 +336,11 @@ func TestFilteringOfUniqueIds(t *testing.T) {
 	properlyFiltersWhen1IdIsUnique := testStruct{testName: "properlyFiltersWhen1IdIsUnique", firstList: []string{"1", "2", "3"}, secondList: []string{"1", "2"}, filteredList: []string{"3"}}
 	properlyFiltersWhen2IdsAreUnique := testStruct{testName: "properlyFiltersWhen2IdsAreUnique", firstList: []string{"1", "2", "3"}, secondList: []string{"2"}, filteredList: []string{"1", "3"}}
 
-
 	Scenarios := []testStruct{emptyWhenBothListsAreEmpty, emptyWhenListsAreTheIdentical, emptyWhenListsHaveSameIdsInDifferentOrder, hasCompleteFirstListWhenSecondListIsEmpty, properlyFiltersWhen1IdIsUnique, properlyFiltersWhen2IdsAreUnique}
 
 	for _, scenario := range Scenarios {
 		returnedList := filterIdsThatAreUniqueToFirstList(scenario.firstList, scenario.secondList)
-		assert.Equal(t, scenario.filteredList, returnedList, "Scenario: " + scenario.testName + " returned unexpected results")
+		assert.Equal(t, scenario.filteredList, returnedList, "Scenario: "+scenario.testName+" returned unexpected results")
 	}
 }
 

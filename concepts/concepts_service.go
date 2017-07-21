@@ -69,9 +69,9 @@ type neoConcept struct {
 }
 
 type equivalenceResult struct {
-	SourceUuid  string  `json:"sourceUuid"`
-	PrefUuid    string  `json:"prefUuid"`
-	Equivalence int  `json:"count"`
+	SourceUuid  string `json:"sourceUuid"`
+	PrefUuid    string `json:"prefUuid"`
+	Equivalence int    `json:"count"`
 }
 
 //Read - read service
@@ -169,7 +169,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
 
-	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, "")
+	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, transId)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Error("Read request for existing concordance resulted in error")
 		return err

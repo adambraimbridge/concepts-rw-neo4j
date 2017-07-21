@@ -69,9 +69,9 @@ type neoConcept struct {
 }
 
 type equivalenceResult struct {
-	SourceUuid  string  `json:"sourceUuid"`
-	PrefUuid    string  `json:"prefUuid"`
-	Equivalence int  `json:"count"`
+	SourceUuid  string `json:"sourceUuid"`
+	PrefUuid    string `json:"prefUuid"`
+	Equivalence int    `json:"count"`
 }
 
 //Read - read service
@@ -169,7 +169,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
 
-	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, "")
+	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, transId)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Error("Read request for existing concordance resulted in error")
 		return err
@@ -181,24 +181,37 @@ func (s Service) Write(thing interface{}, transId string) error {
 	}
 
 	var updatedSourceIds []string
-	for _, src := range aggregatedConceptToWrite.SourceRepresentations {
-		if src.UUID != aggregatedConceptToWrite.PrefUUID {
-			updatedSourceIds = append(updatedSourceIds, src.UUID)
+	for _, updatedSource := range aggregatedConceptToWrite.SourceRepresentations {
+		if updatedSource.UUID != aggregatedConceptToWrite.PrefUUID {
+			updatedSourceIds = append(updatedSourceIds, updatedSource.UUID)
 		}
 	}
 
-	var listToUnconcord []Concept
-
 	existingAggregateConcept := existingConcept.(AggregatedConcept)
-	if exists {
-		//Collect concepts left behind by unconcordance
-		listToUnconcord = handleUnconcordance(updatedSourceIds, existingAggregateConcept)
+	var existingSourceIds []string
+	for _, existingSource := range existingAggregateConcept.SourceRepresentations {
+		if existingSource.UUID != existingAggregateConcept.PrefUUID {
+			existingSourceIds = append(existingSourceIds, existingSource.UUID)
+		}
 	}
 
+	var listToUnconcord []string
+	if exists {
+		//This filter will leave us with ids that were members of existing concordance but are NOT members of current concordance
+		//They will need a new prefUUID node written
+		listToUnconcord = filterIdsThatAreUniqueToFirstList(existingSourceIds, updatedSourceIds)
+	}
+
+	//This filter will leave us with ids that are members of current concordance payload but were not previously concorded to this concordance
+	listToTransferConcordance := filterIdsThatAreUniqueToFirstList(updatedSourceIds, existingSourceIds)
+
+	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
 	//Handle scenarios for transferring source id from an existing concordance to this concordance
-	prefUUIDsToBeDeletedQueryBatch, err := s.handleTransferConcordance(updatedSourceIds, aggregatedConceptToWrite.PrefUUID, transId)
-	if err != nil {
-		return err
+	if len(listToTransferConcordance) > 0 {
+		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(listToTransferConcordance, aggregatedConceptToWrite.PrefUUID, transId)
+		if err != nil {
+			return err
+		}
 	}
 
 	var queryBatch []*neoism.CypherQuery
@@ -239,9 +252,13 @@ func (s Service) Write(thing interface{}, transId string) error {
 	}
 
 	if len(listToUnconcord) > 0 {
-		for _, concept := range listToUnconcord {
-			unconcordQuery := s.writeConcordedNodeForUnconcordedConcepts(concept)
-			queryBatch = append(queryBatch, unconcordQuery)
+		for _, idToUnconcord := range listToUnconcord {
+			for _, concept := range existingAggregateConcept.SourceRepresentations {
+				if idToUnconcord == concept.UUID {
+					unconcordQuery := s.writeConcordedNodeForUnconcordedConcepts(concept)
+					queryBatch = append(queryBatch, unconcordQuery)
+				}
+			}
 		}
 	}
 
@@ -304,24 +321,23 @@ func formatError(field string, uuid string, transId string) string {
 	return err.Error()
 }
 
-func handleUnconcordance(updatedSourceIds []string, existingAggregateConcept AggregatedConcept) []Concept {
-	//Loop through existing to find source concepts that have been unconcorded from the current aggregate concept
-	var hasBeenUnconcorded = true
-	needToBeUnconcorded := []Concept{}
-	for _, src := range existingAggregateConcept.SourceRepresentations {
-		for _, id := range updatedSourceIds {
-			if id == src.UUID {
-				//Existing concorded id is still present in concordance payload
-				hasBeenUnconcorded = false
+func filterIdsThatAreUniqueToFirstList(firstListIds []string, secondListIds []string) []string {
+	//Loop through both lists to find id which is present in first list but not in the second
+	var idIsUniqueToFirstList = true
+	needToBeHandled := []string{}
+	for _, firstId := range firstListIds {
+		for _, secondId := range secondListIds {
+			if firstId == secondId {
+				//Id is present in both lists
+				idIsUniqueToFirstList = false
 			}
 		}
-		if hasBeenUnconcorded == true {
-			log.WithField("UUID", src.UUID).Debug("Concept with uuid: " + src.UUID + " has been unconcorded from prefUUID: " + existingAggregateConcept.PrefUUID)
-			needToBeUnconcorded = append(needToBeUnconcorded, src)
+		if idIsUniqueToFirstList == true {
+			needToBeHandled = append(needToBeHandled, firstId)
 		}
-		hasBeenUnconcorded = true
+		idIsUniqueToFirstList = true
 	}
-	return needToBeUnconcorded
+	return needToBeHandled
 }
 
 func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transId string) ([]*neoism.CypherQuery, error) {

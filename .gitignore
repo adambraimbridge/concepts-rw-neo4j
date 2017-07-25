@@ -32,4 +32,4 @@ _testmain.go
 vendor/*/
 .idea
 
-concepts-rw-neo4j
+/concepts-rw-neo4j

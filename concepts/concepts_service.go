@@ -38,14 +38,6 @@ func (s Service) Initialise() error {
 	}
 
 	err = s.conn.EnsureIndexes(map[string]string{
-		"Thing": "authority",
-	})
-	if err != nil {
-		log.WithError(err).Error("Could not run db index")
-		return err
-	}
-
-	err = s.conn.EnsureIndexes(map[string]string{
 		"Thing": "authorityValue",
 	})
 	if err != nil {

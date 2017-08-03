@@ -9,10 +9,11 @@ import (
 	"time"
 
 	"errors"
+	"strconv"
+
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
-	"strconv"
 )
 
 //Service - CypherDriver - CypherDriver
@@ -31,7 +32,15 @@ func (s Service) Initialise() error {
 		"Identifier": "value",
 		"Thing":      "prefUUID",
 	})
+	if err != nil {
+		log.WithError(err).Error("Could not run db index")
+		return err
+	}
 
+	err = s.conn.EnsureIndexes(map[string]string{
+		"Thing":   "authorityValue",
+		"Concept": "authorityValue",
+	})
 	if err != nil {
 		log.WithError(err).Error("Could not run db index")
 		return err

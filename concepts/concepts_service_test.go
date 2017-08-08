@@ -37,6 +37,131 @@ var db neoutils.NeoConnection
 //Concept Service under test
 var conceptsDriver Service
 
+func getSingleConcordance() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:       "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+		PrefLabel:      "The Best Label",
+		Type:           "Brand",
+		Strapline:      "Keeping it simple",
+		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+		ImageURL:       "http://media.ft.com/brand.png",
+		EmailAddress:   "simple@ft.com",
+		FacebookPage:   "#facebookFTComment",
+		TwitterHandle:  "@ftComment",
+		ScopeNote:      "Comments about stuff",
+		ShortLabel:     "Label",
+		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		SourceRepresentations: []Concept{{
+			UUID:           "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+			PrefLabel:      "The Best Label",
+			Type:           "Brand",
+			Strapline:      "Keeping it simple",
+			DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+			ImageURL:       "http://media.ft.com/brand.png",
+			EmailAddress:   "simple@ft.com",
+			FacebookPage:   "#facebookFTComment",
+			TwitterHandle:  "@ftComment",
+			ScopeNote:      "Comments about stuff",
+			ShortLabel:     "Label",
+			Authority:      "TME",
+			AuthorityValue: "1234",
+			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		}},
+	}
+}
+
+func getDualConcordance() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:       "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+		PrefLabel:      "The Best Label",
+		Type:           "Brand",
+		Strapline:      "Keeping it simple",
+		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+		ImageURL:       "http://media.ft.com/brand.png",
+		EmailAddress:   "simple@ft.com",
+		FacebookPage:   "#facebookFTComment",
+		TwitterHandle:  "@ftComment",
+		ScopeNote:      "Comments about stuff",
+		ShortLabel:     "Label",
+		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		SourceRepresentations: []Concept{
+			{
+				UUID:           "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+				PrefLabel:      "The Best Label",
+				Type:           "Brand",
+				Strapline:      "Keeping it simple",
+				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+				ImageURL:       "http://media.ft.com/brand.png",
+				EmailAddress:   "simple@ft.com",
+				FacebookPage:   "#facebookFTComment",
+				TwitterHandle:  "@ftComment",
+				ScopeNote:      "Comments about stuff",
+				ShortLabel:     "Label",
+				Authority:      "TME",
+				AuthorityValue: "1234",
+				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+			},
+			{
+
+				UUID:           "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b",
+				PrefLabel:      "Not as good Label",
+				Type:           "Brand",
+				Strapline:      "Boring strapline",
+				DescriptionXML: "<p>Some stuff</p>",
+				ImageURL:       "http://media.ft.com/brand.png",
+				Authority:      "TME",
+				AuthorityValue: "987as3dza654-TME",
+			},
+		},
+	}
+}
+
+func getPrefUUIDAsASource() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:       "4c41f314-4548-4fb6-ac48-4618fcbfa84c",
+		PrefLabel:      "The Best Label",
+		Type:           "Brand",
+		Strapline:      "Keeping it simple",
+		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+		ImageURL:       "http://media.ft.com/brand.png",
+		EmailAddress:   "simple@ft.com",
+		FacebookPage:   "#facebookFTComment",
+		TwitterHandle:  "@ftComment",
+		ScopeNote:      "Comments about stuff",
+		ShortLabel:     "Label",
+		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		SourceRepresentations: []Concept{
+			{
+
+				UUID:           "4c41f314-4548-4fb6-ac48-4618fcbfa84c",
+				PrefLabel:      "Not as good Label",
+				Type:           "Brand",
+				Strapline:      "Boring strapline",
+				DescriptionXML: "<p>Some stuff</p>",
+				ImageURL:       "http://media.ft.com/brand.png",
+				Authority:      "TME",
+				AuthorityValue: "987as3dz344-TME",
+			},
+			{
+				UUID:           "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+				PrefLabel:      "The Best Label",
+				Type:           "Brand",
+				Strapline:      "Keeping it simple",
+				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+				ImageURL:       "http://media.ft.com/brand.png",
+				EmailAddress:   "simple@ft.com",
+				FacebookPage:   "#facebookFTComment",
+				TwitterHandle:  "@ftComment",
+				ScopeNote:      "Comments about stuff",
+				ShortLabel:     "Label",
+				Authority:      "TME",
+				AuthorityValue: "1234",
+				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+			},
+		},
+	}
+}
+
 // A lone concept should always have matching pref labels and uuid at the src system level and the top level - We are
 // currently missing validation around this
 func getFullLoneAggregatedConcept() AggregatedConcept {
@@ -259,29 +384,26 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	tid := "test_tid"
 	type testStruct struct {
 		testName      string
-		setUpFile     string
-		testFile      string
+		setUpConcept  AggregatedConcept
+		testConcept   AggregatedConcept
 		uuidsToCheck  []string
 		returnedError string
 	}
 
-	writeHandlesUnconcordanceGracefully := testStruct{testName: "writeHandlesUnconcordanceGracefully", setUpFile: "fixtures/dualConcordance.json", testFile: "fixtures/singleConcordance.json", uuidsToCheck: []string{basicConceptUUID, sourceId_1}}
-	writeTransferConcordanceErrorsOnTransferringPrefUuid := testStruct{testName: "writeTransferConcordanceErrorsOnTransferringPrefUuid", setUpFile: "fixtures/dualConcordance.json", testFile: "fixtures/prefUuidAsSource.json", returnedError: "Cannot currently process this record as it will break an existing concordance with prefUuid: bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}
-	writeHandlesOrphanedPrefUuids := testStruct{testName: "writeHandlesOrphanedPrefUuids", setUpFile: "fixtures/singleConcordance.json", testFile: "fixtures/prefUuidAsSource.json", uuidsToCheck: []string{anotherBasicConceptUUID, basicConceptUUID}}
+	writeHandlesUnconcordanceGracefully := testStruct{testName: "writeHandlesUnconcordanceGracefully", setUpConcept: getDualConcordance(), testConcept: getSingleConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}}
+	writeTransferConcordanceErrorsOnTransferringPrefUuid := testStruct{testName: "writeTransferConcordanceErrorsOnTransferringPrefUuid", setUpConcept: getDualConcordance(), testConcept: getPrefUUIDAsASource(), returnedError: "Cannot currently process this record as it will break an existing concordance with prefUuid: bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}
+	writeHandlesOrphanedPrefUuids := testStruct{testName: "writeHandlesOrphanedPrefUuids", setUpConcept: getDualConcordance(), testConcept: getPrefUUIDAsASource(), uuidsToCheck: []string{anotherBasicConceptUUID, basicConceptUUID}}
 
 	scenarios := []testStruct{writeHandlesUnconcordanceGracefully, writeTransferConcordanceErrorsOnTransferringPrefUuid, writeHandlesOrphanedPrefUuids}
-	//scenarios := []testStruct{writeTransferConcordanceErrorsOnTransferringPrefUuid}
 
 	for _, scenario := range scenarios {
 		cleanDB(t)
 		//Write data into db, to set up test scenario
-		setUpConcepts := readFileReturnAggConcept(scenario.setUpFile, t)
-		err := conceptsDriver.Write(setUpConcepts, tid)
+		err := conceptsDriver.Write(scenario.setUpConcept, tid)
 		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 
 		//Overwrite data with update
-		updatedConcept := readFileReturnAggConcept(scenario.testFile, t)
-		err = conceptsDriver.Write(updatedConcept, tid)
+		err = conceptsDriver.Write(scenario.testConcept, tid)
 		if err != nil {
 			assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unexpected error")
 		}
@@ -298,7 +420,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			}
 		}
 
-		defer cleanDB(t)
+		cleanDB(t)
 	}
 
 }

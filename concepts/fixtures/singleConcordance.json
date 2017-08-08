@@ -5,6 +5,11 @@
   "strapline": "Keeping it simple",
   "descriptionXML": "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
   "_imageUrl": "http://media.ft.com/brand.png",
+  "emailAddress": "simple@ft.com",
+  "facebookPage": "#facebookFTComment",
+  "twitterHandle": "@ftComment",
+  "scopeNote": "Comments about stuff",
+  "shortLabel": "Label",
   "sourceRepresentations": [
     {
       "uuid": "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
@@ -13,6 +18,11 @@
       "authority": "Smartlogic",
       "authorityValue": "123asdfa456-SL",
       "strapline": "Keeping it simple",
+      "emailAddress": "simple@ft.com",
+      "facebookPage": "#facebookFTComment",
+      "twitterHandle": "@ftComment",
+      "scopeNote": "Comments about stuff",
+      "shortLabel": "Label",
       "descriptionXML": "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
       "_imageUrl": "Image url"
     }

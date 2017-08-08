@@ -47,6 +47,11 @@ func getFullLoneAggregatedConcept() AggregatedConcept {
 		Strapline:      "Some strapline",
 		DescriptionXML: "Some description",
 		ImageURL:       "Some image url",
+		EmailAddress:   "simple@ft.com",
+		FacebookPage:   "#facebookFTComment",
+		TwitterHandle:  "@ftComment",
+		ScopeNote:      "Comments about stuff",
+		ShortLabel:     "Label",
 		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 		SourceRepresentations: []Concept{{
 			UUID:           basicConceptUUID,
@@ -57,6 +62,11 @@ func getFullLoneAggregatedConcept() AggregatedConcept {
 			ImageURL:       "Some image url",
 			Authority:      "TME",
 			AuthorityValue: "1234",
+			EmailAddress:   "simple@ft.com",
+			FacebookPage:   "#facebookFTComment",
+			TwitterHandle:  "@ftComment",
+			ScopeNote:      "Comments about stuff",
+			ShortLabel:     "Label",
 			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 		}},
 	}
@@ -454,6 +464,11 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 	assert.Equal(t, expected.DescriptionXML, actualConcept.DescriptionXML, "Actual aggregated concept descriptionXML differs from expected")
 	assert.Equal(t, expected.ImageURL, actualConcept.ImageURL, "Actual aggregated image url differs from expected")
 	assert.Equal(t, expected.Strapline, actualConcept.Strapline, "Actual aggregated strapline differs from expected")
+	assert.Equal(t, expected.EmailAddress, actualConcept.EmailAddress, "Actual email address differs from expected")
+	assert.Equal(t, expected.FacebookPage, actualConcept.FacebookPage, "Actual Facebook page differs from expected")
+	assert.Equal(t, expected.TwitterHandle, actualConcept.TwitterHandle, "Actual Twitter handle differs from expected")
+	assert.Equal(t, expected.ScopeNote, actualConcept.ScopeNote, "Actual scope note differs from expected")
+	assert.Equal(t, expected.ShortLabel, actualConcept.ShortLabel, "Actual short label differs from expected")
 
 	if len(expected.SourceRepresentations) > 0 && len(actualConcept.SourceRepresentations) > 0 {
 		var concepts []Concept
@@ -482,6 +497,11 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 			assert.Equal(t, expected.SourceRepresentations[i].Strapline, concept.Strapline, fmt.Sprintf("Actual concept strapline differs from expected: ConceptId: %s", concept.UUID))
 			assert.True(t, reflect.DeepEqual(expected.SourceRepresentations[i], concept), fmt.Sprintf("Actual concept differs from expected: ConceptId: %s", concept.UUID))
 			assert.Equal(t, expected.SourceRepresentations[i].ParentUUIDs, concept.ParentUUIDs, fmt.Sprintf("Actual concept parent uuids differs from expected: ConceptId: %s", concept.UUID))
+			assert.Equal(t, expected.SourceRepresentations[i].EmailAddress, concept.EmailAddress, fmt.Sprintf("Actual email address differs from expected: ConceptId: %s", concept.EmailAddress))
+			assert.Equal(t, expected.SourceRepresentations[i].FacebookPage, concept.FacebookPage, fmt.Sprintf("Actual Facebook page differs from expected: ConceptId: %s", concept.FacebookPage))
+			assert.Equal(t, expected.SourceRepresentations[i].TwitterHandle, concept.TwitterHandle, fmt.Sprintf("Actual Twitter handle differs from expected: ConceptId: %s", concept.TwitterHandle))
+			assert.Equal(t, expected.SourceRepresentations[i].ScopeNote, concept.ScopeNote, fmt.Sprintf("Actual scope note differs from expected: ConceptId: %s", concept.ScopeNote))
+			assert.Equal(t, expected.SourceRepresentations[i].ShortLabel, concept.ShortLabel, fmt.Sprintf("Actual short label differs from expected: ConceptId: %s", concept.ShortLabel))
 		}
 		actualConcept.SourceRepresentations = concepts
 	}

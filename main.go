@@ -11,6 +11,7 @@ import (
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jawher/mow.cli"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {

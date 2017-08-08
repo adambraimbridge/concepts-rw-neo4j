@@ -8,6 +8,11 @@ type AggregatedConcept struct {
 	Strapline             string    `json:"strapline,omitempty"`
 	DescriptionXML        string    `json:"descriptionXML,omitempty"`
 	ImageURL              string    `json:"_imageUrl,omitempty"`
+	EmailAddress          string    `json:"emailAddress,omitempty"`
+	FacebookPage          string    `json:"facebookPage,omitempty"`
+	TwitterHandle         string    `json:"twitterHandle,omitempty"`
+	ScopeNote             string    `json:"scopeNote,omitempty"`
+	ShortLabel            string    `json:"shortLabel,omitempty"`
 	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
 }
 
@@ -24,6 +29,13 @@ type Concept struct {
 	Strapline         string   `json:"strapline,omitempty"`
 	DescriptionXML    string   `json:"descriptionXML,omitempty"`
 	ImageURL          string   `json:"_imageUrl,omitempty"`
+	EmailAddress      string   `json:"emailAddress,omitempty"`
+	FacebookPage      string   `json:"facebookPage,omitempty"`
+	TwitterHandle     string   `json:"twitterHandle,omitempty"`
+	ScopeNote         string   `json:"scopeNote,omitempty"`
+	ShortLabel        string   `json:"shortLabel,omitempty"`
+	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
+	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
 }
 
 // Map of all the possible node types so we can ensure they all have

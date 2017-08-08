@@ -2,15 +2,12 @@ package concepts
 
 import (
 	"encoding/json"
-
-	"github.com/Financial-Times/neo-model-utils-go/mapper"
-
+	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
-	"errors"
-	"strconv"
-
+	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
@@ -30,21 +27,23 @@ func NewConceptService(cypherRunner neoutils.NeoConnection) Service {
 func (s Service) Initialise() error {
 	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
-		"Thing":      "prefUUID",
+		"Thing":      "authorityValue",
+		"Concept":    "authorityValue",
 	})
 	if err != nil {
-		log.WithError(err).Error("Could not run db index")
+		log.WithError(err).Error("Could not run DB index")
 		return err
 	}
 
-	err = s.conn.EnsureIndexes(map[string]string{
-		"Thing":   "authorityValue",
-		"Concept": "authorityValue",
+	err = s.conn.EnsureConstraints(map[string]string{
+		"Thing":   "prefUUID",
+		"Concept": "prefUUID",
 	})
 	if err != nil {
-		log.WithError(err).Error("Could not run db index")
+		log.WithError(err).Error("Could not run DB constraints")
 		return err
 	}
+
 	return s.conn.EnsureConstraints(constraintMap)
 }
 
@@ -60,6 +59,11 @@ type neoAggregatedConcept struct {
 	Authority             string       `json:"authority,omitempty"`
 	AuthorityValue        string       `json:"authorityValue,omitempty"`
 	LastModifiedEpoch     int          `json:"lastModifiedEpoch,omitempty"`
+	EmailAddress          string       `json:"emailAddress,omitempty"`
+	FacebookPage          string       `json:"facebookPage,omitempty"`
+	TwitterHandle         string       `json:"twitterHandle,omitempty"`
+	ScopeNote             string       `json:"scopeNote,omitempty"`
+	ShortLabel            string       `json:"shortLabel,omitempty"`
 }
 
 type neoConcept struct {
@@ -75,6 +79,11 @@ type neoConcept struct {
 	Strapline         string   `json:"strapline,omitempty"`
 	ImageURL          string   `json:"imageUrl,omitempty"`
 	DescriptionXML    string   `json:"descriptionXML,omitempty"`
+	EmailAddress      string   `json:"emailAddress,omitempty"`
+	FacebookPage      string   `json:"facebookPage,omitempty"`
+	TwitterHandle     string   `json:"twitterHandle,omitempty"`
+	ScopeNote         string   `json:"scopeNote,omitempty"`
+	ShortLabel        string   `json:"shortLabel,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -92,10 +101,14 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 				OPTIONAL MATCH (node)-[HAS_PARENT]->(parent:Thing)
 				WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
 				canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
+				canonical.emailAddress as emailAddress, canonical.facebookPage as facebookPage, canonical.twitterHandle as twitterHandle,
+				canonical.scopeNote as scopeNote, canonical.shortLabel as shortLabel,
 				{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue,
-				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, aliases: node.aliases, descriptionXML: node.descriptionXML,
-				imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid)} as sources
-				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, collect(sources) as sourceRepresentations `,
+				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, emailAddress: node.emailAddress, facebookPage: node.facebookPage,
+				twitterHandle: node.twitterHandle, scopeNote: node.scopeNote, shortLabel: node.shortLabel, aliases: node.aliases,
+				descriptionXML: node.descriptionXML, imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid)} as sources
+				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, emailAddress,
+				facebookPage, twitterHandle, scopeNote, shortLabel, collect(sources) as sourceRepresentations `,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -127,6 +140,11 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 		DescriptionXML: results[0].DescriptionXML,
 		Strapline:      results[0].Strapline,
 		Aliases:        results[0].Aliases,
+		EmailAddress:   results[0].EmailAddress,
+		FacebookPage:   results[0].FacebookPage,
+		TwitterHandle:  results[0].TwitterHandle,
+		ScopeNote:      results[0].ScopeNote,
+		ShortLabel:     results[0].ShortLabel,
 	}
 
 	for _, srcConcept := range results[0].SourceRepresentations {
@@ -162,6 +180,11 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 		concept.ImageURL = srcConcept.ImageURL
 		concept.Strapline = srcConcept.Strapline
 		concept.DescriptionXML = srcConcept.DescriptionXML
+		concept.FacebookPage = srcConcept.FacebookPage
+		concept.EmailAddress = srcConcept.EmailAddress
+		concept.TwitterHandle = srcConcept.TwitterHandle
+		concept.ShortLabel = srcConcept.ShortLabel
+		concept.ScopeNote = srcConcept.ScopeNote
 
 		sourceConcepts = append(sourceConcepts, concept)
 	}
@@ -175,7 +198,7 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 
 func (s Service) Write(thing interface{}, transId string) error {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
-	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
+	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
 
 	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, transId)
@@ -239,6 +262,11 @@ func (s Service) Write(thing interface{}, transId string) error {
 		DescriptionXML: aggregatedConceptToWrite.DescriptionXML,
 		ImageURL:       aggregatedConceptToWrite.ImageURL,
 		Type:           aggregatedConceptToWrite.Type,
+		EmailAddress:   aggregatedConceptToWrite.EmailAddress,
+		FacebookPage:   aggregatedConceptToWrite.FacebookPage,
+		TwitterHandle:  aggregatedConceptToWrite.TwitterHandle,
+		ScopeNote:      aggregatedConceptToWrite.ScopeNote,
+		ShortLabel:     aggregatedConceptToWrite.ShortLabel,
 	}
 
 	// Create the canonical node
@@ -577,7 +605,21 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if len(concept.Aliases) > 0 {
 		nodeProps["aliases"] = concept.Aliases
 	}
-
+	if concept.EmailAddress != "" {
+		nodeProps["emailAddress"] = concept.EmailAddress
+	}
+	if concept.FacebookPage != "" {
+		nodeProps["facebookPage"] = concept.FacebookPage
+	}
+	if concept.TwitterHandle != "" {
+		nodeProps["twitterHandle"] = concept.TwitterHandle
+	}
+	if concept.ScopeNote != "" {
+		nodeProps["scopeNote"] = concept.ScopeNote
+	}
+	if concept.ShortLabel != "" {
+		nodeProps["shortLabel"] = concept.ShortLabel
+	}
 	if concept.DescriptionXML != "" {
 		nodeProps["descriptionXML"] = concept.DescriptionXML
 	}

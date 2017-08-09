@@ -27,17 +27,16 @@ func NewConceptService(cypherRunner neoutils.NeoConnection) Service {
 func (s Service) Initialise() error {
 	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
-		"Thing":      "authorityValue",
-		"Concept":    "authorityValue",
+		"Thing":      "prefUUID",
 	})
 	if err != nil {
-		log.WithError(err).Error("Could not run DB index")
+		log.WithError(err).Error("Could not run db index")
 		return err
 	}
 
-	err = s.conn.EnsureConstraints(map[string]string{
-		"Thing":   "prefUUID",
-		"Concept": "prefUUID",
+	err = s.conn.EnsureIndexes(map[string]string{
+		"Thing":   "authorityValue",
+		"Concept": "authorityValue",
 	})
 	if err != nil {
 		log.WithError(err).Error("Could not run DB constraints")
@@ -84,6 +83,7 @@ type neoConcept struct {
 	TwitterHandle     string   `json:"twitterHandle,omitempty"`
 	ScopeNote         string   `json:"scopeNote,omitempty"`
 	ShortLabel        string   `json:"shortLabel,omitempty"`
+	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -99,15 +99,18 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 	query := &neoism.CypherQuery{
 		Statement: `
 				MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
-				OPTIONAL MATCH (node)-[HAS_PARENT]->(parent:Thing)
+				OPTIONAL MATCH (node)-[:IS_RELATED_TO]-(related:Thing)
+				WITH canonical, node, collect(related.uuid) as relUUIDS
+				OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
 				WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
 				canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
 				canonical.emailAddress as emailAddress, canonical.facebookPage as facebookPage, canonical.twitterHandle as twitterHandle,
 				canonical.scopeNote as scopeNote, canonical.shortLabel as shortLabel,
 				{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue,
-				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, emailAddress: node.emailAddress, facebookPage: node.facebookPage,
-				twitterHandle: node.twitterHandle, scopeNote: node.scopeNote, shortLabel: node.shortLabel, aliases: node.aliases,
-				descriptionXML: node.descriptionXML, imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid)} as sources
+				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, emailAddress: node.emailAddress,
+				facebookPage: node.facebookPage,twitterHandle: node.twitterHandle, scopeNote: node.scopeNote, shortLabel: node.shortLabel,
+				aliases: node.aliases,descriptionXML: node.descriptionXML, imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid),
+				relatedUUIDs:relUUIDS} as sources
 				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, emailAddress,
 				facebookPage, twitterHandle, scopeNote, shortLabel, collect(sources) as sourceRepresentations `,
 		Parameters: map[string]interface{}{
@@ -172,6 +175,19 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 				concept.ParentUUIDs = uuids
 			}
 		}
+
+		if len(srcConcept.RelatedUUIDs) > 0 {
+			//TODO do this differently but I get a "" back from the cypher!
+			for _, uuid := range srcConcept.RelatedUUIDs {
+				if uuid != "" {
+					uuids = append(uuids, uuid)
+				}
+			}
+			if len(uuids) > 0 {
+				concept.RelatedUUIDs = uuids
+			}
+		}
+
 		concept.UUID = srcConcept.UUID
 		concept.PrefLabel = srcConcept.PrefLabel
 		concept.Authority = srcConcept.Authority
@@ -278,8 +294,9 @@ func (s Service) Write(thing interface{}, transId string) error {
 		queryBatch = append(queryBatch, createNodeQueries(concept, "", concept.UUID)...)
 
 		equivQuery := &neoism.CypherQuery{
-			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
-			MERGE (t)-[:EQUIVALENT_TO]->(c)`,
+			Statement: `
+						MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
 			Parameters: map[string]interface{}{
 				"uuid":     concept.UUID,
 				"prefUUID": aggregatedConceptToWrite.PrefUUID,
@@ -287,6 +304,21 @@ func (s Service) Write(thing interface{}, transId string) error {
 		}
 		queryBatch = append(queryBatch, equivQuery)
 
+		if len(concept.RelatedUUIDs) > 0 {
+			for _, relatedUUID := range concept.RelatedUUIDs {
+				relatedToQuery := &neoism.CypherQuery{
+					Statement: `
+						MATCH (t:Thing{uuid:{uuid}})
+						MERGE (c:Thing{uuid:{relUUID}})
+						MERGE (t)-[:IS_RELATED_TO]->(c)`,
+					Parameters: map[string]interface{}{
+						"uuid": concept.UUID,
+						"relUUID": relatedUUID,
+					},
+				}
+				queryBatch = append(queryBatch, relatedToQuery)
+			}
+		}
 	}
 
 	if len(listToUnconcord) > 0 {
@@ -385,7 +417,11 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 
 	for _, updatedSourceId := range updatedSourceIds {
 		equivQuery := &neoism.CypherQuery{
-			Statement: `MATCH (t:Thing {uuid:{uuid}}) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c) OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing) RETURN t.uuid as sourceUuid, c.prefUUID as prefUuid, COUNT(DISTINCT eq) as count`,
+			Statement: `
+					MATCH (t:Thing {uuid:{uuid}})
+					OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c)
+					OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing)
+					RETURN t.uuid as sourceUuid, c.prefUUID as prefUuid, COUNT(DISTINCT eq) as count`,
 			Parameters: map[string]interface{}{
 				"uuid": updatedSourceId,
 			},
@@ -468,9 +504,10 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
 			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
+			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": id,
 			},

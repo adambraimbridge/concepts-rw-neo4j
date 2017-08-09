@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jmcvetta/neoism"
+	_ "github.com/joho/godotenv/autoload"
 
 	"encoding/json"
 	"errors"
@@ -298,6 +299,22 @@ func getUnknownAuthority() AggregatedConcept {
 		}}}
 }
 
+func getConceptWithRelatedTo() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "Pref Label",
+		Type:      "Section",
+		SourceRepresentations: []Concept{{
+			UUID:           basicConceptUUID,
+			PrefLabel:      "Pref Label",
+			Type:           "Section",
+			Authority:      "Smartlogic",
+			AuthorityValue: "1234",
+			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+			RelatedUUIDs:   []string{anotherBasicConceptUUID},
+		}}}
+}
+
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
@@ -321,24 +338,33 @@ func TestConnectivityCheck(t *testing.T) {
 }
 
 func TestWriteService(t *testing.T) {
-	defer cleanDB(t)
+	//defer cleanDB(t)
 
 	tests := []struct {
 		testName          string
 		aggregatedConcept AggregatedConcept
+		relatedConcepts   []AggregatedConcept
 		errStr            string
 	}{
-		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, "Invalid request, no prefLabel has been supplied"},
-		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), ""},
-		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), ""},
-		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), ""},
-		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), "already exists with label TMEIdentifier and property \"value\"=[1234]"},
-		{"Unknown Authority Should Fail", getUnknownAuthority(), "Invalid Request"},
+		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied"},
+		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, ""},
+		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getAnotherFullLoneAggregatedConcept()}, ""},
+		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, ""},
+		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, ""},
+		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label TMEIdentifier and property \"value\"=[1234]"},
+		{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request"},
 	}
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			defer cleanDB(t)
+			//defer cleanDB(t)
+			// Create the related concepts
+			for _, relatedConcept := range test.relatedConcepts {
+				err := conceptsDriver.Write(relatedConcept, "")
+				assert.NoError(t, err, "Failed to write concept")
+
+			}
+
 			err := conceptsDriver.Write(test.aggregatedConcept, "")
 
 			if test.errStr == "" {
@@ -611,6 +637,18 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 					return expected.SourceRepresentations[i].ParentUUIDs[i] < expected.SourceRepresentations[i].ParentUUIDs[j]
 				})
 			}
+
+			sort.Slice(concept.RelatedUUIDs, func(i, j int) bool {
+				return concept.RelatedUUIDs[i] < concept.RelatedUUIDs[j]
+			})
+
+			if expected.SourceRepresentations[i].RelatedUUIDs != nil || len(expected.SourceRepresentations[i].RelatedUUIDs) > 0 {
+
+				sort.Slice(expected.SourceRepresentations[i].RelatedUUIDs, func(i, j int) bool {
+					return expected.SourceRepresentations[i].RelatedUUIDs[i] < expected.SourceRepresentations[i].RelatedUUIDs[j]
+				})
+			}
+			assert.Equal(t, expected.SourceRepresentations[i].RelatedUUIDs, concept.RelatedUUIDs, fmt.Sprintf("Actual concept related uuids differs from expected: ConceptId: %s", concept.UUID))
 			assert.Equal(t, expected.SourceRepresentations[i].PrefLabel, concept.PrefLabel, fmt.Sprintf("Actual concept pref label differs from expected: ConceptId: %s", concept.UUID))
 			assert.Equal(t, expected.SourceRepresentations[i].Type, concept.Type, fmt.Sprintf("Actual concept type differs from expected: ConceptId: %s", concept.UUID))
 			assert.Equal(t, expected.SourceRepresentations[i].UUID, concept.UUID, fmt.Sprintf("Actual concept uuid differs from expected: ConceptId: %s", concept.UUID))

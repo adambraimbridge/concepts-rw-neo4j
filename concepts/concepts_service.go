@@ -30,20 +30,19 @@ func NewConceptService(cypherRunner neoutils.NeoConnection) Service {
 func (s Service) Initialise() error {
 	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
-		"Thing":      "authorityValue",
-		"Concept":    "authorityValue",
+		"Thing":      "prefUUID",
 	})
 	if err != nil {
-		log.WithError(err).Error("Could not run DB index")
+		log.WithError(err).Error("Could not run db index")
 		return err
 	}
 
-	err = s.conn.EnsureConstraints(map[string]string{
-		"Thing":   "prefUUID",
-		"Concept": "prefUUID",
+	err = s.conn.EnsureIndexes(map[string]string{
+		"Thing":   "authorityValue",
+		"Concept": "authorityValue",
 	})
 	if err != nil {
-		log.WithError(err).Error("Could not run DB constraints")
+		log.WithError(err).Error("Could not run db index")
 		return err
 	}
 	return s.conn.EnsureConstraints(constraintMap)

@@ -52,11 +52,11 @@ var constraintMap = map[string]string{
 	"Genre":                "uuid",
 	"Brand":                "uuid",
 	"AlphavilleSeries":     "uuid",
+	"Person":               "uuid",
 	"UPPIdentifier":        "value",
 	"TMEIdentifier":        "value",
 	"FactsetIdentifier":    "value",
 	"SmartlogicIdentifier": "value",
-	"Person":               "value",
 }
 
 var conceptLabels = [...]string{

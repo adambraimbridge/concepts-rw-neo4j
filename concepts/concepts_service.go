@@ -97,7 +97,8 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 	results := []neoAggregatedConcept{}
 
 	query := &neoism.CypherQuery{
-		Statement: `	MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
+		Statement: `
+				MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
 				OPTIONAL MATCH (node)-[HAS_PARENT]->(parent:Thing)
 				WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
 				canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,

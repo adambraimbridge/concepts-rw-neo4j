@@ -62,7 +62,7 @@ var constraintMap = map[string]string{
 
 var conceptLabels = [...]string{
 	"Concept", "Classification", "Section", "Subject", "SpecialReport", "Topic",
-	"Location", "Genre", "Brand", "Person",
+	"Location", "Genre", "Brand", "Person", "Organisation",
 }
 
 // Map of authority and nodelabel for identifiers - we should be removing
@@ -73,4 +73,4 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"Smartlogic": "SmartlogicIdentifier",
 }
 
-var BasicTmePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people"}
+var BasicTmePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people", "organisation"}

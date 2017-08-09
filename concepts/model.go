@@ -53,6 +53,7 @@ var constraintMap = map[string]string{
 	"Brand":                "uuid",
 	"AlphavilleSeries":     "uuid",
 	"Person":               "uuid",
+	"Organisation":         "uuid",
 	"UPPIdentifier":        "value",
 	"TMEIdentifier":        "value",
 	"FactsetIdentifier":    "value",

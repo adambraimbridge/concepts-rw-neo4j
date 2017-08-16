@@ -180,6 +180,7 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 		}
 
 		if len(srcConcept.RelatedUUIDs) > 0 {
+			uuids = []string{}
 			//TODO do this differently but I get a "" back from the cypher!
 			for _, uuid := range srcConcept.RelatedUUIDs {
 				if uuid != "" {
@@ -192,6 +193,7 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 		}
 
 		if len(srcConcept.BroaderUUIDs) > 0 {
+			uuids = []string{}
 			//TODO do this differently but I get a "" back from the cypher!
 			for _, uuid := range srcConcept.BroaderUUIDs {
 				if uuid != "" {

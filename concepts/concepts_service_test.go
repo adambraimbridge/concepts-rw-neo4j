@@ -338,7 +338,7 @@ func TestConnectivityCheck(t *testing.T) {
 }
 
 func TestWriteService(t *testing.T) {
-	//defer cleanDB(t)
+	defer cleanDB(t)
 
 	tests := []struct {
 		testName          string
@@ -357,7 +357,7 @@ func TestWriteService(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			//defer cleanDB(t)
+			defer cleanDB(t)
 			// Create the related concepts
 			for _, relatedConcept := range test.relatedConcepts {
 				err := conceptsDriver.Write(relatedConcept, "")

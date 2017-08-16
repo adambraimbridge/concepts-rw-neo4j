@@ -365,14 +365,14 @@ func TestWriteService(t *testing.T) {
 		relatedConcepts   []AggregatedConcept
 		errStr            string
 	}{
-		//{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied"},
-	//	{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, ""},
+		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied"},
+		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, ""},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getAnotherFullLoneAggregatedConcept()}, ""},
-		//{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, ""},
-		//{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, ""},
-		//{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, ""},
-		//{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label TMEIdentifier and property \"value\"=[1234]"},
-		//{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request"},
+		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, ""},
+		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, ""},
+		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, ""},
+		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label TMEIdentifier and property \"value\"=[1234]"},
+		{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request"},
 	}
 
 	for _, test := range tests {

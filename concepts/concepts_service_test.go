@@ -217,6 +217,22 @@ func getAnotherFullLoneAggregatedConcept() AggregatedConcept {
 	}
 }
 
+func getYetAnotherFullLoneAggregatedConcept() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  yetAnotherBasicConceptUUID,
+		PrefLabel: "Concept PrefLabel",
+		Type:      "Section",
+		SourceRepresentations: []Concept{{
+			UUID:           yetAnotherBasicConceptUUID,
+			PrefLabel:      "Concept PrefLabel",
+			Type:           "Section",
+			Authority:      "TME",
+			AuthorityValue: "4321",
+			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		}},
+	}
+}
+
 func getFullConcordedAggregatedConcept() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:       basicConceptUUID,
@@ -334,6 +350,38 @@ func getConceptWithRelatedToUnknownThing() AggregatedConcept {
 		}}}
 }
 
+func getConceptWithHasBroaderToUnknownThing() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "Pref Label",
+		Type:      "Section",
+		SourceRepresentations: []Concept{{
+			UUID:           basicConceptUUID,
+			PrefLabel:      "Pref Label",
+			Type:           "Section",
+			Authority:      "Smartlogic",
+			AuthorityValue: "1234",
+			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+			BroaderUUIDs:   []string{unknownThingUUID},
+		}}}
+}
+
+func getConceptWithHasBroader() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "Pref Label",
+		Type:      "Section",
+		SourceRepresentations: []Concept{{
+			UUID:           basicConceptUUID,
+			PrefLabel:      "Pref Label",
+			Type:           "Section",
+			Authority:      "Smartlogic",
+			AuthorityValue: "1234",
+			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+			BroaderUUIDs:   []string{yetAnotherBasicConceptUUID},
+		}}}
+}
+
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
@@ -362,13 +410,15 @@ func TestWriteService(t *testing.T) {
 	tests := []struct {
 		testName          string
 		aggregatedConcept AggregatedConcept
-		relatedConcepts   []AggregatedConcept
+		otherRelatedConcepts   []AggregatedConcept
 		errStr            string
 	}{
 		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied"},
 		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, ""},
-		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getAnotherFullLoneAggregatedConcept()}, ""},
+		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, ""},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, ""},
+		{"Creates All Values Present for a Concept with a HAS_BROADER relationship", getConceptWithHasBroader(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, ""},
+		{"Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing", getConceptWithHasBroaderToUnknownThing(), nil, ""},
 		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, ""},
 		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, ""},
 		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label TMEIdentifier and property \"value\"=[1234]"},
@@ -378,10 +428,10 @@ func TestWriteService(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			defer cleanDB(t)
-			// Create the related concepts
-			for _, relatedConcept := range test.relatedConcepts {
+			// Create the related and broader than concepts
+			for _, relatedConcept := range test.otherRelatedConcepts {
 				err := conceptsDriver.Write(relatedConcept, "")
-				assert.NoError(t, err, "Failed to write concept")
+				assert.NoError(t, err, "Failed to write related/broader concept")
 
 			}
 

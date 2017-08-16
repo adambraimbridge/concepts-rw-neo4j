@@ -84,6 +84,7 @@ type neoConcept struct {
 	ScopeNote         string   `json:"scopeNote,omitempty"`
 	ShortLabel        string   `json:"shortLabel,omitempty"`
 	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
+	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -101,6 +102,8 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 				MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
 				OPTIONAL MATCH (node)-[:IS_RELATED_TO]->(related:Thing)
 				WITH canonical, node, collect(related.uuid) as relUUIDS
+				OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
+				WITH canonical, node, relUUIDS, collect(broader.uuid) as broaderUUIDs
 				OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
 				WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
 				canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
@@ -110,7 +113,7 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, emailAddress: node.emailAddress,
 				facebookPage: node.facebookPage,twitterHandle: node.twitterHandle, scopeNote: node.scopeNote, shortLabel: node.shortLabel,
 				aliases: node.aliases,descriptionXML: node.descriptionXML, imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid),
-				relatedUUIDs:relUUIDS} as sources
+				relatedUUIDs:relUUIDS, broaderUUIDs:broaderUUIDs} as sources
 				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, emailAddress,
 				facebookPage, twitterHandle, scopeNote, shortLabel, collect(sources) as sourceRepresentations `,
 		Parameters: map[string]interface{}{
@@ -185,6 +188,18 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 			}
 			if len(uuids) > 0 {
 				concept.RelatedUUIDs = uuids
+			}
+		}
+
+		if len(srcConcept.BroaderUUIDs) > 0 {
+			//TODO do this differently but I get a "" back from the cypher!
+			for _, uuid := range srcConcept.BroaderUUIDs {
+				if uuid != "" {
+					uuids = append(uuids, uuid)
+				}
+			}
+			if len(uuids) > 0 {
+				concept.BroaderUUIDs = uuids
 			}
 		}
 
@@ -317,6 +332,23 @@ func (s Service) Write(thing interface{}, transId string) error {
 				}
 				queryBatch = append(queryBatch, relatedToQuery)
 				queryBatch = append(queryBatch, createNewIdentifierQuery(relatedUUID, "UPPIdentifier", relatedUUID))
+			}
+		}
+
+		if len(concept.BroaderUUIDs) > 0 {
+			for _, broaderThanUUID := range concept.BroaderUUIDs {
+				broaderThanQuery := &neoism.CypherQuery{
+					Statement: `
+						MATCH (t:Thing{uuid:{uuid}})
+						MERGE (c:Thing{uuid:{brUUID}})
+						MERGE (t)-[:HAS_BROADER]->(c)`,
+					Parameters: map[string]interface{}{
+						"uuid": concept.UUID,
+						"brUUID": broaderThanUUID,
+					},
+				}
+				queryBatch = append(queryBatch, broaderThanQuery)
+				queryBatch = append(queryBatch, createNewIdentifierQuery(broaderThanUUID, "UPPIdentifier", broaderThanUUID))
 			}
 		}
 	}
@@ -506,9 +538,10 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
 			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
 			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
+			OPTIONAL MATCH (t)-[broader:HAS_BROADER]->(brNode)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": id,
 			},
@@ -705,7 +738,7 @@ func addIdentifierNodes(UUID string, authority string, authorityValue string) []
 
 func createNewIdentifierQuery(uuid string, identifierLabel string, identifierValue string) *neoism.CypherQuery {
 	statementTemplate := fmt.Sprintf(`MERGE (t:Thing {uuid:{uuid}})
-					CREATE (i:Identifier {value:{value}})
+					MERGE (i:Identifier {value:{value}})
 					MERGE (t)<-[:IDENTIFIES]-(i)
 					set i : %s `, identifierLabel)
 	query := &neoism.CypherQuery{

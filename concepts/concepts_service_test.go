@@ -30,6 +30,8 @@ const (
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
 	sourceId_3 = "5b1d8c31-dfe4-4326-b6a9-6227cb59af1f"
+
+	unknownThingUUID = "b5d7c6b5-db7d-4bce-9d6a-f62195571f92"
 )
 
 //Reusable Neo4J connection
@@ -327,7 +329,7 @@ func getConceptWithRelatedToUnknownThing() AggregatedConcept {
 			Authority:      "Smartlogic",
 			AuthorityValue: "1234",
 			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			RelatedUUIDs:   []string{"b5d7c6b5-db7d-4bce-9d6a-f62195571f92"},
+			RelatedUUIDs:   []string{unknownThingUUID},
 		}}}
 }
 
@@ -354,7 +356,7 @@ func TestConnectivityCheck(t *testing.T) {
 }
 
 func TestWriteService(t *testing.T) {
-	//defer cleanDB(t)
+	defer cleanDB(t)
 
 	tests := []struct {
 		testName          string
@@ -362,19 +364,19 @@ func TestWriteService(t *testing.T) {
 		relatedConcepts   []AggregatedConcept
 		errStr            string
 	}{
-		//{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied"},
-		//{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, ""},
-		//{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getAnotherFullLoneAggregatedConcept()}, ""},
+		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied"},
+		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, ""},
+		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getAnotherFullLoneAggregatedConcept()}, ""},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, ""},
-		//{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, ""},
-		//{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, ""},
-		//{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label TMEIdentifier and property \"value\"=[1234]"},
-		//{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request"},
+		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, ""},
+		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, ""},
+		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label TMEIdentifier and property \"value\"=[1234]"},
+		{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request"},
 	}
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-		//	defer cleanDB(t)
+			defer cleanDB(t)
 			// Create the related concepts
 			for _, relatedConcept := range test.relatedConcepts {
 				err := conceptsDriver.Write(relatedConcept, "")
@@ -704,9 +706,9 @@ func getConceptService(t *testing.T) Service {
 }
 
 func cleanDB(t *testing.T) {
-	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3)
-	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3)
-	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3)
+	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID)
+	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID)
+	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID)
 }
 
 func deleteSourceNodes(t *testing.T, uuids ...string) {

@@ -294,8 +294,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 		queryBatch = append(queryBatch, createNodeQueries(concept, "", concept.UUID)...)
 
 		equivQuery := &neoism.CypherQuery{
-			Statement: `
-						MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
 						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
 			Parameters: map[string]interface{}{
 				"uuid":     concept.UUID,

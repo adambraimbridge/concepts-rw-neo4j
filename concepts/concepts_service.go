@@ -315,7 +315,6 @@ func (s Service) Write(thing interface{}, transId string) error {
 						"relUUID": relatedUUID,
 					},
 				}
-
 				queryBatch = append(queryBatch, relatedToQuery)
 				queryBatch = append(queryBatch, createNewIdentifierQuery(relatedUUID, "UPPIdentifier", relatedUUID))
 			}

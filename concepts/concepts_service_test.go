@@ -25,6 +25,7 @@ import (
 const (
 	basicConceptUUID        = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
 	anotherBasicConceptUUID = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
+	yetAnotherBasicConceptUUID = "f7e3fe2d-7496-4d42-b19f-378094efd263"
 	parentUuid              = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
@@ -313,7 +314,7 @@ func getConceptWithRelatedTo() AggregatedConcept {
 			Authority:      "Smartlogic",
 			AuthorityValue: "1234",
 			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			RelatedUUIDs:   []string{anotherBasicConceptUUID},
+			RelatedUUIDs:   []string{yetAnotherBasicConceptUUID},
 		}}}
 }
 
@@ -364,14 +365,14 @@ func TestWriteService(t *testing.T) {
 		relatedConcepts   []AggregatedConcept
 		errStr            string
 	}{
-		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied"},
-		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, ""},
+		//{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied"},
+	//	{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, ""},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getAnotherFullLoneAggregatedConcept()}, ""},
-		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, ""},
-		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, ""},
-		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, ""},
-		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label TMEIdentifier and property \"value\"=[1234]"},
-		{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request"},
+		//{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, ""},
+		//{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, ""},
+		//{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, ""},
+		//{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label TMEIdentifier and property \"value\"=[1234]"},
+		//{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request"},
 	}
 
 	for _, test := range tests {
@@ -706,9 +707,9 @@ func getConceptService(t *testing.T) Service {
 }
 
 func cleanDB(t *testing.T) {
-	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID)
-	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID)
-	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID)
+	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID)
+	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID)
+	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID)
 }
 
 func deleteSourceNodes(t *testing.T, uuids ...string) {

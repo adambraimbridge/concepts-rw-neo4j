@@ -317,7 +317,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 				}
 
 				queryBatch = append(queryBatch, relatedToQuery)
-				queryBatch = append(queryBatch, createNewIdentifierQuery(relatedUUID, "SmartlogicIdentifier", relatedUUID))
+				queryBatch = append(queryBatch, createNewIdentifierQuery(relatedUUID, "UPPIdentifier", relatedUUID))
 			}
 		}
 	}

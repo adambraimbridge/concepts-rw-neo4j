@@ -316,7 +316,9 @@ func (s Service) Write(thing interface{}, transId string) error {
 						"relUUID": relatedUUID,
 					},
 				}
+				
 				queryBatch = append(queryBatch, relatedToQuery)
+				queryBatch = append(queryBatch, createNewIdentifierQuery(relatedUUID, "SmartlogicIdentifier", relatedUUID))
 			}
 		}
 	}
@@ -540,8 +542,8 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		allProps := setProps(concept, uuid, true)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+											set n={allprops}
+											set n :%s`, getAllLabels(concept.Type)),
 			Parameters: map[string]interface{}{
 				"uuid":     uuid,
 				"allprops": allProps,
@@ -552,8 +554,8 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		allProps := setProps(concept, prefUUID, false)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+											set n={allprops}
+											set n :%s`, getAllLabels(concept.Type)),
 			Parameters: map[string]interface{}{
 				"prefUUID": prefUUID,
 				"allprops": allProps,
@@ -564,11 +566,10 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if len(concept.ParentUUIDs) > 0 {
 		for _, parentUUID := range concept.ParentUUIDs {
 			writeParent := &neoism.CypherQuery{
-				Statement: `
-                                MERGE (o:Thing {uuid: {uuid}})
-		  	   	MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})
-                            	MERGE (parentupp)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {paUuid}
-		            	MERGE (o)-[:HAS_PARENT]->(p)	`,
+				Statement: `MERGE (o:Thing {uuid: {uuid}})
+		  	   				MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})
+                            MERGE (parentupp)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {paUuid}
+		            		MERGE (o)-[:HAS_PARENT]->(p)	`,
 				Parameters: neoism.Props{
 					"paUuid": parentUUID,
 					"uuid":   concept.UUID,
@@ -594,9 +595,10 @@ func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) *neoi
 	allProps := setProps(concept, concept.UUID, false)
 	log.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MATCH (t:Thing{uuid:{prefUUID}}) MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+		Statement: fmt.Sprintf(`	MATCH (t:Thing{uuid:{prefUUID}})
+										MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
+										set n={allprops}
+										set n :%s`, getAllLabels(concept.Type)),
 		Parameters: map[string]interface{}{
 			"prefUUID": concept.UUID,
 			"allprops": allProps,

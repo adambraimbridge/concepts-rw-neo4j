@@ -324,9 +324,10 @@ func (s Service) Write(thing interface{}, transId string) error {
 			for _, relatedUUID := range concept.RelatedUUIDs {
 				relatedToQuery := &neoism.CypherQuery{
 					Statement: `
-						MATCH (t:Thing{uuid:{uuid}})
-						MERGE (c:Thing{uuid:{relUUID}})
-						MERGE (t)-[:IS_RELATED_TO]->(c)`,
+						MATCH (o:Concept {uuid: {uuid}})
+		  	   			MERGE (relUPP:Identifier:UPPIdentifier{value:{relUUID}})
+                        MERGE (relUPP)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {relUUID}
+		            	MERGE (o)-[:IS_RELATED_TO]->(p)	`,
 					Parameters: map[string]interface{}{
 						"uuid": concept.UUID,
 						"relUUID": relatedUUID,
@@ -341,9 +342,11 @@ func (s Service) Write(thing interface{}, transId string) error {
 			for _, broaderThanUUID := range concept.BroaderUUIDs {
 				broaderThanQuery := &neoism.CypherQuery{
 					Statement: `
-						MATCH (t:Thing{uuid:{uuid}})
-						MERGE (c:Thing{uuid:{brUUID}})
-						MERGE (t)-[:HAS_BROADER]->(c)`,
+						MATCH (o:Concept {uuid: {uuid}})
+		  	   			MERGE (brUPP:Identifier:UPPIdentifier{value:{brUUID}})
+                        MERGE (brUPP)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {brUUID}
+		            	MERGE (o)-[:HAS_BROADER]->(p)
+						`,
 					Parameters: map[string]interface{}{
 						"uuid": concept.UUID,
 						"brUUID": broaderThanUUID,

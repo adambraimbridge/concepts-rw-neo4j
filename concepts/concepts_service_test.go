@@ -15,18 +15,16 @@ import (
 	"github.com/jmcvetta/neoism"
 	_ "github.com/joho/godotenv/autoload"
 
-	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"reflect"
 )
 
 //all uuids to be cleaned from DB
 const (
-	basicConceptUUID        = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
-	anotherBasicConceptUUID = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
+	basicConceptUUID           = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
+	anotherBasicConceptUUID    = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
 	yetAnotherBasicConceptUUID = "f7e3fe2d-7496-4d42-b19f-378094efd263"
-	parentUuid              = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
+	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
@@ -408,10 +406,10 @@ func TestWriteService(t *testing.T) {
 	defer cleanDB(t)
 
 	tests := []struct {
-		testName          string
-		aggregatedConcept AggregatedConcept
-		otherRelatedConcepts   []AggregatedConcept
-		errStr            string
+		testName             string
+		aggregatedConcept    AggregatedConcept
+		otherRelatedConcepts []AggregatedConcept
+		errStr               string
 	}{
 		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied"},
 		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, ""},
@@ -467,15 +465,6 @@ func TestWriteService(t *testing.T) {
 		})
 	}
 }
-
-func readFileReturnAggConcept(fileName string, t *testing.T) AggregatedConcept {
-	dualConcordance, err := ioutil.ReadFile(fileName)
-	assert.NoError(t, err, "Error reading file ")
-	aggConcept := AggregatedConcept{}
-	json.Unmarshal(dualConcordance, &aggConcept)
-	return aggConcept
-}
-
 func TestWriteService_HandlingConcordance(t *testing.T) {
 	tid := "test_tid"
 	type testStruct struct {

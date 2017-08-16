@@ -316,7 +316,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 						"relUUID": relatedUUID,
 					},
 				}
-				
+
 				queryBatch = append(queryBatch, relatedToQuery)
 				queryBatch = append(queryBatch, createNewIdentifierQuery(relatedUUID, "SmartlogicIdentifier", relatedUUID))
 			}
@@ -501,6 +501,7 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 	queryBatch := []*neoism.CypherQuery{}
 
 	for _, id := range sourceUuids {
+		// TODO: We should be consistent in using a method to add identifiers: createNewIdentifierQuery
 		deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
@@ -565,6 +566,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 
 	if len(concept.ParentUUIDs) > 0 {
 		for _, parentUUID := range concept.ParentUUIDs {
+			// TODO: We should be consistent in using a method to add identifiers: createNewIdentifierQuery
 			writeParent := &neoism.CypherQuery{
 				Statement: `MERGE (o:Thing {uuid: {uuid}})
 		  	   				MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})

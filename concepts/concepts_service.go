@@ -325,16 +325,16 @@ func (s Service) Write(thing interface{}, transId string) error {
 				relatedToQuery := &neoism.CypherQuery{
 					Statement: `
 						MATCH (o:Concept {uuid: {uuid}})
-		  	   			MERGE (relUPP:Identifier:UPPIdentifier{value:{relUUID}})
-                        MERGE (relUPP)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {relUUID}
-		            	MERGE (o)-[:IS_RELATED_TO]->(p)	`,
+						MERGE (p:Thing {uuid: {relUUID}})
+		            	MERGE (o)-[:IS_RELATED_TO]->(p)
+						MERGE (relatedUPP:Identifier:UPPIdentifier{value:{relUUID}})
+                        MERGE (relatedUPP)-[:IDENTIFIES]->(p)`,
 					Parameters: map[string]interface{}{
 						"uuid": concept.UUID,
 						"relUUID": relatedUUID,
 					},
 				}
 				queryBatch = append(queryBatch, relatedToQuery)
-				queryBatch = append(queryBatch, createNewIdentifierQuery(relatedUUID, "UPPIdentifier", relatedUUID))
 			}
 		}
 
@@ -343,17 +343,16 @@ func (s Service) Write(thing interface{}, transId string) error {
 				broaderThanQuery := &neoism.CypherQuery{
 					Statement: `
 						MATCH (o:Concept {uuid: {uuid}})
-		  	   			MERGE (brUPP:Identifier:UPPIdentifier{value:{brUUID}})
-                        MERGE (brUPP)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {brUUID}
+						MERGE (p:Thing {uuid: {brUUID}})
 		            	MERGE (o)-[:HAS_BROADER]->(p)
-						`,
+		            	MERGE (brUPP:Identifier:UPPIdentifier{value:{brUUID}})
+                        MERGE (brUPP)-[:IDENTIFIES]->(p)`,
 					Parameters: map[string]interface{}{
 						"uuid": concept.UUID,
 						"brUUID": broaderThanUUID,
 					},
 				}
 				queryBatch = append(queryBatch, broaderThanQuery)
-				queryBatch = append(queryBatch, createNewIdentifierQuery(broaderThanUUID, "UPPIdentifier", broaderThanUUID))
 			}
 		}
 	}
@@ -536,7 +535,7 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 	queryBatch := []*neoism.CypherQuery{}
 
 	for _, id := range sourceUuids {
-		// TODO: We should be consistent in using a method to add identifiers: createNewIdentifierQuery
+		// TODO: We should be consistent in using a method to add identifiers: addIdentifierNodes
 		deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
@@ -602,7 +601,6 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 
 	if len(concept.ParentUUIDs) > 0 {
 		for _, parentUUID := range concept.ParentUUIDs {
-			// TODO: We should be consistent in using a method to add identifiers: createNewIdentifierQuery
 			writeParent := &neoism.CypherQuery{
 				Statement: `MERGE (o:Thing {uuid: {uuid}})
 		  	   				MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})
@@ -743,7 +741,7 @@ func addIdentifierNodes(UUID string, authority string, authorityValue string) []
 
 func createNewIdentifierQuery(uuid string, identifierLabel string, identifierValue string) *neoism.CypherQuery {
 	statementTemplate := fmt.Sprintf(`MERGE (t:Thing {uuid:{uuid}})
-					MERGE (i:Identifier {value:{value}})
+					CREATE (i:Identifier {value:{value}})
 					MERGE (t)<-[:IDENTIFIES]-(i)
 					set i : %s `, identifierLabel)
 	query := &neoism.CypherQuery{

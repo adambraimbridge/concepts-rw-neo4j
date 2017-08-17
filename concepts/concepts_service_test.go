@@ -224,8 +224,8 @@ func getYetAnotherFullLoneAggregatedConcept() AggregatedConcept {
 			UUID:           yetAnotherBasicConceptUUID,
 			PrefLabel:      "Concept PrefLabel",
 			Type:           "Section",
-			Authority:      "TME",
-			AuthorityValue: "4321",
+			Authority:      "Smartlogic",
+			AuthorityValue: yetAnotherBasicConceptUUID,
 			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 		}},
 	}
@@ -326,7 +326,7 @@ func getConceptWithRelatedTo() AggregatedConcept {
 			PrefLabel:      "Pref Label",
 			Type:           "Section",
 			Authority:      "Smartlogic",
-			AuthorityValue: "1234",
+			AuthorityValue: basicConceptUUID,
 			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 			RelatedUUIDs:   []string{yetAnotherBasicConceptUUID},
 		}}}
@@ -434,7 +434,6 @@ func TestWriteService(t *testing.T) {
 			}
 
 			err := conceptsDriver.Write(test.aggregatedConcept, "")
-
 			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
 				readConceptAndCompare(t, test.aggregatedConcept, test.testName)

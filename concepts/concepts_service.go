@@ -2,15 +2,12 @@ package concepts
 
 import (
 	"encoding/json"
-
-	"github.com/Financial-Times/neo-model-utils-go/mapper"
-
+	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
-	"errors"
-	"strconv"
-
+	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
@@ -42,9 +39,10 @@ func (s Service) Initialise() error {
 		"Concept": "authorityValue",
 	})
 	if err != nil {
-		log.WithError(err).Error("Could not run db index")
+		log.WithError(err).Error("Could not run DB constraints")
 		return err
 	}
+
 	return s.conn.EnsureConstraints(constraintMap)
 }
 
@@ -60,6 +58,11 @@ type neoAggregatedConcept struct {
 	Authority             string       `json:"authority,omitempty"`
 	AuthorityValue        string       `json:"authorityValue,omitempty"`
 	LastModifiedEpoch     int          `json:"lastModifiedEpoch,omitempty"`
+	EmailAddress          string       `json:"emailAddress,omitempty"`
+	FacebookPage          string       `json:"facebookPage,omitempty"`
+	TwitterHandle         string       `json:"twitterHandle,omitempty"`
+	ScopeNote             string       `json:"scopeNote,omitempty"`
+	ShortLabel            string       `json:"shortLabel,omitempty"`
 }
 
 type neoConcept struct {
@@ -75,6 +78,13 @@ type neoConcept struct {
 	Strapline         string   `json:"strapline,omitempty"`
 	ImageURL          string   `json:"imageUrl,omitempty"`
 	DescriptionXML    string   `json:"descriptionXML,omitempty"`
+	EmailAddress      string   `json:"emailAddress,omitempty"`
+	FacebookPage      string   `json:"facebookPage,omitempty"`
+	TwitterHandle     string   `json:"twitterHandle,omitempty"`
+	ScopeNote         string   `json:"scopeNote,omitempty"`
+	ShortLabel        string   `json:"shortLabel,omitempty"`
+	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
+	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -88,14 +98,24 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 	results := []neoAggregatedConcept{}
 
 	query := &neoism.CypherQuery{
-		Statement: `	MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
-				OPTIONAL MATCH (node)-[HAS_PARENT]->(parent:Thing)
+		Statement: `
+				MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
+				OPTIONAL MATCH (node)-[:IS_RELATED_TO]->(related:Thing)
+				WITH canonical, node, collect(related.uuid) as relUUIDS
+				OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
+				WITH canonical, node, relUUIDS, collect(broader.uuid) as broaderUUIDs
+				OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
 				WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
 				canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
+				canonical.emailAddress as emailAddress, canonical.facebookPage as facebookPage, canonical.twitterHandle as twitterHandle,
+				canonical.scopeNote as scopeNote, canonical.shortLabel as shortLabel,
 				{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue,
-				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, aliases: node.aliases, descriptionXML: node.descriptionXML,
-				imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid)} as sources
-				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, collect(sources) as sourceRepresentations `,
+				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, emailAddress: node.emailAddress,
+				facebookPage: node.facebookPage,twitterHandle: node.twitterHandle, scopeNote: node.scopeNote, shortLabel: node.shortLabel,
+				aliases: node.aliases,descriptionXML: node.descriptionXML, imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid),
+				relatedUUIDs:relUUIDS, broaderUUIDs:broaderUUIDs} as sources
+				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, emailAddress,
+				facebookPage, twitterHandle, scopeNote, shortLabel, collect(sources) as sourceRepresentations `,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -127,6 +147,11 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 		DescriptionXML: results[0].DescriptionXML,
 		Strapline:      results[0].Strapline,
 		Aliases:        results[0].Aliases,
+		EmailAddress:   results[0].EmailAddress,
+		FacebookPage:   results[0].FacebookPage,
+		TwitterHandle:  results[0].TwitterHandle,
+		ScopeNote:      results[0].ScopeNote,
+		ShortLabel:     results[0].ShortLabel,
 	}
 
 	for _, srcConcept := range results[0].SourceRepresentations {
@@ -153,6 +178,33 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 				concept.ParentUUIDs = uuids
 			}
 		}
+
+		if len(srcConcept.RelatedUUIDs) > 0 {
+			uuids = []string{}
+			//TODO do this differently but I get a "" back from the cypher!
+			for _, uuid := range srcConcept.RelatedUUIDs {
+				if uuid != "" {
+					uuids = append(uuids, uuid)
+				}
+			}
+			if len(uuids) > 0 {
+				concept.RelatedUUIDs = uuids
+			}
+		}
+
+		if len(srcConcept.BroaderUUIDs) > 0 {
+			uuids = []string{}
+			//TODO do this differently but I get a "" back from the cypher!
+			for _, uuid := range srcConcept.BroaderUUIDs {
+				if uuid != "" {
+					uuids = append(uuids, uuid)
+				}
+			}
+			if len(uuids) > 0 {
+				concept.BroaderUUIDs = uuids
+			}
+		}
+
 		concept.UUID = srcConcept.UUID
 		concept.PrefLabel = srcConcept.PrefLabel
 		concept.Authority = srcConcept.Authority
@@ -162,6 +214,11 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 		concept.ImageURL = srcConcept.ImageURL
 		concept.Strapline = srcConcept.Strapline
 		concept.DescriptionXML = srcConcept.DescriptionXML
+		concept.FacebookPage = srcConcept.FacebookPage
+		concept.EmailAddress = srcConcept.EmailAddress
+		concept.TwitterHandle = srcConcept.TwitterHandle
+		concept.ShortLabel = srcConcept.ShortLabel
+		concept.ScopeNote = srcConcept.ScopeNote
 
 		sourceConcepts = append(sourceConcepts, concept)
 	}
@@ -175,7 +232,7 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 
 func (s Service) Write(thing interface{}, transId string) error {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
-	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
+	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
 
 	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, transId)
@@ -239,6 +296,11 @@ func (s Service) Write(thing interface{}, transId string) error {
 		DescriptionXML: aggregatedConceptToWrite.DescriptionXML,
 		ImageURL:       aggregatedConceptToWrite.ImageURL,
 		Type:           aggregatedConceptToWrite.Type,
+		EmailAddress:   aggregatedConceptToWrite.EmailAddress,
+		FacebookPage:   aggregatedConceptToWrite.FacebookPage,
+		TwitterHandle:  aggregatedConceptToWrite.TwitterHandle,
+		ScopeNote:      aggregatedConceptToWrite.ScopeNote,
+		ShortLabel:     aggregatedConceptToWrite.ShortLabel,
 	}
 
 	// Create the canonical node
@@ -250,7 +312,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 
 		equivQuery := &neoism.CypherQuery{
 			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
-			MERGE (t)-[:EQUIVALENT_TO]->(c)`,
+						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
 			Parameters: map[string]interface{}{
 				"uuid":     concept.UUID,
 				"prefUUID": aggregatedConceptToWrite.PrefUUID,
@@ -258,6 +320,41 @@ func (s Service) Write(thing interface{}, transId string) error {
 		}
 		queryBatch = append(queryBatch, equivQuery)
 
+		if len(concept.RelatedUUIDs) > 0 {
+			for _, relatedUUID := range concept.RelatedUUIDs {
+				relatedToQuery := &neoism.CypherQuery{
+					Statement: `
+						MATCH (o:Concept {uuid: {uuid}})
+						MERGE (p:Thing {uuid: {relUUID}})
+		            	MERGE (o)-[:IS_RELATED_TO]->(p)
+						MERGE (relatedUPP:Identifier:UPPIdentifier{value:{relUUID}})
+                        MERGE (relatedUPP)-[:IDENTIFIES]->(p)`,
+					Parameters: map[string]interface{}{
+						"uuid": concept.UUID,
+						"relUUID": relatedUUID,
+					},
+				}
+				queryBatch = append(queryBatch, relatedToQuery)
+			}
+		}
+
+		if len(concept.BroaderUUIDs) > 0 {
+			for _, broaderThanUUID := range concept.BroaderUUIDs {
+				broaderThanQuery := &neoism.CypherQuery{
+					Statement: `
+						MATCH (o:Concept {uuid: {uuid}})
+						MERGE (p:Thing {uuid: {brUUID}})
+		            	MERGE (o)-[:HAS_BROADER]->(p)
+		            	MERGE (brUPP:Identifier:UPPIdentifier{value:{brUUID}})
+                        MERGE (brUPP)-[:IDENTIFIES]->(p)`,
+					Parameters: map[string]interface{}{
+						"uuid": concept.UUID,
+						"brUUID": broaderThanUUID,
+					},
+				}
+				queryBatch = append(queryBatch, broaderThanQuery)
+			}
+		}
 	}
 
 	if len(listToUnconcord) > 0 {
@@ -356,7 +453,11 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 
 	for _, updatedSourceId := range updatedSourceIds {
 		equivQuery := &neoism.CypherQuery{
-			Statement: `MATCH (t:Thing {uuid:{uuid}}) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c) OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing) RETURN t.uuid as sourceUuid, c.prefUUID as prefUuid, COUNT(DISTINCT eq) as count`,
+			Statement: `
+					MATCH (t:Thing {uuid:{uuid}})
+					OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c)
+					OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing)
+					RETURN t.uuid as sourceUuid, c.prefUUID as prefUuid, COUNT(DISTINCT eq) as count`,
 			Parameters: map[string]interface{}{
 				"uuid": updatedSourceId,
 			},
@@ -434,14 +535,17 @@ func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQu
 	queryBatch := []*neoism.CypherQuery{}
 
 	for _, id := range sourceUuids {
+		// TODO: We should be consistent in using a method to add identifiers: addIdentifierNodes
 		deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
 			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
+			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
+			OPTIONAL MATCH (t)-[broader:HAS_BROADER]->(brNode)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": id,
 			},
@@ -474,8 +578,8 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		allProps := setProps(concept, uuid, true)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+											set n={allprops}
+											set n :%s`, getAllLabels(concept.Type)),
 			Parameters: map[string]interface{}{
 				"uuid":     uuid,
 				"allprops": allProps,
@@ -486,8 +590,8 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		allProps := setProps(concept, prefUUID, false)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+											set n={allprops}
+											set n :%s`, getAllLabels(concept.Type)),
 			Parameters: map[string]interface{}{
 				"prefUUID": prefUUID,
 				"allprops": allProps,
@@ -498,11 +602,10 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if len(concept.ParentUUIDs) > 0 {
 		for _, parentUUID := range concept.ParentUUIDs {
 			writeParent := &neoism.CypherQuery{
-				Statement: `
-                                MERGE (o:Thing {uuid: {uuid}})
-		  	   	MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})
-                            	MERGE (parentupp)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {paUuid}
-		            	MERGE (o)-[:HAS_PARENT]->(p)	`,
+				Statement: `MERGE (o:Thing {uuid: {uuid}})
+		  	   				MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})
+                            MERGE (parentupp)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {paUuid}
+		            		MERGE (o)-[:HAS_PARENT]->(p)	`,
 				Parameters: neoism.Props{
 					"paUuid": parentUUID,
 					"uuid":   concept.UUID,
@@ -528,9 +631,10 @@ func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) *neoi
 	allProps := setProps(concept, concept.UUID, false)
 	log.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MATCH (t:Thing{uuid:{prefUUID}}) MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+		Statement: fmt.Sprintf(`	MATCH (t:Thing{uuid:{prefUUID}})
+										MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
+										set n={allprops}
+										set n :%s`, getAllLabels(concept.Type)),
 		Parameters: map[string]interface{}{
 			"prefUUID": concept.UUID,
 			"allprops": allProps,
@@ -577,7 +681,21 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if len(concept.Aliases) > 0 {
 		nodeProps["aliases"] = concept.Aliases
 	}
-
+	if concept.EmailAddress != "" {
+		nodeProps["emailAddress"] = concept.EmailAddress
+	}
+	if concept.FacebookPage != "" {
+		nodeProps["facebookPage"] = concept.FacebookPage
+	}
+	if concept.TwitterHandle != "" {
+		nodeProps["twitterHandle"] = concept.TwitterHandle
+	}
+	if concept.ScopeNote != "" {
+		nodeProps["scopeNote"] = concept.ScopeNote
+	}
+	if concept.ShortLabel != "" {
+		nodeProps["shortLabel"] = concept.ShortLabel
+	}
 	if concept.DescriptionXML != "" {
 		nodeProps["descriptionXML"] = concept.DescriptionXML
 	}

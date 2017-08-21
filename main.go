@@ -11,6 +11,7 @@ import (
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jawher/mow.cli"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
@@ -55,6 +56,12 @@ func main() {
 		Name:  "env",
 		Value: "local",
 		Desc:  "environment this app is running in",
+	})
+	requestLoggingOn := app.Bool(cli.BoolOpt{
+		Name:   "requestLoggingOn",
+		Value:  true,
+		Desc:   "Whether to log requests or not",
+		EnvVar: "REQUEST_LOGGING_ON",
 	})
 	logLevel := app.String(cli.StringOpt{
 		Name:   "logLevel",
@@ -102,7 +109,7 @@ func main() {
 			Port:          *port,
 			ServiceName:   "concepts-rw-neo4j",
 			Env:           *env,
-			EnableReqLog:  true,
+			EnableReqLog:  *requestLoggingOn,
 		})
 	}
 	log.Infof("Application started with args %s", os.Args)

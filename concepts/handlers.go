@@ -65,9 +65,6 @@ func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		case rwapi.ConstraintOrTransactionError:
 			writeJSONError(w, e.Error(), http.StatusConflict)
 			return
-		//case invalidRequestError:
-		//	writeJSONError(w, e.InvalidRequestDetails(), http.StatusBadRequest)
-		//	return
 		default:
 			writeJSONError(w, err.Error(), http.StatusServiceUnavailable)
 			return
@@ -103,7 +100,7 @@ func (hh *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 
 	if !found {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(fmt.Sprintf("Concept withh uuid %s not found in db", uuid)))
+		w.Write([]byte(fmt.Sprintf("{\"message\":\"Concept with prefUUID %s not found in db.\"}", uuid)))
 		return
 	}
 

@@ -1,21 +1,51 @@
 package main
 
 import (
-	"fmt"
 	_ "net/http/pprof"
 	"os"
 
-	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
+	standardLog "log"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
-	"github.com/Financial-Times/go-fthealth"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/jawher/mow.cli"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/gorilla/mux"
+	"net/http"
+	"github.com/rcrowley/go-metrics"
+	"github.com/cyberdelia/go-metrics-graphite"
+	"net"
+	"time"
+	"strconv"
 )
 
+const appDescription = "A RESTful API for managing Concepts in neo4j"
+const serviceName = "concepts-rw-neo4j"
+
+type ServerConf struct {
+	AppSystemCode string
+	AppName string
+	GraphiteTCPAddress string
+	GraphitePrefix string
+	Port int
+	LogMetrics bool
+	RequestLoggingOn bool
+}
+
 func main() {
-	app := cli.App("concepts-rw-neo4j", "A RESTful API for managing Concepts in neo4j")
+	app := cli.App(serviceName, appDescription)
+	appSystemCode := app.String(cli.StringOpt{
+		Name:   "app-system-code",
+		Value:  "concept-rw-neo4j",
+		Desc:   "System Code of the application",
+		EnvVar: "APP_SYSTEM_CODE",
+	})
+	appName := app.String(cli.StringOpt{
+		Name:   "app-name",
+		Value:  "Concept Rw Neo4j",
+		Desc:   "Application name",
+		EnvVar: "APP_NAME",
+	})
 	neoURL := app.String(cli.StringOpt{
 		Name:   "neo-url",
 		Value:  "http://localhost:7474/db/data",
@@ -52,11 +82,6 @@ func main() {
 		Desc:   "Whether to log metrics. Set to true if running locally and you want metrics output",
 		EnvVar: "LOG_METRICS",
 	})
-	env := app.String(cli.StringOpt{
-		Name:  "env",
-		Value: "local",
-		Desc:  "environment this app is running in",
-	})
 	requestLoggingOn := app.Bool(cli.BoolOpt{
 		Name:   "requestLoggingOn",
 		Value:  true,
@@ -72,7 +97,7 @@ func main() {
 	log.SetFormatter(&log.JSONFormatter{})
 	lvl, err := log.ParseLevel(*logLevel)
 	if err != nil {
-		log.Warnf("Log level %s could not be parsed, defaulting to info")
+		log.Warnf("Log level %s could not be parsed, defaulting to Info", lvl)
 		lvl = log.InfoLevel
 	}
 	log.SetLevel(lvl)
@@ -87,42 +112,65 @@ func main() {
 			log.Errorf("Could not connect to neo4j, error=[%s]\n", err)
 		}
 
-		conceptsDriver := concepts.NewConceptService(db)
-		conceptsDriver.Initialise()
-
-		baseftrwapp.OutputMetricsIfRequired(*graphiteTCPAddress, *graphitePrefix, *logMetrics)
-
-		services := map[string]baseftrwapp.Service{}
-
-		for _, path := range concepts.BasicTmePaths {
-			services[path] = conceptsDriver
+		appConf := ServerConf{
+			AppSystemCode: *appSystemCode,
+			AppName: *appName,
+			GraphiteTCPAddress: *graphiteTCPAddress,
+			GraphitePrefix: *graphitePrefix,
+			Port: *port,
+			LogMetrics: *logMetrics,
+			RequestLoggingOn: *requestLoggingOn,
 		}
 
-		var checks []fthealth.Check
+		conceptsService := concepts.NewConceptService(db)
+		conceptsService.Initialise()
 
-		// We are only checking Neo4J so only need to check with the implementation for one type
-		checks = append(checks, makeCheck(services[concepts.BasicTmePaths[0]], db))
+		handler := concepts.ConceptsHandler{ConceptsService: conceptsService}
 
-		baseftrwapp.RunServerWithConf(baseftrwapp.RWConf{
-			Services:      services,
-			HealthHandler: fthealth.Handler("ft-concepts_rw_neo4j ServiceModule", "Writes 'concepts' to Neo4j, usually as part of a bulk upload done on a schedule", checks...),
-			Port:          *port,
-			ServiceName:   "concepts-rw-neo4j",
-			Env:           *env,
-			EnableReqLog:  *requestLoggingOn,
-		})
+		services := map[string]concepts.Service{}
+		for _, path := range concepts.BasicTmePaths {
+			services[path] = conceptsService
+		}
+
+		runServerWithParams(handler, services, appConf)
 	}
 	log.Infof("Application started with args %s", os.Args)
 	app.Run(os.Args)
 }
 
-func makeCheck(service baseftrwapp.Service, cr neoutils.CypherRunner) fthealth.Check {
-	return fthealth.Check{
-		BusinessImpact:   "Cannot read/write concepts via this writer",
-		Name:             "Check connectivity to Neo4j - neoUrl is a parameter in hieradata for this service",
-		PanicGuide:       "https://dewey.ft.com/concepts-rw-neo4j.html",
-		Severity:         1,
-		TechnicalSummary: fmt.Sprintf("Cannot connect to Neo4j instance %s with at least one concept loaded in it", cr),
-		Checker:          func() error { return service.Check() },
+func runServerWithParams(handler concepts.ConceptsHandler, services map[string]concepts.Service, appConf ServerConf) {
+	outputMetricsIfRequired(appConf.GraphiteTCPAddress, appConf.GraphitePrefix, appConf.LogMetrics)
+
+	router := mux.NewRouter()
+	log.Info("Registering handlers")
+	for path, service := range services {
+		err := service.Initialise()
+		if err != nil {
+			log.Fatalf("Service for path %s could not startup, err=%s", path, err)
+		}
+
+		router = handler.RegisterHandlers(router, path)
+	}
+
+	mr := handler.RegisterAdminHandlers(router, appConf.AppSystemCode, appConf.AppName, appDescription, appConf.RequestLoggingOn)
+
+	http.Handle("/", mr)
+
+	log.Printf("listening on %d", appConf.Port)
+
+	if err := http.ListenAndServe(":" + strconv.Itoa(appConf.Port), mr); err != nil {
+		log.Fatalf("Unable to start: %v", err)
+	}
+	log.Printf("exiting on %s", serviceName)
+}
+
+func outputMetricsIfRequired(graphiteTCPAddress string, graphitePrefix string, logMetrics bool) {
+	if graphiteTCPAddress != "" {
+		addr, _ := net.ResolveTCPAddr("tcp", graphiteTCPAddress)
+		go graphite.Graphite(metrics.DefaultRegistry, 5*time.Second, graphitePrefix, addr)
+	}
+	if logMetrics { //useful locally
+		//messy use of the 'standard' log package here as this method takes the log struct, not an interface, so can't use logrus.Logger
+		go metrics.Log(metrics.DefaultRegistry, 60*time.Second, standardLog.New(os.Stdout, "metrics", standardLog.Lmicroseconds))
 	}
 }

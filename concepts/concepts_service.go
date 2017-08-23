@@ -9,25 +9,33 @@ import (
 
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
 )
 
 //Service - CypherDriver - CypherDriver
-type Service struct {
+type ConceptService struct {
 	conn neoutils.NeoConnection
 }
 
+// Service defines the functions any read-write application needs to implement
+type Service interface {
+	Write(thing interface{}, transId string) (updatedIds interface{}, err error)
+	Read(uuid string, transId string) (thing interface{}, found bool, err error)
+	DecodeJSON(*json.Decoder) (thing interface{}, identity string, err error)
+	Check() error
+	Initialise() error
+}
+
 //NewConceptService instantiate driver
-func NewConceptService(cypherRunner neoutils.NeoConnection) Service {
-	return Service{cypherRunner}
+func NewConceptService(cypherRunner neoutils.NeoConnection) ConceptService {
+	return ConceptService{cypherRunner}
 }
 
 //Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
-func (s Service) Initialise() error {
+func (s ConceptService) Initialise() error {
 	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
-		"Thing":      "prefUUID",
 	})
 	if err != nil {
 		log.WithError(err).Error("Could not run db index")
@@ -43,6 +51,14 @@ func (s Service) Initialise() error {
 		return err
 	}
 
+	err = s.conn.EnsureConstraints(map[string]string{
+		"Thing":   "prefUUID",
+		"Concept": "prefUUID",
+	})
+	if err != nil {
+		log.WithError(err).Error("Could not run db constraints")
+		return err
+	}
 	return s.conn.EnsureConstraints(constraintMap)
 }
 
@@ -94,7 +110,7 @@ type equivalenceResult struct {
 }
 
 //Read - read service
-func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
+func (s ConceptService) Read(uuid string, transId string) (interface{}, bool, error) {
 	results := []neoAggregatedConcept{}
 
 	query := &neoism.CypherQuery{
@@ -230,26 +246,33 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 	return aggregatedConcept, true, nil
 }
 
-func (s Service) Write(thing interface{}, transId string) error {
+func (s ConceptService) Write(thing interface{}, transId string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
+	uuidsToUpdate := UpdatedConcepts{}
+
+	var updatedUuidList []string
+	updatedUuidList = append(updatedUuidList, aggregatedConceptToWrite.PrefUUID)
+	fmt.Printf("1. Updated uuid list%s\n", updatedUuidList)
 
 	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, transId)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Error("Read request for existing concordance resulted in error")
-		return err
+		return uuidsToUpdate, err
 	}
 
 	err = validateObject(aggregatedConceptToWrite, transId)
 	if err != nil {
-		return err
+		return uuidsToUpdate, err
 	}
 
 	var updatedSourceIds []string
 	for _, updatedSource := range aggregatedConceptToWrite.SourceRepresentations {
 		if updatedSource.UUID != aggregatedConceptToWrite.PrefUUID {
 			updatedSourceIds = append(updatedSourceIds, updatedSource.UUID)
+			//We will need to send a notification of updates of all incoming source ids
+			updatedUuidList = append(updatedUuidList, updatedSource.UUID)
 		}
 	}
 
@@ -274,9 +297,9 @@ func (s Service) Write(thing interface{}, transId string) error {
 	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
 	//Handle scenarios for transferring source id from an existing concordance to this concordance
 	if len(listToTransferConcordance) > 0 {
-		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(listToTransferConcordance, aggregatedConceptToWrite.PrefUUID, transId)
+		prefUUIDsToBeDeletedQueryBatch, updatedUuidList, err = s.handleTransferConcordance(listToTransferConcordance, aggregatedConceptToWrite.PrefUUID, transId, updatedUuidList)
 		if err != nil {
-			return err
+			return uuidsToUpdate, err
 		}
 	}
 
@@ -363,16 +386,23 @@ func (s Service) Write(thing interface{}, transId string) error {
 				if idToUnconcord == concept.UUID {
 					unconcordQuery := s.writeConcordedNodeForUnconcordedConcepts(concept)
 					queryBatch = append(queryBatch, unconcordQuery)
+
+					//We will need to send a notification of updates to unconcorded ids
+					updatedUuidList = append(updatedUuidList, idToUnconcord)
 				}
 			}
 		}
 	}
+
+	fmt.Printf("2. Updated uuid list%s\n", updatedUuidList)
 
 	if len(prefUUIDsToBeDeletedQueryBatch) > 0 {
 		for _, query := range prefUUIDsToBeDeletedQueryBatch {
 			queryBatch = append(queryBatch, query)
 		}
 	}
+
+	uuidsToUpdate.UpdatedIds = updatedUuidList
 
 	log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
 	for _, query := range queryBatch {
@@ -382,12 +412,13 @@ func (s Service) Write(thing interface{}, transId string) error {
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
 	err = s.conn.CypherBatch(queryBatch)
 	if err != nil {
-		return err
+		return uuidsToUpdate, err
 	} else {
 		log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Info("Concept written to db")
-		return nil
+		return uuidsToUpdate, nil
 	}
-	return nil
+
+	return uuidsToUpdate, nil
 }
 
 func validateObject(aggConcept AggregatedConcept, transId string) error {
@@ -446,7 +477,7 @@ func filterIdsThatAreUniqueToFirstList(firstListIds []string, secondListIds []st
 	return needToBeHandled
 }
 
-func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transId string) ([]*neoism.CypherQuery, error) {
+func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transId string, uuidsToUpdate []string) ([]*neoism.CypherQuery, []string, error) {
 	result := []equivalenceResult{}
 
 	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
@@ -467,7 +498,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error("Requests for source nodes canonical information resulted in error")
-			return deleteLonePrefUuidQueries, err
+			return deleteLonePrefUuidQueries, uuidsToUpdate, err
 		}
 
 		if len(result) == 0 {
@@ -476,7 +507,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 		} else if len(result) > 1 {
 			err = errors.New("Multiple concepts found with matching uuid!")
 			log.WithError(err).WithField("UUID", updatedSourceId)
-			return deleteLonePrefUuidQueries, err
+			return deleteLonePrefUuidQueries, uuidsToUpdate, err
 		}
 
 		log.WithField("UUID", result[0].SourceUuid).Debug("Existing prefUUID is " + result[0].PrefUuid + " equivalence count is " + strconv.Itoa(result[0].Equivalence))
@@ -493,7 +524,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := errors.New("This source id: " + result[0].SourceUuid + " the only concordance to a non-matching node with prefUuid: " + result[0].PrefUuid)
 				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoadingDodgyData"}).Error(err)
-				return deleteLonePrefUuidQueries, err
+				return deleteLonePrefUuidQueries, uuidsToUpdate, err
 			}
 		} else {
 			if result[0].SourceUuid == result[0].PrefUuid {
@@ -502,7 +533,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 					// Source is prefUUID for a different concordance
 					err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result[0].SourceUuid)
 					log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoadingInvalidConcordance"}).Error(err)
-					return deleteLonePrefUuidQueries, err
+					return deleteLonePrefUuidQueries, uuidsToUpdate, err
 				} else {
 					// Source is prefUUID for a current concordance
 					break
@@ -510,11 +541,13 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 			} else {
 				// Source was concorded to different concordance. Data on existing concordance is now out of data
 				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoadingStaleData"}).Info("Need to re-ingest concordance record for prefUuid: " + result[0].PrefUuid + " as source: " + result[0].SourceUuid + " has been removed.")
+				//We will need to send a notification of updates to existing concordances who have had source nodes removed
+				uuidsToUpdate = append(uuidsToUpdate, result[0].PrefUuid)
 				break
 			}
 		}
 	}
-	return deleteLonePrefUuidQueries, nil
+	return deleteLonePrefUuidQueries, uuidsToUpdate, nil
 }
 
 func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
@@ -528,7 +561,7 @@ func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 	return equivQuery
 }
 
-func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
+func (s ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
 	acUUID := ac.PrefUUID
 	sourceUuids := getSourceIds(ac.SourceRepresentations)
 
@@ -627,7 +660,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 
 }
 
-func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
+func (s ConceptService) writeConcordedNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
 	allProps := setProps(concept, concept.UUID, false)
 	log.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
@@ -754,45 +787,16 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 	return query
 }
 
-//Delete - Delete method
-func (s Service) Delete(uuid string, transId string) (bool, error) {
-	log.WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Info("Delete endpoint is currently non-functional")
-	return false, nil
-}
-
 //DecodeJSON - decode json
-func (s Service) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
+func (s ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
 	sub := AggregatedConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.PrefUUID, err
 }
 
 //Check - checker
-func (s Service) Check() error {
+func (s ConceptService) Check() error {
 	return neoutils.Check(s.conn)
-}
-
-//Count - Count of concepts
-// TODO: This needs to change of course to be taxonomy specific but will involve
-// a breaking change to the base app so vendoring needs to be applied - Do we care about this count?
-func (s Service) Count() (int, error) {
-
-	results := []struct {
-		Count int `json:"c"`
-	}{}
-
-	query := &neoism.CypherQuery{
-		Statement: `MATCH (n:Concept) return count(n) as c`,
-		Result:    &results,
-	}
-
-	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
-
-	if err != nil {
-		return 0, err
-	}
-
-	return results[0].Count, nil
 }
 
 type requestError struct {

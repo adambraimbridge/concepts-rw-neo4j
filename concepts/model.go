@@ -38,6 +38,10 @@ type Concept struct {
 	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
 }
 
+type UpdatedConcepts struct {
+	UpdatedIds []string `json: "updatedIds"`
+}
+
 // Map of all the possible node types so we can ensure they all have
 // constraints on the uuid
 var constraintMap = map[string]string{

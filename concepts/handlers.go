@@ -32,6 +32,7 @@ func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 
 	tid := transactionidutils.GetTransactionIDFromRequest(r)
 	w.Header().Add("Content-Type", "application/json")
+	w.Header().Set("X-Request-Id", tid)
 
 	var body io.Reader = r.Body
 	if r.Header.Get("Content-Encoding") == "gzip" {
@@ -73,7 +74,6 @@ func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("X-Request-Id", tid)
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(updatedIds); err != nil {
 		writeJSONError(w, err.Error(), http.StatusInternalServerError)
@@ -103,7 +103,7 @@ func (hh *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 
 	if !found {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(err.Error()))
+		w.Write([]byte(fmt.Sprintf("Concept withh uuid %s not found in db", uuid)))
 		return
 	}
 

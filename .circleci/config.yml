@@ -1,54 +1,62 @@
 version: 2
 jobs:
   build:
+    working_directory: /go/src/github.com/Financial-Times/concepts-rw-neo4j
     docker:
       - image: circleci/golang:1.8
+        environment:
+          TEST_DIR: /tmp/test-results
       - image: neo4j:3.1.0-enterprise
         environment:
           NEO4J_AUTH: none
           NEO4J_HEAP_MEMORY: 256
           NEO4J_CACHE_MEMORY: 256M
-
-    working_directory: /go/src/github.com/Financial-Times/concepts-rw-neo4j
-    environment:
-      CIRCLE_TEST_REPORTS: /tmp/test-reports
-      CIRCLE_ARTIFACTS: /tmp/artifacts
-      NEO4J_TEST_URL: "http://localhost:7474/db/data/"
-
     steps:
       - checkout
       - run:
-          name: Make /go owned by circleci
-          command: sudo chown -R circleci:circleci /go
+          name: Make go get work
+          command: sudo chown -R circleci:circleci /go/src
       - run:
-          name: Download dependancies
+          name: Create test folder
+          command: mkdir -p $TEST_DIR
+      - run:
+          name: External Dependancies
           command: |
             go get -u github.com/kardianos/govendor
             go get -u github.com/jstemmer/go-junit-report
             go get -u github.com/mattn/goveralls
       - run:
-          name: Sync vendored packages
+          name: Govendor Sync
           command: govendor sync -v
       - run:
-          name: Build service
+          name: Govendor build
           command: govendor build -v
       - run:
-          name: Wait for Neo to be available
-          command: wget --retry-connrefused --no-check-certificate -T 60 $NEO4J_TEST_URL; curl $NEO4J_TEST_URL
-      - run:
-          name: Run tests and coverage
+          name: Run Tests
           command: |
-            mkdir -p $CIRCLE_TEST_REPORTS/golang
-            mkdir -p $CIRCLE_ARTIFACTS
-            govendor test -race -v +local | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
+            echo "mode: atomic" > $TEST_DIR/coverage.out
+            PACKAGES=`govendor list -no-status +local`
+            PACKAGES_LIST=`govendor list -no-status +local | paste -sd ',' -`
+            EXIT_CODE=0
+            for PKG in $PACKAGES; do
+              echo =-= $PKG
+              govendor test -v -race -coverpkg=$PACKAGES_LIST -coverprofile=$TEST_DIR/profile.out $PKG; __EXIT_CODE__=$?
+              if [ "$__EXIT_CODE__" -ne "0" ]; then
+                EXIT_CODE=$__EXIT_CODE__
+              fi
+              if [ -f $TEST_DIR/profile.out ]; then
+                tail -n +2 $TEST_DIR/profile.out >> $TEST_DIR/coverage.out; rm $TEST_DIR/profile.out
+              fi
+            done
+            exit $EXIT_CODE
       - run:
-          name: Upload to coveralls
-          command: goveralls -coverprofile=$CIRCLE_ARTIFACTS/coverage.out -service=circle-ci -repotoken=$COVERALLS_TOKEN
-      - store_test_results:
-          path: /tmp/test-reports
+          name: Upload to Coveralls
+          command: goveralls -coverprofile=$TEST_DIR/coverage.out -service=circle-ci -repotoken=$COVERALLS_TOKEN
       - store_artifacts:
-          path: /tmp/artifacts
-          destination: build
+          path: /tmp/test-results
+          destination: raw-test-output
+      - store_test_results:
+          path: /tmp/test-results
   docker_build:
     working_directory: /concepts-rw-neo4j
     docker:
@@ -65,6 +73,4 @@ workflows:
   tests_and_docker:
     jobs:
       - build
-      - docker_build:
-          requires:
-            - build
+      - docker_build

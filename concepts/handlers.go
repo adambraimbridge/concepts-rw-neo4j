@@ -1,19 +1,19 @@
 package concepts
 
 import (
-	"net/http"
-	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/Financial-Times/transactionid-utils-go"
-	"encoding/json"
-	"github.com/gorilla/handlers"
-	"io"
 	"compress/gzip"
-	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
+	"encoding/json"
+	"fmt"
+	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/Financial-Times/transactionid-utils-go"
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	"io"
+	"net/http"
 )
 
 type ConceptsHandler struct {
-	ConceptsService ConceptService
+	ConceptsService ConceptServicer
 }
 
 func (h *ConceptsHandler) RegisterHandlers(router *mux.Router, path string) *mux.Router {
@@ -62,8 +62,14 @@ func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		switch e := err.(type) {
-		case rwapi.ConstraintOrTransactionError:
+		case noContentReturnedError:
+			writeJSONError(w, e.NoContentReturnedDetails(), http.StatusNoContent)
+			return
+		case *neoutils.ConstraintViolationError:
 			writeJSONError(w, e.Error(), http.StatusConflict)
+			return
+		case invalidRequestError:
+			writeJSONError(w, e.InvalidRequestDetails(), http.StatusBadRequest)
 			return
 		default:
 			writeJSONError(w, err.Error(), http.StatusServiceUnavailable)

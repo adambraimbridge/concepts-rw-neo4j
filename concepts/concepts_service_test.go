@@ -463,7 +463,7 @@ func TestWriteService(t *testing.T) {
 			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
 				readConceptAndCompare(t, test.aggregatedConcept, test.testName)
-				assert.Equal(t, test.updatedConcepts, updatedConcepts, "Test " + test.testName + " failed: Updated uuid list differs from expected")
+				assert.Equal(t, test.updatedConcepts, updatedConcepts, "Test "+test.testName+" failed: Updated uuid list differs from expected")
 
 				// Check lone nodes and leaf nodes for identifiers nodes
 				// lone node
@@ -494,12 +494,12 @@ func TestWriteService(t *testing.T) {
 func TestWriteService_HandlingConcordance(t *testing.T) {
 	tid := "test_tid"
 	type testStruct struct {
-		testName      string
-		setUpConcept  AggregatedConcept
-		testConcept   AggregatedConcept
-		uuidsToCheck  []string
-		returnedError string
-		updatedConcepts      UpdatedConcepts
+		testName        string
+		setUpConcept    AggregatedConcept
+		testConcept     AggregatedConcept
+		uuidsToCheck    []string
+		returnedError   string
+		updatedConcepts UpdatedConcepts
 	}
 
 	writeHandlesUnconcordanceGracefully := testStruct{testName: "writeHandlesUnconcordanceGracefully", setUpConcept: getDualConcordance(), testConcept: getSingleConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
@@ -520,7 +520,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unexpected error")
 		}
 
-		assert.Equal(t, scenario.updatedConcepts, updatedConcepts, "Test " + scenario.testName + " failed: Updated uuid list differs from expected")
+		assert.Equal(t, scenario.updatedConcepts, updatedConcepts, "Test "+scenario.testName+" failed: Updated uuid list differs from expected")
 
 		for _, id := range scenario.uuidsToCheck {
 			concept, found, err := conceptsDriver.Read(id, tid)
@@ -612,7 +612,7 @@ func TestTransferConcordance(t *testing.T) {
 	scenarios := []testStruct{nodeHasNoConconcordance, nodeHasExistingConcordanceWhichWouldCauseDataIssues, nodeHasExistingConcordanceWhichNeedsToBeReWritten, nodeHasInvalidConcordance, nodeIsPrefUuidForExistingConcordance, nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, _,  err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "", "", []string{})
+		returnedQueryList, _, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "", "", []string{})
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
 			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")

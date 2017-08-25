@@ -1,13 +1,13 @@
 package concepts
 
 import (
-	"github.com/gorilla/mux"
-	"net/http"
-	log "github.com/sirupsen/logrus"
-	st "github.com/Financial-Times/service-status-go/httphandlers"
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	"github.com/Financial-Times/http-handlers-go/httphandlers"
+	st "github.com/Financial-Times/service-status-go/httphandlers"
+	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
+	log "github.com/sirupsen/logrus"
+	"net/http"
 )
 
 func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCode string, appName string, appDescription string, enableRequestLogging bool) http.Handler {

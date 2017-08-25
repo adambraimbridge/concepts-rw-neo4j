@@ -4,32 +4,32 @@ import (
 	_ "net/http/pprof"
 	"os"
 
-	standardLog "log"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	log "github.com/sirupsen/logrus"
+	"github.com/cyberdelia/go-metrics-graphite"
+	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/gorilla/mux"
-	"net/http"
 	"github.com/rcrowley/go-metrics"
-	"github.com/cyberdelia/go-metrics-graphite"
+	log "github.com/sirupsen/logrus"
+	standardLog "log"
 	"net"
-	"time"
+	"net/http"
 	"strconv"
+	"time"
 )
 
 const appDescription = "A RESTful API for managing Concepts in neo4j"
 const serviceName = "concepts-rw-neo4j"
 
 type ServerConf struct {
-	AppSystemCode string
-	AppName string
+	AppSystemCode      string
+	AppName            string
 	GraphiteTCPAddress string
-	GraphitePrefix string
-	Port int
-	LogMetrics bool
-	RequestLoggingOn bool
+	GraphitePrefix     string
+	Port               int
+	LogMetrics         bool
+	RequestLoggingOn   bool
 }
 
 func main() {
@@ -113,13 +113,13 @@ func main() {
 		}
 
 		appConf := ServerConf{
-			AppSystemCode: *appSystemCode,
-			AppName: *appName,
+			AppSystemCode:      *appSystemCode,
+			AppName:            *appName,
 			GraphiteTCPAddress: *graphiteTCPAddress,
-			GraphitePrefix: *graphitePrefix,
-			Port: *port,
-			LogMetrics: *logMetrics,
-			RequestLoggingOn: *requestLoggingOn,
+			GraphitePrefix:     *graphitePrefix,
+			Port:               *port,
+			LogMetrics:         *logMetrics,
+			RequestLoggingOn:   *requestLoggingOn,
 		}
 
 		conceptsService := concepts.NewConceptService(db)
@@ -127,7 +127,7 @@ func main() {
 
 		handler := concepts.ConceptsHandler{ConceptsService: conceptsService}
 
-		services := map[string]concepts.Service{}
+		services := map[string]concepts.ConceptService{}
 		for _, path := range concepts.BasicTmePaths {
 			services[path] = conceptsService
 		}
@@ -138,7 +138,7 @@ func main() {
 	app.Run(os.Args)
 }
 
-func runServerWithParams(handler concepts.ConceptsHandler, services map[string]concepts.Service, appConf ServerConf) {
+func runServerWithParams(handler concepts.ConceptsHandler, services map[string]concepts.ConceptService, appConf ServerConf) {
 	outputMetricsIfRequired(appConf.GraphiteTCPAddress, appConf.GraphitePrefix, appConf.LogMetrics)
 
 	router := mux.NewRouter()
@@ -158,7 +158,7 @@ func runServerWithParams(handler concepts.ConceptsHandler, services map[string]c
 
 	log.Printf("listening on %d", appConf.Port)
 
-	if err := http.ListenAndServe(":" + strconv.Itoa(appConf.Port), mr); err != nil {
+	if err := http.ListenAndServe(":"+strconv.Itoa(appConf.Port), mr); err != nil {
 		log.Fatalf("Unable to start: %v", err)
 	}
 	log.Printf("exiting on %s", serviceName)

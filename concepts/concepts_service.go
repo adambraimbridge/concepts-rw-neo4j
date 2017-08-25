@@ -9,8 +9,8 @@ import (
 
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	log "github.com/sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
+	log "github.com/sirupsen/logrus"
 )
 
 //Service - CypherDriver - CypherDriver
@@ -19,7 +19,7 @@ type ConceptService struct {
 }
 
 // Service defines the functions any read-write application needs to implement
-type Service interface {
+type ConceptServicer interface {
 	Write(thing interface{}, transId string) (updatedIds interface{}, err error)
 	Read(uuid string, transId string) (thing interface{}, found bool, err error)
 	DecodeJSON(*json.Decoder) (thing interface{}, identity string, err error)
@@ -254,7 +254,6 @@ func (s ConceptService) Write(thing interface{}, transId string) (interface{}, e
 
 	var updatedUuidList []string
 	updatedUuidList = append(updatedUuidList, aggregatedConceptToWrite.PrefUUID)
-	fmt.Printf("1. Updated uuid list%s\n", updatedUuidList)
 
 	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, transId)
 	if err != nil {
@@ -353,7 +352,7 @@ func (s ConceptService) Write(thing interface{}, transId string) (interface{}, e
 						MERGE (relatedUPP:Identifier:UPPIdentifier{value:{relUUID}})
                         MERGE (relatedUPP)-[:IDENTIFIES]->(p)`,
 					Parameters: map[string]interface{}{
-						"uuid": concept.UUID,
+						"uuid":    concept.UUID,
 						"relUUID": relatedUUID,
 					},
 				}
@@ -371,7 +370,7 @@ func (s ConceptService) Write(thing interface{}, transId string) (interface{}, e
 		            	MERGE (brUPP:Identifier:UPPIdentifier{value:{brUUID}})
                         MERGE (brUPP)-[:IDENTIFIES]->(p)`,
 					Parameters: map[string]interface{}{
-						"uuid": concept.UUID,
+						"uuid":   concept.UUID,
 						"brUUID": broaderThanUUID,
 					},
 				}
@@ -393,8 +392,6 @@ func (s ConceptService) Write(thing interface{}, transId string) (interface{}, e
 			}
 		}
 	}
-
-	fmt.Printf("2. Updated uuid list%s\n", updatedUuidList)
 
 	if len(prefUUIDsToBeDeletedQueryBatch) > 0 {
 		for _, query := range prefUUIDsToBeDeletedQueryBatch {

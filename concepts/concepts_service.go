@@ -2,35 +2,40 @@ package concepts
 
 import (
 	"encoding/json"
-
-	"github.com/Financial-Times/neo-model-utils-go/mapper"
-
+	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
-	"errors"
-	"strconv"
-
+	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
+	log "github.com/sirupsen/logrus"
 )
 
 //Service - CypherDriver - CypherDriver
-type Service struct {
+type ConceptService struct {
 	conn neoutils.NeoConnection
 }
 
+// Service defines the functions any read-write application needs to implement
+type ConceptServicer interface {
+	Write(thing interface{}, transId string) (updatedIds interface{}, err error)
+	Read(uuid string, transId string) (thing interface{}, found bool, err error)
+	DecodeJSON(*json.Decoder) (thing interface{}, identity string, err error)
+	Check() error
+	Initialise() error
+}
+
 //NewConceptService instantiate driver
-func NewConceptService(cypherRunner neoutils.NeoConnection) Service {
-	return Service{cypherRunner}
+func NewConceptService(cypherRunner neoutils.NeoConnection) ConceptService {
+	return ConceptService{cypherRunner}
 }
 
 //Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
-func (s Service) Initialise() error {
+func (s ConceptService) Initialise() error {
 	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
-		"Thing":      "prefUUID",
 	})
 	if err != nil {
 		log.WithError(err).Error("Could not run db index")
@@ -42,7 +47,16 @@ func (s Service) Initialise() error {
 		"Concept": "authorityValue",
 	})
 	if err != nil {
-		log.WithError(err).Error("Could not run db index")
+		log.WithError(err).Error("Could not run DB constraints")
+		return err
+	}
+
+	err = s.conn.EnsureConstraints(map[string]string{
+		"Thing":   "prefUUID",
+		"Concept": "prefUUID",
+	})
+	if err != nil {
+		log.WithError(err).Error("Could not run db constraints")
 		return err
 	}
 	return s.conn.EnsureConstraints(constraintMap)
@@ -60,6 +74,11 @@ type neoAggregatedConcept struct {
 	Authority             string       `json:"authority,omitempty"`
 	AuthorityValue        string       `json:"authorityValue,omitempty"`
 	LastModifiedEpoch     int          `json:"lastModifiedEpoch,omitempty"`
+	EmailAddress          string       `json:"emailAddress,omitempty"`
+	FacebookPage          string       `json:"facebookPage,omitempty"`
+	TwitterHandle         string       `json:"twitterHandle,omitempty"`
+	ScopeNote             string       `json:"scopeNote,omitempty"`
+	ShortLabel            string       `json:"shortLabel,omitempty"`
 }
 
 type neoConcept struct {
@@ -75,6 +94,13 @@ type neoConcept struct {
 	Strapline         string   `json:"strapline,omitempty"`
 	ImageURL          string   `json:"imageUrl,omitempty"`
 	DescriptionXML    string   `json:"descriptionXML,omitempty"`
+	EmailAddress      string   `json:"emailAddress,omitempty"`
+	FacebookPage      string   `json:"facebookPage,omitempty"`
+	TwitterHandle     string   `json:"twitterHandle,omitempty"`
+	ScopeNote         string   `json:"scopeNote,omitempty"`
+	ShortLabel        string   `json:"shortLabel,omitempty"`
+	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
+	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -84,18 +110,28 @@ type equivalenceResult struct {
 }
 
 //Read - read service
-func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
+func (s ConceptService) Read(uuid string, transId string) (interface{}, bool, error) {
 	results := []neoAggregatedConcept{}
 
 	query := &neoism.CypherQuery{
-		Statement: `	MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
-				OPTIONAL MATCH (node)-[HAS_PARENT]->(parent:Thing)
+		Statement: `
+				MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
+				OPTIONAL MATCH (node)-[:IS_RELATED_TO]->(related:Thing)
+				WITH canonical, node, collect(related.uuid) as relUUIDS
+				OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
+				WITH canonical, node, relUUIDS, collect(broader.uuid) as broaderUUIDs
+				OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
 				WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
 				canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
+				canonical.emailAddress as emailAddress, canonical.facebookPage as facebookPage, canonical.twitterHandle as twitterHandle,
+				canonical.scopeNote as scopeNote, canonical.shortLabel as shortLabel,
 				{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue,
-				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, aliases: node.aliases, descriptionXML: node.descriptionXML,
-				imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid)} as sources
-				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, collect(sources) as sourceRepresentations `,
+				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, emailAddress: node.emailAddress,
+				facebookPage: node.facebookPage,twitterHandle: node.twitterHandle, scopeNote: node.scopeNote, shortLabel: node.shortLabel,
+				aliases: node.aliases,descriptionXML: node.descriptionXML, imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid),
+				relatedUUIDs:relUUIDS, broaderUUIDs:broaderUUIDs} as sources
+				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, emailAddress,
+				facebookPage, twitterHandle, scopeNote, shortLabel, collect(sources) as sourceRepresentations `,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -127,6 +163,11 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 		DescriptionXML: results[0].DescriptionXML,
 		Strapline:      results[0].Strapline,
 		Aliases:        results[0].Aliases,
+		EmailAddress:   results[0].EmailAddress,
+		FacebookPage:   results[0].FacebookPage,
+		TwitterHandle:  results[0].TwitterHandle,
+		ScopeNote:      results[0].ScopeNote,
+		ShortLabel:     results[0].ShortLabel,
 	}
 
 	for _, srcConcept := range results[0].SourceRepresentations {
@@ -153,6 +194,33 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 				concept.ParentUUIDs = uuids
 			}
 		}
+
+		if len(srcConcept.RelatedUUIDs) > 0 {
+			uuids = []string{}
+			//TODO do this differently but I get a "" back from the cypher!
+			for _, uuid := range srcConcept.RelatedUUIDs {
+				if uuid != "" {
+					uuids = append(uuids, uuid)
+				}
+			}
+			if len(uuids) > 0 {
+				concept.RelatedUUIDs = uuids
+			}
+		}
+
+		if len(srcConcept.BroaderUUIDs) > 0 {
+			uuids = []string{}
+			//TODO do this differently but I get a "" back from the cypher!
+			for _, uuid := range srcConcept.BroaderUUIDs {
+				if uuid != "" {
+					uuids = append(uuids, uuid)
+				}
+			}
+			if len(uuids) > 0 {
+				concept.BroaderUUIDs = uuids
+			}
+		}
+
 		concept.UUID = srcConcept.UUID
 		concept.PrefLabel = srcConcept.PrefLabel
 		concept.Authority = srcConcept.Authority
@@ -162,6 +230,11 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 		concept.ImageURL = srcConcept.ImageURL
 		concept.Strapline = srcConcept.Strapline
 		concept.DescriptionXML = srcConcept.DescriptionXML
+		concept.FacebookPage = srcConcept.FacebookPage
+		concept.EmailAddress = srcConcept.EmailAddress
+		concept.TwitterHandle = srcConcept.TwitterHandle
+		concept.ShortLabel = srcConcept.ShortLabel
+		concept.ScopeNote = srcConcept.ScopeNote
 
 		sourceConcepts = append(sourceConcepts, concept)
 	}
@@ -173,26 +246,32 @@ func (s Service) Read(uuid string, transId string) (interface{}, bool, error) {
 	return aggregatedConcept, true, nil
 }
 
-func (s Service) Write(thing interface{}, transId string) error {
+func (s ConceptService) Write(thing interface{}, transId string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
-	// then we need to add prefUUID to the lode node if it has been removed from the concordance listed against a smart logic concept
+	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
+	uuidsToUpdate := UpdatedConcepts{}
+
+	var updatedUuidList []string
+	updatedUuidList = append(updatedUuidList, aggregatedConceptToWrite.PrefUUID)
 
 	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, transId)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Error("Read request for existing concordance resulted in error")
-		return err
+		return uuidsToUpdate, err
 	}
 
 	err = validateObject(aggregatedConceptToWrite, transId)
 	if err != nil {
-		return err
+		return uuidsToUpdate, err
 	}
 
 	var updatedSourceIds []string
 	for _, updatedSource := range aggregatedConceptToWrite.SourceRepresentations {
 		if updatedSource.UUID != aggregatedConceptToWrite.PrefUUID {
 			updatedSourceIds = append(updatedSourceIds, updatedSource.UUID)
+			//We will need to send a notification of updates of all incoming source ids
+			updatedUuidList = append(updatedUuidList, updatedSource.UUID)
 		}
 	}
 
@@ -217,9 +296,9 @@ func (s Service) Write(thing interface{}, transId string) error {
 	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
 	//Handle scenarios for transferring source id from an existing concordance to this concordance
 	if len(listToTransferConcordance) > 0 {
-		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(listToTransferConcordance, aggregatedConceptToWrite.PrefUUID, transId)
+		prefUUIDsToBeDeletedQueryBatch, updatedUuidList, err = s.handleTransferConcordance(listToTransferConcordance, aggregatedConceptToWrite.PrefUUID, transId, updatedUuidList)
 		if err != nil {
-			return err
+			return uuidsToUpdate, err
 		}
 	}
 
@@ -239,6 +318,11 @@ func (s Service) Write(thing interface{}, transId string) error {
 		DescriptionXML: aggregatedConceptToWrite.DescriptionXML,
 		ImageURL:       aggregatedConceptToWrite.ImageURL,
 		Type:           aggregatedConceptToWrite.Type,
+		EmailAddress:   aggregatedConceptToWrite.EmailAddress,
+		FacebookPage:   aggregatedConceptToWrite.FacebookPage,
+		TwitterHandle:  aggregatedConceptToWrite.TwitterHandle,
+		ScopeNote:      aggregatedConceptToWrite.ScopeNote,
+		ShortLabel:     aggregatedConceptToWrite.ShortLabel,
 	}
 
 	// Create the canonical node
@@ -250,7 +334,7 @@ func (s Service) Write(thing interface{}, transId string) error {
 
 		equivQuery := &neoism.CypherQuery{
 			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
-			MERGE (t)-[:EQUIVALENT_TO]->(c)`,
+						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
 			Parameters: map[string]interface{}{
 				"uuid":     concept.UUID,
 				"prefUUID": aggregatedConceptToWrite.PrefUUID,
@@ -258,6 +342,41 @@ func (s Service) Write(thing interface{}, transId string) error {
 		}
 		queryBatch = append(queryBatch, equivQuery)
 
+		if len(concept.RelatedUUIDs) > 0 {
+			for _, relatedUUID := range concept.RelatedUUIDs {
+				relatedToQuery := &neoism.CypherQuery{
+					Statement: `
+						MATCH (o:Concept {uuid: {uuid}})
+						MERGE (p:Thing {uuid: {relUUID}})
+		            	MERGE (o)-[:IS_RELATED_TO]->(p)
+						MERGE (relatedUPP:Identifier:UPPIdentifier{value:{relUUID}})
+                        MERGE (relatedUPP)-[:IDENTIFIES]->(p)`,
+					Parameters: map[string]interface{}{
+						"uuid":    concept.UUID,
+						"relUUID": relatedUUID,
+					},
+				}
+				queryBatch = append(queryBatch, relatedToQuery)
+			}
+		}
+
+		if len(concept.BroaderUUIDs) > 0 {
+			for _, broaderThanUUID := range concept.BroaderUUIDs {
+				broaderThanQuery := &neoism.CypherQuery{
+					Statement: `
+						MATCH (o:Concept {uuid: {uuid}})
+						MERGE (p:Thing {uuid: {brUUID}})
+		            	MERGE (o)-[:HAS_BROADER]->(p)
+		            	MERGE (brUPP:Identifier:UPPIdentifier{value:{brUUID}})
+                        MERGE (brUPP)-[:IDENTIFIES]->(p)`,
+					Parameters: map[string]interface{}{
+						"uuid":   concept.UUID,
+						"brUUID": broaderThanUUID,
+					},
+				}
+				queryBatch = append(queryBatch, broaderThanQuery)
+			}
+		}
 	}
 
 	if len(listToUnconcord) > 0 {
@@ -266,6 +385,9 @@ func (s Service) Write(thing interface{}, transId string) error {
 				if idToUnconcord == concept.UUID {
 					unconcordQuery := s.writeConcordedNodeForUnconcordedConcepts(concept)
 					queryBatch = append(queryBatch, unconcordQuery)
+
+					//We will need to send a notification of updates to unconcorded ids
+					updatedUuidList = append(updatedUuidList, idToUnconcord)
 				}
 			}
 		}
@@ -277,6 +399,8 @@ func (s Service) Write(thing interface{}, transId string) error {
 		}
 	}
 
+	uuidsToUpdate.UpdatedIds = updatedUuidList
+
 	log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
 	for _, query := range queryBatch {
 		log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Debug(fmt.Sprintf("Query: %s", query))
@@ -285,12 +409,13 @@ func (s Service) Write(thing interface{}, transId string) error {
 	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
 	err = s.conn.CypherBatch(queryBatch)
 	if err != nil {
-		return err
+		return uuidsToUpdate, err
 	} else {
 		log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Info("Concept written to db")
-		return nil
+		return uuidsToUpdate, nil
 	}
-	return nil
+
+	return uuidsToUpdate, nil
 }
 
 func validateObject(aggConcept AggregatedConcept, transId string) error {
@@ -349,14 +474,18 @@ func filterIdsThatAreUniqueToFirstList(firstListIds []string, secondListIds []st
 	return needToBeHandled
 }
 
-func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transId string) ([]*neoism.CypherQuery, error) {
+func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transId string, uuidsToUpdate []string) ([]*neoism.CypherQuery, []string, error) {
 	result := []equivalenceResult{}
 
 	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
 
 	for _, updatedSourceId := range updatedSourceIds {
 		equivQuery := &neoism.CypherQuery{
-			Statement: `MATCH (t:Thing {uuid:{uuid}}) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c) OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing) RETURN t.uuid as sourceUuid, c.prefUUID as prefUuid, COUNT(DISTINCT eq) as count`,
+			Statement: `
+					MATCH (t:Thing {uuid:{uuid}})
+					OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c)
+					OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing)
+					RETURN t.uuid as sourceUuid, c.prefUUID as prefUuid, COUNT(DISTINCT eq) as count`,
 			Parameters: map[string]interface{}{
 				"uuid": updatedSourceId,
 			},
@@ -366,7 +495,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId}).Error("Requests for source nodes canonical information resulted in error")
-			return deleteLonePrefUuidQueries, err
+			return deleteLonePrefUuidQueries, uuidsToUpdate, err
 		}
 
 		if len(result) == 0 {
@@ -375,7 +504,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 		} else if len(result) > 1 {
 			err = errors.New("Multiple concepts found with matching uuid!")
 			log.WithError(err).WithField("UUID", updatedSourceId)
-			return deleteLonePrefUuidQueries, err
+			return deleteLonePrefUuidQueries, uuidsToUpdate, err
 		}
 
 		log.WithField("UUID", result[0].SourceUuid).Debug("Existing prefUUID is " + result[0].PrefUuid + " equivalence count is " + strconv.Itoa(result[0].Equivalence))
@@ -392,7 +521,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := errors.New("This source id: " + result[0].SourceUuid + " the only concordance to a non-matching node with prefUuid: " + result[0].PrefUuid)
 				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoadingDodgyData"}).Error(err)
-				return deleteLonePrefUuidQueries, err
+				return deleteLonePrefUuidQueries, uuidsToUpdate, err
 			}
 		} else {
 			if result[0].SourceUuid == result[0].PrefUuid {
@@ -401,7 +530,7 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 					// Source is prefUUID for a different concordance
 					err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result[0].SourceUuid)
 					log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoadingInvalidConcordance"}).Error(err)
-					return deleteLonePrefUuidQueries, err
+					return deleteLonePrefUuidQueries, uuidsToUpdate, err
 				} else {
 					// Source is prefUUID for a current concordance
 					break
@@ -409,11 +538,13 @@ func (s Service) handleTransferConcordance(updatedSourceIds []string, prefUUID s
 			} else {
 				// Source was concorded to different concordance. Data on existing concordance is now out of data
 				log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoadingStaleData"}).Info("Need to re-ingest concordance record for prefUuid: " + result[0].PrefUuid + " as source: " + result[0].SourceUuid + " has been removed.")
+				//We will need to send a notification of updates to existing concordances who have had source nodes removed
+				uuidsToUpdate = append(uuidsToUpdate, result[0].PrefUuid)
 				break
 			}
 		}
 	}
-	return deleteLonePrefUuidQueries, nil
+	return deleteLonePrefUuidQueries, uuidsToUpdate, nil
 }
 
 func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
@@ -427,21 +558,24 @@ func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 	return equivQuery
 }
 
-func (s Service) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
+func (s ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
 	acUUID := ac.PrefUUID
 	sourceUuids := getSourceIds(ac.SourceRepresentations)
 
 	queryBatch := []*neoism.CypherQuery{}
 
 	for _, id := range sourceUuids {
+		// TODO: We should be consistent in using a method to add identifiers: addIdentifierNodes
 		deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
 			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
+			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
+			OPTIONAL MATCH (t)-[broader:HAS_BROADER]->(brNode)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": id,
 			},
@@ -474,8 +608,8 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		allProps := setProps(concept, uuid, true)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+											set n={allprops}
+											set n :%s`, getAllLabels(concept.Type)),
 			Parameters: map[string]interface{}{
 				"uuid":     uuid,
 				"allprops": allProps,
@@ -486,8 +620,8 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		allProps := setProps(concept, prefUUID, false)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+											set n={allprops}
+											set n :%s`, getAllLabels(concept.Type)),
 			Parameters: map[string]interface{}{
 				"prefUUID": prefUUID,
 				"allprops": allProps,
@@ -498,11 +632,10 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if len(concept.ParentUUIDs) > 0 {
 		for _, parentUUID := range concept.ParentUUIDs {
 			writeParent := &neoism.CypherQuery{
-				Statement: `
-                                MERGE (o:Thing {uuid: {uuid}})
-		  	   	MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})
-                            	MERGE (parentupp)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {paUuid}
-		            	MERGE (o)-[:HAS_PARENT]->(p)	`,
+				Statement: `MERGE (o:Thing {uuid: {uuid}})
+		  	   				MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})
+                            MERGE (parentupp)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {paUuid}
+		            		MERGE (o)-[:HAS_PARENT]->(p)	`,
 				Parameters: neoism.Props{
 					"paUuid": parentUUID,
 					"uuid":   concept.UUID,
@@ -524,13 +657,14 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 
 }
 
-func (s Service) writeConcordedNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
+func (s ConceptService) writeConcordedNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
 	allProps := setProps(concept, concept.UUID, false)
 	log.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MATCH (t:Thing{uuid:{prefUUID}}) MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
-								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+		Statement: fmt.Sprintf(`	MATCH (t:Thing{uuid:{prefUUID}})
+										MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
+										set n={allprops}
+										set n :%s`, getAllLabels(concept.Type)),
 		Parameters: map[string]interface{}{
 			"prefUUID": concept.UUID,
 			"allprops": allProps,
@@ -577,7 +711,21 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if len(concept.Aliases) > 0 {
 		nodeProps["aliases"] = concept.Aliases
 	}
-
+	if concept.EmailAddress != "" {
+		nodeProps["emailAddress"] = concept.EmailAddress
+	}
+	if concept.FacebookPage != "" {
+		nodeProps["facebookPage"] = concept.FacebookPage
+	}
+	if concept.TwitterHandle != "" {
+		nodeProps["twitterHandle"] = concept.TwitterHandle
+	}
+	if concept.ScopeNote != "" {
+		nodeProps["scopeNote"] = concept.ScopeNote
+	}
+	if concept.ShortLabel != "" {
+		nodeProps["shortLabel"] = concept.ShortLabel
+	}
 	if concept.DescriptionXML != "" {
 		nodeProps["descriptionXML"] = concept.DescriptionXML
 	}
@@ -636,45 +784,16 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 	return query
 }
 
-//Delete - Delete method
-func (s Service) Delete(uuid string, transId string) (bool, error) {
-	log.WithFields(log.Fields{"UUID": uuid, "transaction_id": transId}).Info("Delete endpoint is currently non-functional")
-	return false, nil
-}
-
 //DecodeJSON - decode json
-func (s Service) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
+func (s ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
 	sub := AggregatedConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.PrefUUID, err
 }
 
 //Check - checker
-func (s Service) Check() error {
+func (s ConceptService) Check() error {
 	return neoutils.Check(s.conn)
-}
-
-//Count - Count of concepts
-// TODO: This needs to change of course to be taxonomy specific but will involve
-// a breaking change to the base app so vendoring needs to be applied - Do we care about this count?
-func (s Service) Count() (int, error) {
-
-	results := []struct {
-		Count int `json:"c"`
-	}{}
-
-	query := &neoism.CypherQuery{
-		Statement: `MATCH (n:Concept) return count(n) as c`,
-		Result:    &results,
-	}
-
-	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
-
-	if err != nil {
-		return 0, err
-	}
-
-	return results[0].Count, nil
 }
 
 type requestError struct {

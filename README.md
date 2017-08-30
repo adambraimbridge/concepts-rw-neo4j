@@ -18,13 +18,13 @@ or update:
 
 ## Running
 
-`$GOPATH/bin/concepts-rw-neo4j --neo-url={neo4jUrl} --port={port} --batchSize=50 --graphiteTCPAddress=graphite.ft.com:2003 --graphitePrefix=content.{env}c.concepts.rw.neo4j.{hostname} --logMetrics=false
+`$GOPATH/bin/concepts-rw-neo4j --neo-url={neo4jUrl} --port={port} --batchSize=50 --graphiteTCPAddress=graphite.ft.com:2003 --graphitePrefix=content.{env}c.concepts.rw.neo4j.{hostname} --logMetrics=false --logLevel=Info --requestLoggingOn=true
 
 All arguments are optional, they default to a local Neo4j install on the default port (7474), application running on port 8080, batchSize of 1024, graphiteTCPAddress of "" (meaning metrics won't be written to Graphite), graphitePrefix of "" and logMetrics false.
 
 ## Deployment
 
-This deploys to our delivery cluster via the normal mechnism https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/coco/deploy-process
+This deploys to our delivery cluster via the normal mechanism https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/coco/deploy-process
 
 ## Service Endpoints
 
@@ -38,8 +38,6 @@ The mandatory fields are the prefUUID, prefLabel, type, and sourceRepresentation
 Failure to provide mandatory fields will return 400 bad request.
 
 Every request results in an attempt to update that concept
-
-A successful PUT results in 200.
 
 We run queries in batches. If a batch fails, all failing requests will get a 500 server error response.
 
@@ -61,6 +59,16 @@ Example PUT request:
              	}]
              }'`
 
+A successful PUT results in 200 and returns a json response of all updated uuids.
+
+Example response from above request:
+
+    `{
+         "UpdatedIds": [
+             "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
+         ]
+     }`
+
 The type field is not currently validated against the path
 
 "TME", "UPP" and "Smartlogic" are the only valid authorities, any other Authority will result in a 400 bad request response.
@@ -75,22 +83,14 @@ If not found, you'll get a 404 response.
 Empty fields are omitted from the response.
 `curl -H "X-Request-Id: 123" localhost:8080/sections/3fa70485-3a57-3b9b-9449-774b001cd965`
 
-### DELETE
-Not currently supported
-
-### COUNT
-*This functionality is not currently correct and needs to return the specific taxonomy but at the moment it only returns the count of the number of concepts in Neo4J"
-Will return the number of concepts in Neo4J 
-
 ### Admin endpoints
 Healthchecks: [http://localhost:8080/__health](http://localhost:8080/__health)
-Ping: [http://localhost:8080/ping](http://localhost:8080/ping) or [http://localhost:8080/__ping](http://localhost:8080/__ping)
 Good to Go: [http://localhost:8080/__gtg](http://localhost:8080/__gtg)
 Build-Info: [http://localhost:8080/build-info](http://localhost:8080/build-info)
 
 ### Logging
- the application uses logrus, the logfile is initialised in main.go.
- logging requires an env app parameter, for all environments  other than local logs are written to file
- when running locally logging is written to console (if you want to log locally to file you need to pass in an env parameter that is != local)
- NOTE: build-info end point is not logged as it is called every second from varnish and this information is not needed in  logs/splunk
+This application uses logrus, the logfile is initialised in main.go and is configurable on runtime parameters
+
+- logLevel run parameter can be set to debug for more detailed logging
+- requestLoggingOn can be set to false to stop logging of http requests
 

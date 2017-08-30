@@ -8,6 +8,11 @@ type AggregatedConcept struct {
 	Strapline             string    `json:"strapline,omitempty"`
 	DescriptionXML        string    `json:"descriptionXML,omitempty"`
 	ImageURL              string    `json:"_imageUrl,omitempty"`
+	EmailAddress          string    `json:"emailAddress,omitempty"`
+	FacebookPage          string    `json:"facebookPage,omitempty"`
+	TwitterHandle         string    `json:"twitterHandle,omitempty"`
+	ScopeNote             string    `json:"scopeNote,omitempty"`
+	ShortLabel            string    `json:"shortLabel,omitempty"`
 	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
 }
 
@@ -24,6 +29,17 @@ type Concept struct {
 	Strapline         string   `json:"strapline,omitempty"`
 	DescriptionXML    string   `json:"descriptionXML,omitempty"`
 	ImageURL          string   `json:"_imageUrl,omitempty"`
+	EmailAddress      string   `json:"emailAddress,omitempty"`
+	FacebookPage      string   `json:"facebookPage,omitempty"`
+	TwitterHandle     string   `json:"twitterHandle,omitempty"`
+	ScopeNote         string   `json:"scopeNote,omitempty"`
+	ShortLabel        string   `json:"shortLabel,omitempty"`
+	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
+	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
+}
+
+type UpdatedConcepts struct {
+	UpdatedIds []string `json: "updatedIds"`
 }
 
 // Map of all the possible node types so we can ensure they all have
@@ -40,16 +56,17 @@ var constraintMap = map[string]string{
 	"Genre":                "uuid",
 	"Brand":                "uuid",
 	"AlphavilleSeries":     "uuid",
+	"Person":               "uuid",
+	"Organisation":         "uuid",
 	"UPPIdentifier":        "value",
 	"TMEIdentifier":        "value",
 	"FactsetIdentifier":    "value",
 	"SmartlogicIdentifier": "value",
-	"Person":               "value",
 }
 
 var conceptLabels = [...]string{
 	"Concept", "Classification", "Section", "Subject", "SpecialReport", "Topic",
-	"Location", "Genre", "Brand", "Person",
+	"Location", "Genre", "Brand", "Person", "Organisation",
 }
 
 // Map of authority and nodelabel for identifiers - we should be removing
@@ -60,4 +77,4 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"Smartlogic": "SmartlogicIdentifier",
 }
 
-var BasicTmePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people"}
+var BasicTmePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people", "organisation"}

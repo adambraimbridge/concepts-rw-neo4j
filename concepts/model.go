@@ -58,7 +58,7 @@ var constraintMap = map[string]string{
 	"AlphavilleSeries":     "uuid",
 	"Person":               "uuid",
 	"Organisation":         "uuid",
-	"MembershipRole":		"uuid",
+	"MembershipRole":       "uuid",
 	"UPPIdentifier":        "value",
 	"TMEIdentifier":        "value",
 	"FactsetIdentifier":    "value",
@@ -78,4 +78,4 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"Smartlogic": "SmartlogicIdentifier",
 }
 
-var ConceptTypePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people", "organisations", "membershiprole"}
+var ConceptTypePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people", "organisations", "membershiproles"}

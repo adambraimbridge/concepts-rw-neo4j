@@ -81,6 +81,7 @@ type neoAggregatedConcept struct {
 	ShortLabel            string       `json:"shortLabel,omitempty"`
 	OrganisationUUID      string       `json:"organisationUUID,omitempty"`
 	PersonUUID            string       `json:"personUUID,omitempty"`
+	MembershipRoles       []string     `json:"membershipRoles,omitempty"`
 }
 
 type neoConcept struct {
@@ -105,6 +106,7 @@ type neoConcept struct {
 	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
 	OrganisationUUID  string   `json:"organisationUUID,omitempty"`
 	PersonUUID        string   `json:"personUUID,omitempty"`
+	MembershipRoles   []string `json:"membershipRoles,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -128,18 +130,20 @@ func (s ConceptService) Read(uuid string, transId string) (interface{}, bool, er
 				WITH canonical, node, collect(related.uuid) as relUUIDS, organisationUUID, personUUID
 				OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
 				WITH canonical, node, relUUIDS, organisationUUID, personUUID, collect(broader.uuid) as broaderUUIDs
+				OPTIONAL MATCH (node)-[:HAS_ROLE]->(role:Thing)
+				WITH canonical, node, relUUIDS, organisationUUID, personUUID, broaderUUIDs, collect(role.uuid) as membershipRoles
 				OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
 				WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
 				canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
 				canonical.emailAddress as emailAddress, canonical.facebookPage as facebookPage, canonical.twitterHandle as twitterHandle,
-				canonical.scopeNote as scopeNote, canonical.shortLabel as shortLabel, organisationUUID, personUUID,
+				canonical.scopeNote as scopeNote, canonical.shortLabel as shortLabel, organisationUUID, personUUID, membershipRoles,
 				{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue,
 				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, emailAddress: node.emailAddress,
 				facebookPage: node.facebookPage,twitterHandle: node.twitterHandle, scopeNote: node.scopeNote, shortLabel: node.shortLabel,
 				aliases: node.aliases,descriptionXML: node.descriptionXML, imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid),
-				relatedUUIDs:relUUIDS, broaderUUIDs:broaderUUIDs, organisationUUID: organisationUUID, personUUID: personUUID} as sources
+				relatedUUIDs:relUUIDS, broaderUUIDs:broaderUUIDs, organisationUUID: organisationUUID, personUUID: personUUID, membershipRoles: membershipRoles} as sources
 				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, emailAddress,
-				facebookPage, twitterHandle, scopeNote, shortLabel, organisationUUID, personUUID, collect(sources) as sourceRepresentations `,
+				facebookPage, twitterHandle, scopeNote, shortLabel, organisationUUID, personUUID, membershipRoles, collect(sources) as sourceRepresentations `,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -178,6 +182,19 @@ func (s ConceptService) Read(uuid string, transId string) (interface{}, bool, er
 		ShortLabel:       results[0].ShortLabel,
 		PersonUUID:       results[0].PersonUUID,
 		OrganisationUUID: results[0].OrganisationUUID,
+	}
+
+	if len(results[0].MembershipRoles) > 0 {
+		var uuids = []string{}
+		//TODO do this differently but I get a "" back from the cypher!
+		for _, uuid := range results[0].MembershipRoles {
+			if uuid != "" {
+				uuids = append(uuids, uuid)
+			}
+		}
+		if len(uuids) > 0 {
+			aggregatedConcept.MembershipRoles = uuids
+		}
 	}
 
 	for _, srcConcept := range results[0].SourceRepresentations {
@@ -228,6 +245,19 @@ func (s ConceptService) Read(uuid string, transId string) (interface{}, bool, er
 			}
 			if len(uuids) > 0 {
 				concept.BroaderUUIDs = uuids
+			}
+		}
+
+		if len(srcConcept.MembershipRoles) > 0 {
+			uuids = []string{}
+			//TODO do this differently but I get a "" back from the cypher!
+			for _, uuid := range srcConcept.MembershipRoles {
+				if uuid != "" {
+					uuids = append(uuids, uuid)
+				}
+			}
+			if len(uuids) > 0 {
+				concept.MembershipRoles = uuids
 			}
 		}
 
@@ -654,7 +684,6 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			}
 			queryBatch = append(queryBatch, writeParent)
 		}
-
 	}
 
 	if concept.OrganisationUUID != "" {
@@ -679,10 +708,26 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		            		MERGE (membership)-[:HAS_MEMBER]->(person)`,
 			Parameters: neoism.Props{
 				"personUuid": concept.PersonUUID,
-				"uuid":    concept.UUID,
+				"uuid":       concept.UUID,
 			},
 		}
 		queryBatch = append(queryBatch, writePerson)
+	}
+
+	if len(concept.MembershipRoles) > 0 {
+		for _, membershipRoleUUID := range concept.MembershipRoles {
+			writeParent := &neoism.CypherQuery{
+				Statement: `MERGE (membership:Thing {uuid: {uuid}})
+		  	   				MERGE (roleupp:Identifier:UPPIdentifier{value:{mmbUuid}})
+                            MERGE (roleupp)-[:IDENTIFIES]->(role:Thing) ON CREATE SET role.uuid = {mmbUuid}
+		            		MERGE (membership)-[:HAS_ROLE]->(role)	`,
+				Parameters: neoism.Props{
+					"mmbUuid": membershipRoleUUID,
+					"uuid":    concept.UUID,
+				},
+			}
+			queryBatch = append(queryBatch, writeParent)
+		}
 	}
 
 	queryBatch = append(queryBatch, createConceptQuery)

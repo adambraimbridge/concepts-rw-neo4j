@@ -431,6 +431,7 @@ func getMembership() AggregatedConcept {
 		Type:             "Membership",
 		OrganisationUUID: organisationUUID,
 		PersonUUID:       personUUID,
+		MembershipRoles: []string{membershipRoleUUID},
 		SourceRepresentations: []Concept{{
 			UUID:             membershipUUID,
 			PrefLabel:        "Membership Pref Label",
@@ -439,7 +440,7 @@ func getMembership() AggregatedConcept {
 			AuthorityValue:   "746464",
 			OrganisationUUID: organisationUUID,
 			PersonUUID:       personUUID,
-		//	MembershipRoles: []string{membershipRoleUUID},
+			MembershipRoles: []string{membershipRoleUUID},
 		}}}
 }
 
@@ -466,7 +467,7 @@ func TestConnectivityCheck(t *testing.T) {
 }
 
 func TestWriteService(t *testing.T) {
-	//defer cleanDB(t)
+	defer cleanDB(t)
 
 	tests := []struct {
 		testName             string
@@ -712,6 +713,16 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 	sort.Slice(actualConcept.SourceRepresentations, func(i, j int) bool {
 		return actualConcept.SourceRepresentations[i].UUID < actualConcept.SourceRepresentations[j].UUID
 	})
+	if expected.MembershipRoles != nil || len(expected.MembershipRoles) > 0 {
+		sort.Slice(expected.MembershipRoles, func(i, j int) bool {
+			return expected.MembershipRoles[i] < expected.MembershipRoles[j]
+		})
+	}
+	if actualConcept.MembershipRoles != nil || len(actualConcept.MembershipRoles) > 0 {
+		sort.Slice(actualConcept.MembershipRoles, func(i, j int) bool {
+			return actualConcept.MembershipRoles[i] < actualConcept.MembershipRoles[j]
+		})
+	}
 
 	assert.NoError(t, err, "Unexpected Error occurred")
 	assert.True(t, found, "Concept has not been found")
@@ -731,6 +742,7 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 	assert.Equal(t, expected.PersonUUID, actualConcept.PersonUUID, "Actual person uuid for membership  differs from expected")
 	assert.Equal(t, expected.OrganisationUUID, actualConcept.OrganisationUUID, "Actual organisation uuid for membership differs from expectedConceptId: %s", expected.OrganisationUUID)
 	assert.Equal(t, expected.ShortLabel, actualConcept.ShortLabel, "Actual person uuid for membership  differs from expected: PersonUUID: %s", expected.PersonUUID)
+	assert.Equal(t, expected.MembershipRoles, actualConcept.MembershipRoles, "Actual MembershipRoles differs from expected: MembershipRoles: %s", actualConcept.MembershipRoles)
 
 	if len(expected.SourceRepresentations) > 0 && len(actualConcept.SourceRepresentations) > 0 {
 		var concepts []Concept
@@ -746,7 +758,6 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 			})
 
 			if expected.SourceRepresentations[i].ParentUUIDs != nil || len(expected.SourceRepresentations[i].ParentUUIDs) > 0 {
-
 				sort.Slice(expected.SourceRepresentations[i].ParentUUIDs, func(i, j int) bool {
 					return expected.SourceRepresentations[i].ParentUUIDs[i] < expected.SourceRepresentations[i].ParentUUIDs[j]
 				})
@@ -757,9 +768,19 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 			})
 
 			if expected.SourceRepresentations[i].RelatedUUIDs != nil || len(expected.SourceRepresentations[i].RelatedUUIDs) > 0 {
-
 				sort.Slice(expected.SourceRepresentations[i].RelatedUUIDs, func(i, j int) bool {
 					return expected.SourceRepresentations[i].RelatedUUIDs[i] < expected.SourceRepresentations[i].RelatedUUIDs[j]
+				})
+			}
+
+			if expected.SourceRepresentations[i].MembershipRoles != nil || len(expected.SourceRepresentations[i].MembershipRoles) > 0 {
+				sort.Slice(expected.SourceRepresentations[i].MembershipRoles, func(i, j int) bool {
+					return expected.SourceRepresentations[i].MembershipRoles[i] < expected.SourceRepresentations[i].MembershipRoles[j]
+				})
+			}
+			if actualConcept.SourceRepresentations[i].MembershipRoles != nil || len(actualConcept.SourceRepresentations[i].MembershipRoles) > 0 {
+				sort.Slice(actualConcept.SourceRepresentations[i].MembershipRoles, func(i, j int) bool {
+					return actualConcept.SourceRepresentations[i].MembershipRoles[i] < actualConcept.SourceRepresentations[i].MembershipRoles[j]
 				})
 			}
 			assert.Equal(t, expected.SourceRepresentations[i].RelatedUUIDs, concept.RelatedUUIDs, fmt.Sprintf("Actual concept related uuids differs from expected: ConceptId: %s", concept.UUID))
@@ -778,6 +799,7 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 			assert.Equal(t, expected.SourceRepresentations[i].ShortLabel, concept.ShortLabel, fmt.Sprintf("Actual short label differs from expected: ConceptId: %s", concept.ShortLabel))
 			assert.Equal(t, expected.SourceRepresentations[i].OrganisationUUID, concept.OrganisationUUID, "Actual organisation uuid for membership differs from expected OganisationUUID: %s", concept.OrganisationUUID)
 			assert.Equal(t, expected.SourceRepresentations[i].PersonUUID, concept.PersonUUID, "Actual person uuid for membership  differs from expected: PersonUUID: %s", concept.PersonUUID)
+			assert.Equal(t, expected.SourceRepresentations[i].MembershipRoles, concept.MembershipRoles, "Actual MembershipRoles differs from expected: MembershipRoles: %s", concept.MembershipRoles)
 		}
 		actualConcept.SourceRepresentations = concepts
 	}

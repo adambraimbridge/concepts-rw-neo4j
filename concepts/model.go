@@ -78,4 +78,4 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"Smartlogic": "SmartlogicIdentifier",
 }
 
-var ConceptTypePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people", "organisation", "membershiprole"}
+var ConceptTypePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people", "organisations", "membershiprole"}

@@ -58,6 +58,7 @@ var constraintMap = map[string]string{
 	"AlphavilleSeries":     "uuid",
 	"Person":               "uuid",
 	"Organisation":         "uuid",
+	"MembershipRole":		"uuid",
 	"UPPIdentifier":        "value",
 	"TMEIdentifier":        "value",
 	"FactsetIdentifier":    "value",
@@ -66,7 +67,7 @@ var constraintMap = map[string]string{
 
 var conceptLabels = [...]string{
 	"Concept", "Classification", "Section", "Subject", "SpecialReport", "Topic",
-	"Location", "Genre", "Brand", "Person", "Organisation",
+	"Location", "Genre", "Brand", "Person", "Organisation", "MembershipRole",
 }
 
 // Map of authority and nodelabel for identifiers - we should be removing
@@ -77,4 +78,4 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"Smartlogic": "SmartlogicIdentifier",
 }
 
-var BasicTmePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people", "organisation"}
+var ConceptTypePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people", "organisation", "membershiprole"}

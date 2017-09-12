@@ -21,10 +21,11 @@ import (
 
 //all uuids to be cleaned from DB
 const (
-	basicConceptUUID           = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
-	anotherBasicConceptUUID    = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
-	yetAnotherBasicConceptUUID = "f7e3fe2d-7496-4d42-b19f-378094efd263"
-	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
+	basicConceptUUID           	= "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
+	anotherBasicConceptUUID    	= "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
+	membershipRoleUUID			= "f807193d-337b-412f-b32c-afa14b385819"
+	yetAnotherBasicConceptUUID 	= "f7e3fe2d-7496-4d42-b19f-378094efd263"
+	parentUuid                 	= "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
@@ -405,6 +406,20 @@ func getConceptWithHasBroader() AggregatedConcept {
 		}}}
 }
 
+func getMembershipRole() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  membershipRoleUUID,
+		PrefLabel: "MembershipRole Pref Label",
+		Type:      "MembershipRole",
+		SourceRepresentations: []Concept{{
+			UUID:           membershipRoleUUID,
+			PrefLabel:      "MembershipRole Pref Label",
+			Type:           "MembershipRole",
+			Authority:      "Smartlogic",
+			AuthorityValue: "987654321",
+		}}}
+}
+
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
@@ -439,6 +454,7 @@ func TestWriteService(t *testing.T) {
 	}{
 		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied", UpdatedConcepts{UpdatedIds: []string{}}},
 		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
+		{"Creates All Values Present for a MembershipRole", getMembershipRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a HAS_BROADER relationship", getConceptWithHasBroader(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},

@@ -128,7 +128,7 @@ func main() {
 		handler := concepts.ConceptsHandler{ConceptsService: conceptsService}
 
 		services := map[string]concepts.ConceptService{}
-		for _, path := range concepts.BasicTmePaths {
+		for _, path := range concepts.ConceptTypePaths {
 			services[path] = conceptsService
 		}
 

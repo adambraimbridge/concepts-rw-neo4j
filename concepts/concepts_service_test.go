@@ -26,6 +26,11 @@ const (
 	yetAnotherBasicConceptUUID = "f7e3fe2d-7496-4d42-b19f-378094efd263"
 	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
+	membershipRoleUUID = "f807193d-337b-412f-b32c-afa14b385819"
+	organisationUUID   = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
+	personUUID         = "35946807-0205-4fc1-8516-bb1ae141659b"
+	membershipUUID     = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
 	sourceId_3 = "5b1d8c31-dfe4-4326-b6a9-6227cb59af1f"
@@ -405,6 +410,40 @@ func getConceptWithHasBroader() AggregatedConcept {
 		}}}
 }
 
+func getMembershipRole() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  membershipRoleUUID,
+		PrefLabel: "MembershipRole Pref Label",
+		Type:      "MembershipRole",
+		SourceRepresentations: []Concept{{
+			UUID:           membershipRoleUUID,
+			PrefLabel:      "MembershipRole Pref Label",
+			Type:           "MembershipRole",
+			Authority:      "Smartlogic",
+			AuthorityValue: "987654321",
+		}}}
+}
+
+func getMembership() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:         membershipUUID,
+		PrefLabel:        "Membership Pref Label",
+		Type:             "Membership",
+		OrganisationUUID: organisationUUID,
+		PersonUUID:       personUUID,
+		MembershipRoles: []string{membershipRoleUUID},
+		SourceRepresentations: []Concept{{
+			UUID:             membershipUUID,
+			PrefLabel:        "Membership Pref Label",
+			Type:             "Membership",
+			Authority:        "Smartlogic",
+			AuthorityValue:   "746464",
+			OrganisationUUID: organisationUUID,
+			PersonUUID:       personUUID,
+			MembershipRoles: []string{membershipRoleUUID},
+		}}}
+}
+
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
@@ -439,6 +478,8 @@ func TestWriteService(t *testing.T) {
 	}{
 		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied", UpdatedConcepts{UpdatedIds: []string{}}},
 		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
+		{"Creates All Values Present for a MembershipRole", getMembershipRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
+		{"Creates All Values Present for a Membership", getMembership(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a HAS_BROADER relationship", getConceptWithHasBroader(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
@@ -672,6 +713,16 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 	sort.Slice(actualConcept.SourceRepresentations, func(i, j int) bool {
 		return actualConcept.SourceRepresentations[i].UUID < actualConcept.SourceRepresentations[j].UUID
 	})
+	if expected.MembershipRoles != nil || len(expected.MembershipRoles) > 0 {
+		sort.Slice(expected.MembershipRoles, func(i, j int) bool {
+			return expected.MembershipRoles[i] < expected.MembershipRoles[j]
+		})
+	}
+	if actualConcept.MembershipRoles != nil || len(actualConcept.MembershipRoles) > 0 {
+		sort.Slice(actualConcept.MembershipRoles, func(i, j int) bool {
+			return actualConcept.MembershipRoles[i] < actualConcept.MembershipRoles[j]
+		})
+	}
 
 	assert.NoError(t, err, "Unexpected Error occurred")
 	assert.True(t, found, "Concept has not been found")
@@ -687,6 +738,11 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 	assert.Equal(t, expected.TwitterHandle, actualConcept.TwitterHandle, "Actual Twitter handle differs from expected")
 	assert.Equal(t, expected.ScopeNote, actualConcept.ScopeNote, "Actual scope note differs from expected")
 	assert.Equal(t, expected.ShortLabel, actualConcept.ShortLabel, "Actual short label differs from expected")
+	assert.Equal(t, expected.OrganisationUUID, actualConcept.OrganisationUUID, "Actual organisation uuid for membership differs from expected")
+	assert.Equal(t, expected.PersonUUID, actualConcept.PersonUUID, "Actual person uuid for membership  differs from expected")
+	assert.Equal(t, expected.OrganisationUUID, actualConcept.OrganisationUUID, "Actual organisation uuid for membership differs from expectedConceptId: %s", expected.OrganisationUUID)
+	assert.Equal(t, expected.ShortLabel, actualConcept.ShortLabel, "Actual person uuid for membership  differs from expected: PersonUUID: %s", expected.PersonUUID)
+	assert.Equal(t, expected.MembershipRoles, actualConcept.MembershipRoles, "Actual MembershipRoles differs from expected: MembershipRoles: %s", actualConcept.MembershipRoles)
 
 	if len(expected.SourceRepresentations) > 0 && len(actualConcept.SourceRepresentations) > 0 {
 		var concepts []Concept
@@ -702,7 +758,6 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 			})
 
 			if expected.SourceRepresentations[i].ParentUUIDs != nil || len(expected.SourceRepresentations[i].ParentUUIDs) > 0 {
-
 				sort.Slice(expected.SourceRepresentations[i].ParentUUIDs, func(i, j int) bool {
 					return expected.SourceRepresentations[i].ParentUUIDs[i] < expected.SourceRepresentations[i].ParentUUIDs[j]
 				})
@@ -713,9 +768,19 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 			})
 
 			if expected.SourceRepresentations[i].RelatedUUIDs != nil || len(expected.SourceRepresentations[i].RelatedUUIDs) > 0 {
-
 				sort.Slice(expected.SourceRepresentations[i].RelatedUUIDs, func(i, j int) bool {
 					return expected.SourceRepresentations[i].RelatedUUIDs[i] < expected.SourceRepresentations[i].RelatedUUIDs[j]
+				})
+			}
+
+			if expected.SourceRepresentations[i].MembershipRoles != nil || len(expected.SourceRepresentations[i].MembershipRoles) > 0 {
+				sort.Slice(expected.SourceRepresentations[i].MembershipRoles, func(i, j int) bool {
+					return expected.SourceRepresentations[i].MembershipRoles[i] < expected.SourceRepresentations[i].MembershipRoles[j]
+				})
+			}
+			if actualConcept.SourceRepresentations[i].MembershipRoles != nil || len(actualConcept.SourceRepresentations[i].MembershipRoles) > 0 {
+				sort.Slice(actualConcept.SourceRepresentations[i].MembershipRoles, func(i, j int) bool {
+					return actualConcept.SourceRepresentations[i].MembershipRoles[i] < actualConcept.SourceRepresentations[i].MembershipRoles[j]
 				})
 			}
 			assert.Equal(t, expected.SourceRepresentations[i].RelatedUUIDs, concept.RelatedUUIDs, fmt.Sprintf("Actual concept related uuids differs from expected: ConceptId: %s", concept.UUID))
@@ -732,10 +797,13 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 			assert.Equal(t, expected.SourceRepresentations[i].TwitterHandle, concept.TwitterHandle, fmt.Sprintf("Actual Twitter handle differs from expected: ConceptId: %s", concept.TwitterHandle))
 			assert.Equal(t, expected.SourceRepresentations[i].ScopeNote, concept.ScopeNote, fmt.Sprintf("Actual scope note differs from expected: ConceptId: %s", concept.ScopeNote))
 			assert.Equal(t, expected.SourceRepresentations[i].ShortLabel, concept.ShortLabel, fmt.Sprintf("Actual short label differs from expected: ConceptId: %s", concept.ShortLabel))
+			assert.Equal(t, expected.SourceRepresentations[i].OrganisationUUID, concept.OrganisationUUID, "Actual organisation uuid for membership differs from expected OganisationUUID: %s", concept.OrganisationUUID)
+			assert.Equal(t, expected.SourceRepresentations[i].PersonUUID, concept.PersonUUID, "Actual person uuid for membership  differs from expected: PersonUUID: %s", concept.PersonUUID)
+			assert.Equal(t, expected.SourceRepresentations[i].MembershipRoles, concept.MembershipRoles, "Actual MembershipRoles differs from expected: MembershipRoles: %s", concept.MembershipRoles)
 		}
 		actualConcept.SourceRepresentations = concepts
 	}
-	assert.True(t, reflect.DeepEqual(expected, actualConcept), "Actual aggregated concept differs from expected")
+	assert.True(t, reflect.DeepEqual(expected, actualConcept), "Actual aggregated concept differs from expected: Expected: %v, Actual: %v", expected, actualConcept)
 }
 
 func neoUrl() string {

@@ -13,6 +13,9 @@ type AggregatedConcept struct {
 	TwitterHandle         string    `json:"twitterHandle,omitempty"`
 	ScopeNote             string    `json:"scopeNote,omitempty"`
 	ShortLabel            string    `json:"shortLabel,omitempty"`
+	MembershipRoles       []string  `json:"membershipRoles,omitempty"`
+	OrganisationUUID      string    `json:"organisationUUID,omitempty"`
+	PersonUUID            string    `json:"personUUID,omitempty"`
 	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
 }
 
@@ -36,6 +39,9 @@ type Concept struct {
 	ShortLabel        string   `json:"shortLabel,omitempty"`
 	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
 	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
+	MembershipRoles   []string `json:"membershipRoles,omitempty"`
+	OrganisationUUID  string   `json:"organisationUUID,omitempty"`
+	PersonUUID        string   `json:"personUUID,omitempty"`
 }
 
 type UpdatedConcepts struct {
@@ -58,6 +64,8 @@ var constraintMap = map[string]string{
 	"AlphavilleSeries":     "uuid",
 	"Person":               "uuid",
 	"Organisation":         "uuid",
+	"MembershipRole":       "uuid",
+	"Membership":           "uuid",
 	"UPPIdentifier":        "value",
 	"TMEIdentifier":        "value",
 	"FactsetIdentifier":    "value",
@@ -66,7 +74,7 @@ var constraintMap = map[string]string{
 
 var conceptLabels = [...]string{
 	"Concept", "Classification", "Section", "Subject", "SpecialReport", "Topic",
-	"Location", "Genre", "Brand", "Person", "Organisation",
+	"Location", "Genre", "Brand", "Person", "Organisation", "MembershipRole", "Membership",
 }
 
 // Map of authority and nodelabel for identifiers - we should be removing
@@ -77,4 +85,4 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"Smartlogic": "SmartlogicIdentifier",
 }
 
-var BasicTmePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people", "organisation"}
+var ConceptTypePaths = []string{"brands", "topics", "subjects", "special-reports", "genres", "locations", "sections", "alphaville-series", "people", "organisations", "membershiproles", "memberships"}

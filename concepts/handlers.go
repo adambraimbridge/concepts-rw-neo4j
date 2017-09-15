@@ -4,12 +4,12 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/Financial-Times/transactionid-utils-go"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
+	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 )
 
 type ConceptsHandler struct {
@@ -65,7 +65,7 @@ func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		case noContentReturnedError:
 			writeJSONError(w, e.NoContentReturnedDetails(), http.StatusNoContent)
 			return
-		case *neoutils.ConstraintViolationError:
+		case rwapi.ConstraintOrTransactionError:
 			writeJSONError(w, e.Error(), http.StatusConflict)
 			return
 		case invalidRequestError:

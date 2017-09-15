@@ -8,9 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 	"github.com/gorilla/mux"
-	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -22,7 +21,7 @@ func TestPutHandler(t *testing.T) {
 	tests := []struct {
 		name        string
 		req         *http.Request
-		ds          ConceptServicer
+		mockService ConceptServicer
 		statusCode  int
 		contentType string // Contents of the Content-Type header
 		body        string
@@ -31,12 +30,12 @@ func TestPutHandler(t *testing.T) {
 		{"ParseError", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failParse: true}, http.StatusBadRequest, "", errorMessage("TEST failing to DECODE")},
 		{"UUIDMisMatch", newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999")), mockConceptService{uuid: knownUUID}, http.StatusBadRequest, "", errorMessage("Uuids from payload and request, respectively, do not match: '12345' '99999'")},
 		{"WriteFailed", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failWrite: true}, http.StatusServiceUnavailable, "", errorMessage("TEST failing to WRITE")},
-		{"WriteFailedDueToConflict", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failConflict: true}, http.StatusConflict, "", errorMessage("Neo4j ConstraintViolation TEST failing to WRITE due to CONFLICT")},
+		{"WriteFailedDueToConflict", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failConflict: true}, http.StatusConflict, "", errorMessage("")},
 	}
 
 	for _, test := range tests {
 		r := mux.NewRouter()
-		handler := ConceptsHandler{test.ds}
+		handler := ConceptsHandler{test.mockService}
 		handler.RegisterHandlers(r, "dummies")
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, test.req)
@@ -131,7 +130,7 @@ func (dS mockConceptService) Write(thing interface{}, transId string) (interface
 		return mockList, errors.New("TEST failing to WRITE")
 	}
 	if dS.failConflict {
-		return mockList, neoutils.NewConstraintViolationError("TEST failing to WRITE due to CONFLICT", &neoism.NeoError{})
+		return mockList, rwapi.ConstraintOrTransactionError{}
 	}
 	if len(dS.uuidList) > 0 {
 		mockList.UpdatedIds = dS.uuidList

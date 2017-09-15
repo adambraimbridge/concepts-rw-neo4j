@@ -447,9 +447,9 @@ func (s ConceptService) Write(thing interface{}, transId string) (interface{}, e
 		log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Debug(fmt.Sprintf("Query: %s", query))
 	}
 
-	// TODO: Handle Constraint error properly but having difficulties with *neoutils.ConstraintViolationError
 	err = s.conn.CypherBatch(queryBatch)
 	if err != nil {
+		log.WithError(err).WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Error("Error executing neo4j write query. Concept NOT written.")
 		return uuidsToUpdate, err
 	} else {
 		log.WithFields(log.Fields{"UUID": aggregatedConceptToWrite.PrefUUID, "transaction_id": transId}).Info("Concept written to db")
@@ -567,7 +567,6 @@ func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, pre
 		} else {
 			if result[0].SourceUuid == result[0].PrefUuid {
 				if result[0].SourceUuid != prefUUID {
-					//TODO ???
 					// Source is prefUUID for a different concordance
 					err := errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: " + result[0].SourceUuid)
 					log.WithFields(log.Fields{"UUID": prefUUID, "transaction_id": transId, "alert_tag": "ConceptLoadingInvalidConcordance"}).Error(err)

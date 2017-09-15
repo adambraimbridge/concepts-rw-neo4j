@@ -17,6 +17,8 @@ import (
 
 	"errors"
 	"reflect"
+
+	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 )
 
 //all uuids to be cleaned from DB
@@ -431,7 +433,7 @@ func getMembership() AggregatedConcept {
 		Type:             "Membership",
 		OrganisationUUID: organisationUUID,
 		PersonUUID:       personUUID,
-		MembershipRoles: []string{membershipRoleUUID},
+		MembershipRoles:  []string{membershipRoleUUID},
 		SourceRepresentations: []Concept{{
 			UUID:             membershipUUID,
 			PrefLabel:        "Membership Pref Label",
@@ -440,7 +442,7 @@ func getMembership() AggregatedConcept {
 			AuthorityValue:   "746464",
 			OrganisationUUID: organisationUUID,
 			PersonUUID:       personUUID,
-			MembershipRoles: []string{membershipRoleUUID},
+			MembershipRoles:  []string{membershipRoleUUID},
 		}}}
 }
 
@@ -701,6 +703,24 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 			assert.NoError(t, err, scenario.testName)
 		}
 	}
+}
+
+func TestConflictResultsInRawpiConflictError(t *testing.T) {
+	defer cleanDB(t)
+
+	obj := getSingleConcordance()
+	_, err := conceptsDriver.Write(obj, "trans_id")
+
+	assert.NoError(t, err, "Failed to write concept")
+
+	clashedObj := obj
+
+	clashedObj.PrefUUID = "12345"
+	clashedObj.SourceRepresentations[0].UUID = "12345"
+
+	_, err = conceptsDriver.Write(clashedObj, "trans_id")
+	assert.IsType(t, rwapi.ConstraintOrTransactionError{}, err)
+
 }
 
 func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName string) {

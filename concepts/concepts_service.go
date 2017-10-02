@@ -834,29 +834,22 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 func addIdentifierNodes(UUID string, authority string, authorityValue string) []*neoism.CypherQuery {
 	var queryBatch []*neoism.CypherQuery
 	//Add Alternative Identifier
-	for k, v := range authorityToIdentifierLabelMap {
-		if k == authority {
-			alternativeIdentifierQuery := createNewIdentifierQuery(UUID, v, authorityValue)
-			queryBatch = append(queryBatch, alternativeIdentifierQuery)
-		}
-	}
 
-	if authority != "UPP" {
-		//TODO Remove this when things no longer matches on UppIdentifier
-		// Add UPPIdentififer
-		uppIdentifierQuery := createNewIdentifierQuery(UUID,
-			authorityToIdentifierLabelMap["UPP"], UUID)
+	if label, ok := authorityToIdentifierLabelMap[authority]; ok {
+		alternativeIdentifierQuery := createNewIdentifierQuery(UUID, label, authorityValue)
+		queryBatch = append(queryBatch, alternativeIdentifierQuery)
 
+		uppIdentifierQuery := createNewIdentifierQuery(UUID, authorityToIdentifierLabelMap["UPP"], UUID)
 		queryBatch = append(queryBatch, uppIdentifierQuery)
 	}
+
 	return queryBatch
 }
 
 func createNewIdentifierQuery(uuid string, identifierLabel string, identifierValue string) *neoism.CypherQuery {
 	statementTemplate := fmt.Sprintf(`MERGE (t:Thing {uuid:{uuid}})
-					CREATE (i:Identifier {value:{value}})
-					MERGE (t)<-[:IDENTIFIES]-(i)
-					set i : %s `, identifierLabel)
+					MERGE (i:Identifier:%s {value:{value}})
+					MERGE (t)<-[:IDENTIFIES]-(i)`, identifierLabel)
 	query := &neoism.CypherQuery{
 		Statement: statementTemplate,
 		Parameters: map[string]interface{}{

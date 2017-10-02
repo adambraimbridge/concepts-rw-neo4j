@@ -17,8 +17,6 @@ import (
 
 	"errors"
 	"reflect"
-
-	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 )
 
 //all uuids to be cleaned from DB
@@ -705,24 +703,6 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	}
 }
 
-func TestConflictResultsInRawpiConflictError(t *testing.T) {
-	defer cleanDB(t)
-
-	obj := getSingleConcordance()
-	_, err := conceptsDriver.Write(obj, "trans_id")
-
-	assert.NoError(t, err, "Failed to write concept")
-
-	clashedObj := obj
-
-	clashedObj.PrefUUID = "12345"
-	clashedObj.SourceRepresentations[0].UUID = "12345"
-
-	_, err = conceptsDriver.Write(clashedObj, "trans_id")
-	assert.IsType(t, rwapi.ConstraintOrTransactionError{}, err)
-
-}
-
 func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName string) {
 	actual, found, err := conceptsDriver.Read(expected.PrefUUID, "")
 	actualConcept := actual.(AggregatedConcept)
@@ -845,9 +825,9 @@ func getConceptService(t *testing.T) ConceptService {
 }
 
 func cleanDB(t *testing.T) {
-	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID)
-	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID)
-	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID)
+	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID)
+	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID)
+	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID)
 }
 
 func deleteSourceNodes(t *testing.T, uuids ...string) {

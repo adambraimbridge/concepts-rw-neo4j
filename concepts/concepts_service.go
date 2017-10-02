@@ -854,7 +854,7 @@ func addIdentifierNodes(UUID string, authority string, authorityValue string) []
 
 func createNewIdentifierQuery(uuid string, identifierLabel string, identifierValue string) *neoism.CypherQuery {
 	statementTemplate := fmt.Sprintf(`MERGE (t:Thing {uuid:{uuid}})
-					CREATE (i:Identifier {value:{value}})
+					MERGE (i:Identifier {value:{value}})
 					MERGE (t)<-[:IDENTIFIES]-(i)
 					set i : %s `, identifierLabel)
 	query := &neoism.CypherQuery{

@@ -613,9 +613,12 @@ func (s ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.C
 			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
 			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
 			OPTIONAL MATCH (t)-[broader:HAS_BROADER]->(brNode)
+			OPTIONAL MATCH (t)-[ho:HAS_ORGANISATION]->(org)
+			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->(memb)
+			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->(mr)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo, broader`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": id,
 			},

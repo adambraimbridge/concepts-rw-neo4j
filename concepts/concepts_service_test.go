@@ -17,6 +17,8 @@ import (
 
 	"errors"
 	"reflect"
+
+	"encoding/json"
 )
 
 //all uuids to be cleaned from DB
@@ -30,6 +32,9 @@ const (
 	organisationUUID   = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
 	personUUID         = "35946807-0205-4fc1-8516-bb1ae141659b"
 	membershipUUID     = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+	anotherMembershipRoleUUID = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
+	anotherOrganisationUUID = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
+	anotherPersonUUID = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
@@ -444,6 +449,26 @@ func getMembership() AggregatedConcept {
 		}}}
 }
 
+func getUpdatedMembership() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:         membershipUUID,
+		PrefLabel:        "Membership Pref Label",
+		Type:             "Membership",
+		OrganisationUUID: anotherOrganisationUUID,
+		PersonUUID:       anotherPersonUUID,
+		MembershipRoles:  []string{anotherMembershipRoleUUID},
+		SourceRepresentations: []Concept{{
+			UUID:             membershipUUID,
+			PrefLabel:        "Membership Pref Label",
+			Type:             "Membership",
+			Authority:        "Smartlogic",
+			AuthorityValue:   "746464",
+			OrganisationUUID: anotherOrganisationUUID,
+			PersonUUID:       anotherPersonUUID,
+			MembershipRoles:  []string{anotherMembershipRoleUUID},
+		}}}
+}
+
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
@@ -532,6 +557,41 @@ func TestWriteService(t *testing.T) {
 		})
 	}
 }
+
+func TestWriteMemberships_CleansUpExisting(t *testing.T) {
+	defer cleanDB(t)
+
+	_, err := conceptsDriver.Write(getMembership(), "test_tid")
+	assert.NoError(t, err, "Failed to write membership")
+
+	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
+	assert.NoError(t, err, "Failed to read membership")
+	ab, err := json.Marshal(result)
+
+	originalMembership := AggregatedConcept{}
+	json.Unmarshal(ab, &originalMembership)
+
+	assert.Equal(t, len(originalMembership.MembershipRoles), 1)
+	assert.Equal(t, []string{membershipRoleUUID}, originalMembership.MembershipRoles)
+	assert.Equal(t, organisationUUID, originalMembership.OrganisationUUID)
+	assert.Equal(t, personUUID, originalMembership.PersonUUID)
+
+	_, err = conceptsDriver.Write(getUpdatedMembership(), "test_tid")
+	assert.NoError(t, err, "Failed to write membership")
+
+	updatedResult, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
+	assert.NoError(t, err, "Failed to read membership")
+	cd, err := json.Marshal(updatedResult)
+
+	updatedMemebership := AggregatedConcept{}
+	json.Unmarshal(cd, &updatedMemebership)
+
+	assert.Equal(t, len(updatedMemebership.MembershipRoles), 1)
+	assert.Equal(t, []string{anotherMembershipRoleUUID}, updatedMemebership.MembershipRoles)
+	assert.Equal(t, anotherOrganisationUUID, updatedMemebership.OrganisationUUID)
+	assert.Equal(t, anotherPersonUUID, updatedMemebership.PersonUUID)
+}
+
 func TestWriteService_HandlingConcordance(t *testing.T) {
 	tid := "test_tid"
 	type testStruct struct {
@@ -825,9 +885,9 @@ func getConceptService(t *testing.T) ConceptService {
 }
 
 func cleanDB(t *testing.T) {
-	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID)
-	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID)
-	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID)
+	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID)
+	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID)
+	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID)
 }
 
 func deleteSourceNodes(t *testing.T, uuids ...string) {

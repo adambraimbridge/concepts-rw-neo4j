@@ -19,6 +19,9 @@ import (
 	"reflect"
 
 	"encoding/json"
+	"github.com/Financial-Times/go-logger"
+	"github.com/mitchellh/hashstructure"
+	"strconv"
 )
 
 //all uuids to be cleaned from DB
@@ -28,13 +31,13 @@ const (
 	yetAnotherBasicConceptUUID = "f7e3fe2d-7496-4d42-b19f-378094efd263"
 	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
-	membershipRoleUUID = "f807193d-337b-412f-b32c-afa14b385819"
-	organisationUUID   = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
-	personUUID         = "35946807-0205-4fc1-8516-bb1ae141659b"
-	membershipUUID     = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+	membershipRoleUUID        = "f807193d-337b-412f-b32c-afa14b385819"
+	organisationUUID          = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
+	personUUID                = "35946807-0205-4fc1-8516-bb1ae141659b"
+	membershipUUID            = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 	anotherMembershipRoleUUID = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
-	anotherOrganisationUUID = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
-	anotherPersonUUID = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
+	anotherOrganisationUUID   = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
+	anotherPersonUUID         = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
@@ -48,6 +51,8 @@ var db neoutils.NeoConnection
 
 //Concept Service under test
 var conceptsDriver ConceptService
+
+var emptyList []string
 
 func getSingleConcordance() AggregatedConcept {
 	return AggregatedConcept{
@@ -472,6 +477,8 @@ func getUpdatedMembership() AggregatedConcept {
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
+	logger.InitLogger("test-concepts-rw-neo4j", "info")
+
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
 	db, _ = neoutils.Connect(neoUrl(), conf)
@@ -509,7 +516,7 @@ func TestWriteService(t *testing.T) {
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a HAS_BROADER relationship", getConceptWithHasBroader(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing", getConceptWithHasBroaderToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, anotherBasicConceptUUID}}},
+		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, basicConceptUUID}}},
 		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label `TMEIdentifier` and property `value` = '1234'", UpdatedConcepts{UpdatedIds: []string{}}},
 		{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request", UpdatedConcepts{UpdatedIds: []string{}}},
@@ -605,16 +612,16 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 
 	writeHandlesUnconcordanceGracefully := testStruct{testName: "writeHandlesUnconcordanceGracefully", setUpConcept: getDualConcordance(), testConcept: getSingleConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
 	writeTransferConcordanceErrorsOnTransferringPrefUuid := testStruct{testName: "writeTransferConcordanceErrorsOnTransferringPrefUuid", setUpConcept: getDualConcordance(), testConcept: getPrefUUIDAsASource(), returnedError: "Cannot currently process this record as it will break an existing concordance with prefUuid: bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}
-	writeHandlesTransferSourceFromOtherConcordance := testStruct{testName: "writeHandlesOrphanedPrefUuids", setUpConcept: getDualConcordance(), testConcept: getTransferSourceConcordance(), uuidsToCheck: []string{anotherBasicConceptUUID, sourceId_1, basicConceptUUID}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, sourceId_1, basicConceptUUID}}}
+	writeHandlesTransferSourceFromOtherConcordance := testStruct{testName: "writeHandlesTransferSourceFromOtherConcordance", setUpConcept: getDualConcordance(), testConcept: getTransferSourceConcordance(), uuidsToCheck: []string{anotherBasicConceptUUID, sourceId_1, basicConceptUUID}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, sourceId_1}}}
+	ifConceptIsUnchangedNothingIsWritten := testStruct{testName: "ifConceptIsUnchangedNothingIsWritten", setUpConcept: getDualConcordance(), testConcept: getDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: emptyList}}
 
-	scenarios := []testStruct{writeHandlesUnconcordanceGracefully, writeTransferConcordanceErrorsOnTransferringPrefUuid, writeHandlesTransferSourceFromOtherConcordance}
+	scenarios := []testStruct{writeHandlesUnconcordanceGracefully, writeTransferConcordanceErrorsOnTransferringPrefUuid, writeHandlesTransferSourceFromOtherConcordance, ifConceptIsUnchangedNothingIsWritten}
 
 	for _, scenario := range scenarios {
 		cleanDB(t)
 		//Write data into db, to set up test scenario
 		_, err := conceptsDriver.Write(scenario.setUpConcept, tid)
 		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
-
 		//Overwrite data with update
 		updatedConcepts, err := conceptsDriver.Write(scenario.testConcept, tid)
 		if err != nil {
@@ -629,12 +636,12 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 				assert.True(t, found, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 				assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
+				verifyAggregateHashIsCorrect(t, scenario.testConcept, scenario.testName)
 			} else {
 				assert.Equal(t, AggregatedConcept{}, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 				assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 			}
 		}
-
 		cleanDB(t)
 	}
 
@@ -863,6 +870,8 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 		}
 		actualConcept.SourceRepresentations = concepts
 	}
+	//Have to set expected hash here otherwise deep equal will always fail
+	expected.AggregatedHash = actualConcept.AggregatedHash
 	assert.True(t, reflect.DeepEqual(expected, actualConcept), "Actual aggregated concept differs from expected: Expected: %v, Actual: %v", expected, actualConcept)
 }
 
@@ -951,4 +960,27 @@ func getIdentifierValue(t *testing.T, uuidPropertyName string, uuid string, labe
 		return results[0].Value
 	}
 	return ""
+}
+
+func verifyAggregateHashIsCorrect(t *testing.T, concept AggregatedConcept, testName string) {
+	results := []struct {
+		Hash string `json:"a.aggregateHash"`
+	}{}
+
+	query := &neoism.CypherQuery{
+		Statement: `
+			MATCH (a:Thing {prefUUID: {uuid}})
+			RETURN a.aggregateHash`,
+		Parameters: map[string]interface{}{
+			"uuid": concept.PrefUUID,
+		},
+		Result: &results,
+	}
+	err := db.CypherBatch([]*neoism.CypherQuery{query})
+	assert.NoError(t, err, fmt.Sprintf("Error while retrieving concept hash"))
+	fmt.Sprintf("Results are %v\n", results)
+
+	conceptHash, _ := hashstructure.Hash(concept, nil)
+	hashAsString := strconv.FormatUint(conceptHash, 10)
+	assert.Equal(t, hashAsString, results[0].Hash, fmt.Sprintf("Test %s failed: Concept hash %s and stored record %s are not equal!", testName, hashAsString, results[0].Hash))
 }

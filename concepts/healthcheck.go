@@ -2,16 +2,18 @@ package concepts
 
 import (
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/http-handlers-go/httphandlers"
 	st "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
-	log "github.com/sirupsen/logrus"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCode string, appName string, appDescription string, enableRequestLogging bool) http.Handler {
-	log.Info("Registering healthcheck handlers")
+	logger.Info("Registering healthcheck handlers")
 	var checks []fthealth.Check = []fthealth.Check{h.makeNeo4jAvailabililtyCheck()}
 
 	router.HandleFunc("/__health", fthealth.Handler(fthealth.HealthCheck{SystemCode: appSystemCode, Name: appName, Description: appDescription, Checks: checks}))
@@ -29,7 +31,7 @@ func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCod
 
 func (h *ConceptsHandler) gtgCheck(rw http.ResponseWriter, req *http.Request) {
 	if errString, err := h.makeNeo4jAvailabililtyCheck().Checker(); err != nil {
-		log.WithError(err).Errorf("Connection to Neo4j healthcheck failed [%s]", errString)
+		logger.WithError(err).Errorf("Connection to Neo4j healthcheck failed [%s]", errString)
 		rw.WriteHeader(http.StatusServiceUnavailable)
 		rw.Write([]byte("Connection to Neo4j healthcheck failed"))
 		return

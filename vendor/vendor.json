@@ -27,6 +27,12 @@
 			"revisionTime": "2017-05-25T09:50:41Z"
 		},
 		{
+			"checksumSHA1": "vEjWOjTbj1zDU4aNsl1u4J801Wg=",
+			"path": "github.com/Financial-Times/go-logger",
+			"revision": "ec38b420999cfcbc86816afb47f365dad510450c",
+			"revisionTime": "2017-10-20T13:42:12Z"
+		},
+		{
 			"checksumSHA1": "dqF1g4reeLPNN10qTXgDJj3fHm4=",
 			"path": "github.com/Financial-Times/http-handlers-go/httphandlers",
 			"revision": "229ac16f1d9ec9bca485d2dafb9ec14dc7e9ba24",
@@ -161,6 +167,12 @@
 			"path": "github.com/kr/text",
 			"revision": "7cafcd837844e784b526369c9bce262804aebc60",
 			"revisionTime": "2016-05-04T02:26:26Z"
+		},
+		{
+			"checksumSHA1": "tWUjKyFOGJtYExocPWVYiXBYsfE=",
+			"path": "github.com/mitchellh/hashstructure",
+			"revision": "2bca23e0e452137f789efbc8610126fd8b94f73b",
+			"revisionTime": "2017-06-09T04:59:27Z"
 		},
 		{
 			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",

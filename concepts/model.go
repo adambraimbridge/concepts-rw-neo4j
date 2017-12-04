@@ -16,6 +16,7 @@ type AggregatedConcept struct {
 	MembershipRoles       []string  `json:"membershipRoles,omitempty"`
 	OrganisationUUID      string    `json:"organisationUUID,omitempty"`
 	PersonUUID            string    `json:"personUUID,omitempty"`
+	AggregatedHash        string    `json:"aggregateHash,omitempty"`
 	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
 }
 
@@ -42,6 +43,7 @@ type Concept struct {
 	MembershipRoles   []string `json:"membershipRoles,omitempty"`
 	OrganisationUUID  string   `json:"organisationUUID,omitempty"`
 	PersonUUID        string   `json:"personUUID,omitempty"`
+	Hash              string   `json:"hash,omitempty"`
 }
 
 type UpdatedConcepts struct {

@@ -5,13 +5,13 @@ import (
 	"os"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/cyberdelia/go-metrics-graphite"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rcrowley/go-metrics"
-	log "github.com/sirupsen/logrus"
 	standardLog "log"
 	"net"
 	"net/http"
@@ -90,26 +90,19 @@ func main() {
 	})
 	logLevel := app.String(cli.StringOpt{
 		Name:   "logLevel",
+		Value:  "info",
 		Desc:   "Level of logging to be shown",
 		EnvVar: "LOG_LEVEL",
 	})
 
-	log.SetFormatter(&log.JSONFormatter{})
-	lvl, err := log.ParseLevel(*logLevel)
-	if err != nil {
-		log.Warnf("Log level %s could not be parsed, defaulting to Info", lvl)
-		lvl = log.InfoLevel
-	}
-	log.SetLevel(lvl)
-	log.Info(lvl.String() + ": log level set")
-
+	logger.InitLogger(*appName, *logLevel)
 	app.Action = func() {
 		conf := neoutils.DefaultConnectionConfig()
 		conf.BatchSize = *batchSize
 		db, err := neoutils.Connect(*neoURL, conf)
 
 		if err != nil {
-			log.Errorf("Could not connect to neo4j, error=[%s]\n", err)
+			logger.Errorf("Could not connect to neo4j, error=[%s]\n", err)
 		}
 
 		appConf := ServerConf{
@@ -134,7 +127,7 @@ func main() {
 
 		runServerWithParams(handler, services, appConf)
 	}
-	log.Infof("Application started with args %s", os.Args)
+	logger.Infof("Application started with args %s", os.Args)
 	app.Run(os.Args)
 }
 
@@ -142,11 +135,11 @@ func runServerWithParams(handler concepts.ConceptsHandler, services map[string]c
 	outputMetricsIfRequired(appConf.GraphiteTCPAddress, appConf.GraphitePrefix, appConf.LogMetrics)
 
 	router := mux.NewRouter()
-	log.Info("Registering handlers")
+	logger.Info("Registering handlers")
 	for path, service := range services {
 		err := service.Initialise()
 		if err != nil {
-			log.Fatalf("Service for path %s could not startup, err=%s", path, err)
+			logger.Fatalf("Service for path %s could not startup, err=%s", path, err)
 		}
 
 		router = handler.RegisterHandlers(router, path)
@@ -156,12 +149,12 @@ func runServerWithParams(handler concepts.ConceptsHandler, services map[string]c
 
 	http.Handle("/", mr)
 
-	log.Printf("listening on %d", appConf.Port)
+	logger.Printf("listening on %d", appConf.Port)
 
 	if err := http.ListenAndServe(":"+strconv.Itoa(appConf.Port), mr); err != nil {
-		log.Fatalf("Unable to start: %v", err)
+		logger.Fatalf("Unable to start: %v", err)
 	}
-	log.Printf("exiting on %s", serviceName)
+	logger.Printf("exiting on %s", serviceName)
 }
 
 func outputMetricsIfRequired(graphiteTCPAddress string, graphitePrefix string, logMetrics bool) {

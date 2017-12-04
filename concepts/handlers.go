@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Financial-Times/transactionid-utils-go"
+	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
-	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 )
 
 type ConceptsHandler struct {
@@ -30,9 +30,9 @@ func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
 
-	tid := transactionidutils.GetTransactionIDFromRequest(r)
+	transID := transactionidutils.GetTransactionIDFromRequest(r)
 	w.Header().Add("Content-Type", "application/json")
-	w.Header().Set("X-Request-Id", tid)
+	w.Header().Set("X-Request-Id", transID)
 
 	var body io.Reader = r.Body
 	if r.Header.Get("Content-Encoding") == "gzip" {
@@ -58,7 +58,7 @@ func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedIds, err := hh.ConceptsService.Write(inst, tid)
+	updatedIds, err := hh.ConceptsService.Write(inst, transID)
 
 	if err != nil {
 		switch e := err.(type) {
@@ -92,12 +92,12 @@ func (hh *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
 
-	tid := transactionidutils.GetTransactionIDFromRequest(r)
+	transID := transactionidutils.GetTransactionIDFromRequest(r)
 
-	obj, found, err := hh.ConceptsService.Read(uuid, tid)
+	obj, found, err := hh.ConceptsService.Read(uuid, transID)
 
 	w.Header().Add("Content-Type", "application/json")
-	w.Header().Set("X-Request-Id", tid)
+	w.Header().Set("X-Request-Id", transID)
 
 	if err != nil {
 		writeJSONError(w, err.Error(), http.StatusServiceUnavailable)

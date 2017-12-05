@@ -1,7 +1,6 @@
 package concepts
 
 import (
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"github.com/Financial-Times/transactionid-utils-go"

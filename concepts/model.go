@@ -47,7 +47,7 @@ type Concept struct {
 }
 
 type UpdatedConcepts struct {
-	UpdatedIds []string `json: "updatedIds"`
+	UpdatedIds []string `json:"updatedIDs"`
 }
 
 // Map of all the possible node types so we can ensure they all have

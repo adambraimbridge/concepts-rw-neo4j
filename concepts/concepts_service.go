@@ -318,6 +318,7 @@ func (s ConceptService) Write(thing interface{}, transID string) (interface{}, e
 	if exists {
 		existingAggregateConcept := existingConcept.(AggregatedConcept)
 		if existingAggregateConcept.AggregatedHash == "" {
+			//TODO remove this
 			fmt.Printf("Concept is old pre-hash\n")
 			existingAggregateConcept.AggregatedHash = "0"
 		}
@@ -336,8 +337,10 @@ func (s ConceptService) Write(thing interface{}, transID string) (interface{}, e
 		requestSourceUuids := getSourceIds(aggregatedConceptToWrite.SourceRepresentations)
 		existingSourceUuids := getSourceIds(existingAggregateConcept.SourceRepresentations)
 
-		//Concepts were different
-		updatedUUIDList = append(updatedUUIDList, aggregatedConceptToWrite.PrefUUID)
+		//Concept has been updated since last write, so need to send notification of all affected ids
+		for _, source := range aggregatedConceptToWrite.SourceRepresentations {
+			updatedUUIDList = append(updatedUUIDList, source.UUID)
+		}
 
 		//This filter will leave us with ids that were members of existing concordance but are NOT members of current concordance
 		//They will need a new prefUUID node written
@@ -348,7 +351,7 @@ func (s ConceptService) Write(thing interface{}, transID string) (interface{}, e
 
 		//Handle scenarios for transferring source id from an existing concordance to this concordance
 		if len(listToTransferConcordance) > 0 {
-			prefUUIDsToBeDeletedQueryBatch, updatedUUIDList, err = s.handleTransferConcordance(listToTransferConcordance, aggregatedConceptToWrite.PrefUUID, transID, updatedUUIDList)
+			prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(listToTransferConcordance, aggregatedConceptToWrite.PrefUUID, transID)
 			if err != nil {
 				return uuidsToUpdate, err
 			}
@@ -375,9 +378,13 @@ func (s ConceptService) Write(thing interface{}, transID string) (interface{}, e
 			}
 		}
 	} else {
-		prefUUIDsToBeDeletedQueryBatch, updatedUUIDList, err = s.handleTransferConcordance(getSourceIds(aggregatedConceptToWrite.SourceRepresentations), aggregatedConceptToWrite.PrefUUID, transID, updatedUUIDList)
+		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(getSourceIds(aggregatedConceptToWrite.SourceRepresentations), aggregatedConceptToWrite.PrefUUID, transID)
 		if err != nil {
 			return uuidsToUpdate, err
+		}
+		//Concept is new, send notification of all source ids
+		for _, source := range aggregatedConceptToWrite.SourceRepresentations {
+			updatedUUIDList = append(updatedUUIDList, source.UUID)
 		}
 	}
 
@@ -461,9 +468,8 @@ func filterIdsThatAreUniqueToFirstList(firstListIds []string, secondListIds []st
 }
 
 //Handle new source nodes that have been added to current concordance
-func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transID string, uuidsToUpdate []string) ([]*neoism.CypherQuery, []string, error) {
+func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transID string) ([]*neoism.CypherQuery, error) {
 	result := []equivalenceResult{}
-
 	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
 
 	for _, updatedSourceId := range updatedSourceIds {
@@ -482,17 +488,16 @@ func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, pre
 		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
 		if err != nil {
 			logger.WithError(err).WithTransactionID(transID).WithUUID(prefUUID).Error("Requests for source nodes canonical information resulted in error")
-			return deleteLonePrefUuidQueries, uuidsToUpdate, err
+			return deleteLonePrefUuidQueries, err
 		}
 
 		if len(result) == 0 {
 			logger.WithTransactionID(transID).WithUUID(prefUUID).Info("No existing concordance record found")
-			uuidsToUpdate = append(uuidsToUpdate, updatedSourceId)
 			continue
 		} else if len(result) > 1 {
 			err = fmt.Errorf("Multiple source concepts found with matching uuid: %s", updatedSourceId)
 			logger.WithTransactionID(transID).WithUUID(prefUUID).Error(err.Error())
-			return deleteLonePrefUuidQueries, uuidsToUpdate, err
+			return deleteLonePrefUuidQueries, err
 		}
 
 		logger.WithField("UUID", result[0].SourceUUID).Debug("Existing prefUUID is " + result[0].PrefUUID + " equivalence count is " + strconv.Itoa(result[0].Equivalence))
@@ -509,7 +514,7 @@ func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, pre
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := fmt.Errorf("This source id: %s the only concordance to a non-matching node with prefUuid: %s", result[0].SourceUUID, result[0].PrefUUID)
 				logger.WithTransactionID(transID).WithUUID(prefUUID).WithField("alert_tag", "ConceptLoadingDodgyData").Error(err)
-				return deleteLonePrefUuidQueries, uuidsToUpdate, err
+				return deleteLonePrefUuidQueries, err
 			}
 		} else {
 			if result[0].SourceUUID == result[0].PrefUUID {
@@ -517,7 +522,7 @@ func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, pre
 					// Source is prefUUID for a different concordance
 					err := fmt.Errorf("Cannot currently process this record as it will break an existing concordance with prefUuid: %s", result[0].SourceUUID)
 					logger.WithTransactionID(transID).WithUUID(prefUUID).WithField("alert_tag", "ConceptLoadingInvalidConcordance").Error(err)
-					return deleteLonePrefUuidQueries, uuidsToUpdate, err
+					return deleteLonePrefUuidQueries, err
 				} else {
 					// Source is prefUUID for a current concordance
 					break
@@ -525,13 +530,11 @@ func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, pre
 			} else {
 				// Source was concorded to different concordance. Data on existing concordance is now out of data
 				logger.WithTransactionID(transID).WithUUID(prefUUID).WithField("alert_tag", "ConceptLoadingStaleData").Infof("Need to re-ingest concordance record for prefUuid: % as source: %s has been removed.", result[0].PrefUUID, result[0].SourceUUID)
-				//Source has been concorded to new concordance
-				uuidsToUpdate = append(uuidsToUpdate, result[0].SourceUUID)
 				break
 			}
 		}
 	}
-	return deleteLonePrefUuidQueries, uuidsToUpdate, nil
+	return deleteLonePrefUuidQueries, nil
 }
 
 //Clean up canonical nodes of a concept that has become a source of current concept

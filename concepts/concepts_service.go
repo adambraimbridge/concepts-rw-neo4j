@@ -318,8 +318,6 @@ func (s ConceptService) Write(thing interface{}, transID string) (interface{}, e
 	if exists {
 		existingAggregateConcept := existingConcept.(AggregatedConcept)
 		if existingAggregateConcept.AggregatedHash == "" {
-			//TODO remove this
-			fmt.Printf("Concept is old pre-hash\n")
 			existingAggregateConcept.AggregatedHash = "0"
 		}
 		currentHash, err := strconv.ParseUint(existingAggregateConcept.AggregatedHash, 10, 64)
@@ -484,7 +482,6 @@ func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, pre
 			},
 			Result: &result,
 		}
-
 		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
 		if err != nil {
 			logger.WithError(err).WithTransactionID(transID).WithUUID(prefUUID).Error("Requests for source nodes canonical information resulted in error")
@@ -523,9 +520,6 @@ func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, pre
 					err := fmt.Errorf("Cannot currently process this record as it will break an existing concordance with prefUuid: %s", result[0].SourceUUID)
 					logger.WithTransactionID(transID).WithUUID(prefUUID).WithField("alert_tag", "ConceptLoadingInvalidConcordance").Error(err)
 					return deleteLonePrefUuidQueries, err
-				} else {
-					// Source is prefUUID for a current concordance
-					break
 				}
 			} else {
 				// Source was concorded to different concordance. Data on existing concordance is now out of data

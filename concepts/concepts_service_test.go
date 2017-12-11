@@ -19,6 +19,9 @@ import (
 	"reflect"
 
 	"encoding/json"
+	"github.com/Financial-Times/go-logger"
+	"github.com/mitchellh/hashstructure"
+	"strconv"
 )
 
 //all uuids to be cleaned from DB
@@ -28,13 +31,13 @@ const (
 	yetAnotherBasicConceptUUID = "f7e3fe2d-7496-4d42-b19f-378094efd263"
 	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
-	membershipRoleUUID = "f807193d-337b-412f-b32c-afa14b385819"
-	organisationUUID   = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
-	personUUID         = "35946807-0205-4fc1-8516-bb1ae141659b"
-	membershipUUID     = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+	membershipRoleUUID        = "f807193d-337b-412f-b32c-afa14b385819"
+	organisationUUID          = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
+	personUUID                = "35946807-0205-4fc1-8516-bb1ae141659b"
+	membershipUUID            = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 	anotherMembershipRoleUUID = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
-	anotherOrganisationUUID = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
-	anotherPersonUUID = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
+	anotherOrganisationUUID   = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
+	anotherPersonUUID         = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
@@ -48,6 +51,8 @@ var db neoutils.NeoConnection
 
 //Concept Service under test
 var conceptsDriver ConceptService
+
+var emptyList []string
 
 func getSingleConcordance() AggregatedConcept {
 	return AggregatedConcept{
@@ -114,7 +119,6 @@ func getDualConcordance() AggregatedConcept {
 				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 			},
 			{
-
 				UUID:           sourceId_1,
 				PrefLabel:      "Not as good Label",
 				Type:           "Brand",
@@ -123,6 +127,105 @@ func getDualConcordance() AggregatedConcept {
 				ImageURL:       "http://media.ft.com/brand.png",
 				Authority:      "TME",
 				AuthorityValue: "987as3dza654-TME",
+			},
+		},
+	}
+}
+
+func getUpdatedDualConcordance() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:       basicConceptUUID,
+		PrefLabel:      "The Biggest, Bestest, Brandiest Brand",
+		Type:           "Brand",
+		Strapline:      "Much more complicated",
+		DescriptionXML: "<body>One brand to rule them all, one brand to find them; one brand to bring them all and in the darkness bind them</body>",
+		ImageURL:       "http://media.ft.com/brand.png",
+		EmailAddress:   "simple@ft.com",
+		FacebookPage:   "#facebookFTComment",
+		TwitterHandle:  "@ftComment",
+		ScopeNote:      "Comments about stuff",
+		ShortLabel:     "Label",
+		Aliases:        []string{"oneLabel", "secondLabel"},
+		SourceRepresentations: []Concept{
+			{
+				UUID:           basicConceptUUID,
+				PrefLabel:      "The Best Label",
+				Type:           "Brand",
+				Strapline:      "Much more complicated",
+				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+				ImageURL:       "http://media.ft.com/brand.png",
+				EmailAddress:   "simple@ft.com",
+				FacebookPage:   "#facebookFTComment",
+				TwitterHandle:  "@ftComment",
+				ScopeNote:      "Comments about stuff",
+				ShortLabel:     "Label",
+				Authority:      "TME",
+				AuthorityValue: "1234",
+				Aliases:        []string{"oneLabel", "secondLabel"},
+			},
+			{
+				UUID:           sourceId_1,
+				PrefLabel:      "The Biggest, Bestest, Brandiest Brand",
+				Type:           "Brand",
+				Strapline:      "Boring strapline",
+				DescriptionXML: "<body>One brand to rule them all, one brand to find them; one brand to bring them all and in the darkness bind them</body>",
+				ImageURL:       "http://media.ft.com/brand.png",
+				Authority:      "TME",
+				AuthorityValue: "987as3dza654-TME",
+			},
+		},
+	}
+}
+
+func getTriConcordance() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:       basicConceptUUID,
+		PrefLabel:      "The Best Label",
+		Type:           "Brand",
+		Strapline:      "Keeping it simple",
+		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+		ImageURL:       "http://media.ft.com/brand.png",
+		EmailAddress:   "simple@ft.com",
+		FacebookPage:   "#facebookFTComment",
+		TwitterHandle:  "@ftComment",
+		ScopeNote:      "Comments about stuff",
+		ShortLabel:     "Label",
+		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		SourceRepresentations: []Concept{
+			{
+				UUID:           basicConceptUUID,
+				PrefLabel:      "The Best Label",
+				Type:           "Brand",
+				Strapline:      "Keeping it simple",
+				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+				ImageURL:       "http://media.ft.com/brand.png",
+				EmailAddress:   "simple@ft.com",
+				FacebookPage:   "#facebookFTComment",
+				TwitterHandle:  "@ftComment",
+				ScopeNote:      "Comments about stuff",
+				ShortLabel:     "Label",
+				Authority:      "TME",
+				AuthorityValue: "1234",
+				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+			},
+			{
+				UUID:           sourceId_1,
+				PrefLabel:      "Not as good Label",
+				Type:           "Brand",
+				Strapline:      "Boring strapline",
+				DescriptionXML: "<p>Some stuff</p>",
+				ImageURL:       "http://media.ft.com/brand.png",
+				Authority:      "TME",
+				AuthorityValue: "987as3dza654-TME",
+			},
+			{
+				UUID:           sourceId_2,
+				PrefLabel:      "Even worse Label",
+				Type:           "Brand",
+				Strapline:      "Bad strapline",
+				DescriptionXML: "<p>More stuff</p>",
+				Authority:      "TME",
+				AuthorityValue: "123bc3xwa456-TME",
 			},
 		},
 	}
@@ -472,6 +575,8 @@ func getUpdatedMembership() AggregatedConcept {
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
+	logger.InitLogger("test-concepts-rw-neo4j", "info")
+
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
 	db, _ = neoutils.Connect(neoUrl(), conf)
@@ -509,7 +614,7 @@ func TestWriteService(t *testing.T) {
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a HAS_BROADER relationship", getConceptWithHasBroader(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing", getConceptWithHasBroaderToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, anotherBasicConceptUUID}}},
+		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, basicConceptUUID}}},
 		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label `TMEIdentifier` and property `value` = '1234'", UpdatedConcepts{UpdatedIds: []string{}}},
 		{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request", UpdatedConcepts{UpdatedIds: []string{}}},
@@ -602,19 +707,24 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		returnedError   string
 		updatedConcepts UpdatedConcepts
 	}
+	singleConcordanceNoChangesNoUpdates := testStruct{testName: "singleConcordanceNoChangesNoUpdates", setUpConcept: getSingleConcordance(), testConcept: getSingleConcordance(), uuidsToCheck: []string{basicConceptUUID}, updatedConcepts: UpdatedConcepts{UpdatedIds: emptyList}}
+	dualConcordanceNoChangesNoUpdates := testStruct{testName: "dualConcordanceNoChangesNoUpdates", setUpConcept: getDualConcordance(), testConcept: getDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: emptyList}}
+	singleConcordanceToDualConcordanceUpdatesBoth := testStruct{testName: "singleConcordanceToDualConcordanceUpdatesBoth", setUpConcept: getSingleConcordance(), testConcept: getDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
+	dualConcordanceToSingleConcordanceUpdatesBoth := testStruct{testName: "dualConcordanceToSingleConcordanceUpdatesBoth", setUpConcept: getDualConcordance(), testConcept: getSingleConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
+	errorsOnAddingConcordanceOfCanonicalNode := testStruct{testName: "errorsOnAddingConcordanceOfCanonicalNode", setUpConcept: getDualConcordance(), testConcept: getPrefUUIDAsASource(), returnedError: "Cannot currently process this record as it will break an existing concordance with prefUuid: bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}
+	transferSourceFromOtherConcordanceToAnother := testStruct{testName: "transferSourceFromOtherConcordanceToAnother", setUpConcept: getDualConcordance(), testConcept: getTransferSourceConcordance(), uuidsToCheck: []string{anotherBasicConceptUUID, sourceId_1, basicConceptUUID}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, sourceId_1}}}
+	addThirdSourceToDualConcordanceUpdateAll := testStruct{testName: "addThirdSourceToDualConcordanceUpdateAll", setUpConcept: getDualConcordance(), testConcept: getTriConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1, sourceId_2}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1, sourceId_2}}}
+	triConcordanceToDualConcordanceUpdatesAll := testStruct{testName: "triConcordanceToDualConcordanceUpdatesAll", setUpConcept: getTriConcordance(), testConcept: getDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1, sourceId_2}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1, sourceId_2}}}
+	dataChangesOnCanonicalUpdateBoth := testStruct{testName: "dataChangesOnCanonicalUpdateBoth", setUpConcept: getDualConcordance(), testConcept: getUpdatedDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
 
-	writeHandlesUnconcordanceGracefully := testStruct{testName: "writeHandlesUnconcordanceGracefully", setUpConcept: getDualConcordance(), testConcept: getSingleConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
-	writeTransferConcordanceErrorsOnTransferringPrefUuid := testStruct{testName: "writeTransferConcordanceErrorsOnTransferringPrefUuid", setUpConcept: getDualConcordance(), testConcept: getPrefUUIDAsASource(), returnedError: "Cannot currently process this record as it will break an existing concordance with prefUuid: bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}
-	writeHandlesTransferSourceFromOtherConcordance := testStruct{testName: "writeHandlesOrphanedPrefUuids", setUpConcept: getDualConcordance(), testConcept: getTransferSourceConcordance(), uuidsToCheck: []string{anotherBasicConceptUUID, sourceId_1, basicConceptUUID}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, sourceId_1, basicConceptUUID}}}
-
-	scenarios := []testStruct{writeHandlesUnconcordanceGracefully, writeTransferConcordanceErrorsOnTransferringPrefUuid, writeHandlesTransferSourceFromOtherConcordance}
+	scenarios := []testStruct{singleConcordanceNoChangesNoUpdates, dualConcordanceNoChangesNoUpdates, singleConcordanceToDualConcordanceUpdatesBoth, dualConcordanceToSingleConcordanceUpdatesBoth, errorsOnAddingConcordanceOfCanonicalNode, transferSourceFromOtherConcordanceToAnother, addThirdSourceToDualConcordanceUpdateAll, triConcordanceToDualConcordanceUpdatesAll, dataChangesOnCanonicalUpdateBoth}
 
 	for _, scenario := range scenarios {
 		cleanDB(t)
 		//Write data into db, to set up test scenario
 		_, err := conceptsDriver.Write(scenario.setUpConcept, tid)
 		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
-
+		verifyAggregateHashIsCorrect(t, scenario.setUpConcept, scenario.testName)
 		//Overwrite data with update
 		updatedConcepts, err := conceptsDriver.Write(scenario.testConcept, tid)
 		if err != nil {
@@ -629,12 +739,12 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 				assert.True(t, found, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 				assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
+				verifyAggregateHashIsCorrect(t, scenario.testConcept, scenario.testName)
 			} else {
 				assert.Equal(t, AggregatedConcept{}, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 				assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 			}
 		}
-
 		cleanDB(t)
 	}
 
@@ -713,7 +823,7 @@ func TestTransferConcordance(t *testing.T) {
 	scenarios := []testStruct{nodeHasNoConconcordance, nodeHasExistingConcordanceWhichWouldCauseDataIssues, nodeHasExistingConcordanceWhichNeedsToBeReWritten, nodeHasInvalidConcordance, nodeIsPrefUuidForExistingConcordance, nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, _, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "", "", []string{})
+		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "", "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
 			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
@@ -863,6 +973,8 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 		}
 		actualConcept.SourceRepresentations = concepts
 	}
+	//Have to set expected hash here otherwise deep equal will always fail
+	expected.AggregatedHash = actualConcept.AggregatedHash
 	assert.True(t, reflect.DeepEqual(expected, actualConcept), "Actual aggregated concept differs from expected: Expected: %v, Actual: %v", expected, actualConcept)
 }
 
@@ -951,4 +1063,27 @@ func getIdentifierValue(t *testing.T, uuidPropertyName string, uuid string, labe
 		return results[0].Value
 	}
 	return ""
+}
+
+func verifyAggregateHashIsCorrect(t *testing.T, concept AggregatedConcept, testName string) {
+	results := []struct {
+		Hash string `json:"a.aggregateHash"`
+	}{}
+
+	query := &neoism.CypherQuery{
+		Statement: `
+			MATCH (a:Thing {prefUUID: {uuid}})
+			RETURN a.aggregateHash`,
+		Parameters: map[string]interface{}{
+			"uuid": concept.PrefUUID,
+		},
+		Result: &results,
+	}
+	err := db.CypherBatch([]*neoism.CypherQuery{query})
+	assert.NoError(t, err, fmt.Sprintf("Error while retrieving concept hash"))
+	fmt.Sprintf("Results are %v\n", results)
+
+	conceptHash, _ := hashstructure.Hash(concept, nil)
+	hashAsString := strconv.FormatUint(conceptHash, 10)
+	assert.Equal(t, hashAsString, results[0].Hash, fmt.Sprintf("Test %s failed: Concept hash %s and stored record %s are not equal!", testName, hashAsString, results[0].Hash))
 }

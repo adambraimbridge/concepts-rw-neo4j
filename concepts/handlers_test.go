@@ -26,7 +26,7 @@ func TestPutHandler(t *testing.T) {
 		contentType string // Contents of the Content-Type header
 		body        string
 	}{
-		{"Success", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID}, http.StatusOK, "", "{\"UpdatedIds\":null}\n"},
+		{"Success", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID}, http.StatusOK, "", "{\"updatedIDs\":null}\n"},
 		{"ParseError", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failParse: true}, http.StatusBadRequest, "", errorMessage("TEST failing to DECODE")},
 		{"UUIDMisMatch", newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999")), mockConceptService{uuid: knownUUID}, http.StatusBadRequest, "", errorMessage("Uuids from payload and request, respectively, do not match: '12345' '99999'")},
 		{"WriteFailed", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failWrite: true}, http.StatusServiceUnavailable, "", errorMessage("TEST failing to WRITE")},
@@ -166,54 +166,4 @@ func (dS mockConceptService) Check() error {
 
 func (dS mockConceptService) Initialise() error {
 	return nil
-}
-
-//type dummyServiceData struct {
-//}
-//
-//func (dS dummyService) Write(thing interface{}, transId string) (interface{}, error) {
-//	mockList := UpdatedConcepts{}
-//	if dS.failWrite {
-//		return mockList, errors.New("TEST failing to WRITE")
-//	}
-//	if dS.failConflict {
-//		return mockList, neoutils.NewConstraintViolationError("TEST failing to WRITE due to CONFLICT", &neoism.NeoError{})
-//	}
-//	if len(dS.uuidList) > 0 {
-//		mockList.UpdatedIds = dS.uuidList
-//	}
-//	dS.transId = transId
-//	return mockList, nil
-//}
-//
-//func (dS dummyService) Read(uuid string, transId string) (thing interface{}, found bool, err error) {
-//	if dS.failRead {
-//		return nil, false, errors.New("TEST failing to READ")
-//	}
-//	if uuid == dS.uuid {
-//		return dummyServiceData{}, true, nil
-//	}
-//	dS.transId = transId
-//	return nil, false, nil
-//}
-//
-//func (dS dummyService) DecodeJSON(*json.Decoder) (thing interface{}, identity string, err error) {
-//	if dS.failParse {
-//		return "", "", errors.New("TEST failing to DECODE")
-//	}
-//	return dummyServiceData{}, dS.uuid, nil
-//}
-//
-//func (dS dummyService) Check() error {
-//	if dS.failCheck {
-//		return errors.New("TEST failing to CHECK")
-//	}
-//	return nil
-//}
-//
-//func (dS dummyService) Initialise() error {
-//	return nil
-//}
-
-func healthHandler(http.ResponseWriter, *http.Request) {
 }

@@ -80,8 +80,8 @@ func TestGtgHandler(t *testing.T) {
 		contentType string // Contents of the Content-Type header
 		body        string
 	}{
-		{"Success", newRequest("GET", "/__gtg"), mockConceptService{failCheck: false}, http.StatusOK, "", ""},
-		{"GTGError", newRequest("GET", "/__gtg"), mockConceptService{failCheck: true}, http.StatusServiceUnavailable, "", "Connection to Neo4j healthcheck failed"},
+		{"Success", newRequest("GET", "/__gtg"), mockConceptService{failCheck: false}, http.StatusOK, "", "OK"},
+		{"GTGError", newRequest("GET", "/__gtg"), mockConceptService{failCheck: true}, http.StatusServiceUnavailable, "", "TEST failing to CHECK"},
 	}
 
 	for _, test := range tests {

@@ -1,22 +1,33 @@
 package concepts
 
 import (
+	"net/http"
+	"time"
+
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/http-handlers-go/httphandlers"
 	st "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
-	"net/http"
-
 	log "github.com/sirupsen/logrus"
 )
 
 func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCode string, appName string, appDescription string, enableRequestLogging bool) http.Handler {
 	logger.Info("Registering healthcheck handlers")
-	var checks []fthealth.Check = []fthealth.Check{h.makeNeo4jAvailabililtyCheck()}
+	var checks = []fthealth.Check{h.makeNeo4jAvailabilityCheck()}
 
-	router.HandleFunc("/__health", fthealth.Handler(fthealth.HealthCheck{SystemCode: appSystemCode, Name: appName, Description: appDescription, Checks: checks}))
+	hc := fthealth.TimedHealthCheck{
+		HealthCheck: fthealth.HealthCheck{
+			SystemCode:  appSystemCode,
+			Name:        appName,
+			Description: appDescription,
+			Checks:      checks,
+		},
+		Timeout: 10 * time.Second,
+	}
+
+	router.HandleFunc("/__health", fthealth.Handler(hc))
 	router.HandleFunc(st.BuildInfoPath, st.BuildInfoHandler)
 	router.HandleFunc(st.GTGPath, h.gtgCheck)
 
@@ -30,7 +41,7 @@ func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCod
 }
 
 func (h *ConceptsHandler) gtgCheck(rw http.ResponseWriter, req *http.Request) {
-	if errString, err := h.makeNeo4jAvailabililtyCheck().Checker(); err != nil {
+	if errString, err := h.makeNeo4jAvailabilityCheck().Checker(); err != nil {
 		logger.WithError(err).Errorf("Connection to Neo4j healthcheck failed [%s]", errString)
 		rw.WriteHeader(http.StatusServiceUnavailable)
 		rw.Write([]byte("Connection to Neo4j healthcheck failed"))
@@ -39,7 +50,7 @@ func (h *ConceptsHandler) gtgCheck(rw http.ResponseWriter, req *http.Request) {
 	rw.WriteHeader(http.StatusOK)
 }
 
-func (h *ConceptsHandler) makeNeo4jAvailabililtyCheck() fthealth.Check {
+func (h *ConceptsHandler) makeNeo4jAvailabilityCheck() fthealth.Check {
 	return fthealth.Check{
 		BusinessImpact:   "Cannot read/write concepts via this writer",
 		Name:             "Check connectivity to Neo4j - neoUrl is a parameter in hieradata for this service",

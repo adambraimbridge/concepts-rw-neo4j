@@ -1,27 +1,22 @@
 package concepts
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"reflect"
+	"sort"
+	"strconv"
 	"testing"
-
 	"time"
 
-	"sort"
-
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/jmcvetta/neoism"
 	_ "github.com/joho/godotenv/autoload"
-
-	"errors"
-	"reflect"
-
-	"encoding/json"
-	"github.com/Financial-Times/go-logger"
 	"github.com/mitchellh/hashstructure"
-	"strconv"
+	"github.com/stretchr/testify/assert"
 )
 
 //all uuids to be cleaned from DB

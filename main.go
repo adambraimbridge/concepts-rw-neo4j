@@ -1,8 +1,13 @@
 package main
 
 import (
+	standardLog "log"
+	"net"
+	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	"github.com/Financial-Times/go-logger"
@@ -12,11 +17,6 @@ import (
 	"github.com/jawher/mow.cli"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rcrowley/go-metrics"
-	standardLog "log"
-	"net"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const appDescription = "A RESTful API for managing Concepts in neo4j"

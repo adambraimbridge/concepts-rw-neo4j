@@ -1,24 +1,35 @@
 package concepts
 
 import (
+	"net/http"
+	"time"
+
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/http-handlers-go/httphandlers"
+	"github.com/Financial-Times/service-status-go/gtg"
 	st "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
-	"net/http"
-
 	log "github.com/sirupsen/logrus"
 )
 
 func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCode string, appName string, appDescription string, enableRequestLogging bool) http.Handler {
 	logger.Info("Registering healthcheck handlers")
-	var checks []fthealth.Check = []fthealth.Check{h.makeNeo4jAvailabililtyCheck()}
 
-	router.HandleFunc("/__health", fthealth.Handler(fthealth.HealthCheck{SystemCode: appSystemCode, Name: appName, Description: appDescription, Checks: checks}))
+	hc := fthealth.TimedHealthCheck{
+		HealthCheck: fthealth.HealthCheck{
+			SystemCode:  appSystemCode,
+			Name:        appName,
+			Description: appDescription,
+			Checks:      h.checks(),
+		},
+		Timeout: 10 * time.Second,
+	}
+
+	router.HandleFunc("/__health", fthealth.Handler(hc))
 	router.HandleFunc(st.BuildInfoPath, st.BuildInfoHandler)
-	router.HandleFunc(st.GTGPath, h.gtgCheck)
+	router.HandleFunc(st.GTGPath, st.NewGoodToGoHandler(h.GTG))
 
 	var monitoringRouter http.Handler = router
 	if enableRequestLogging {
@@ -29,17 +40,22 @@ func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCod
 	return monitoringRouter
 }
 
-func (h *ConceptsHandler) gtgCheck(rw http.ResponseWriter, req *http.Request) {
-	if errString, err := h.makeNeo4jAvailabililtyCheck().Checker(); err != nil {
-		logger.WithError(err).Errorf("Connection to Neo4j healthcheck failed [%s]", errString)
-		rw.WriteHeader(http.StatusServiceUnavailable)
-		rw.Write([]byte("Connection to Neo4j healthcheck failed"))
-		return
+func (h *ConceptsHandler) GTG() gtg.Status {
+	var statusChecker []gtg.StatusChecker
+	for _, c := range h.checks() {
+		checkFunc := func() gtg.Status {
+			return gtgCheck(c.Checker)
+		}
+		statusChecker = append(statusChecker, checkFunc)
 	}
-	rw.WriteHeader(http.StatusOK)
+	return gtg.FailFastParallelCheck(statusChecker)()
 }
 
-func (h *ConceptsHandler) makeNeo4jAvailabililtyCheck() fthealth.Check {
+func (h *ConceptsHandler) checks() []fthealth.Check {
+	return []fthealth.Check{h.makeNeo4jAvailabilityCheck()}
+}
+
+func (h *ConceptsHandler) makeNeo4jAvailabilityCheck() fthealth.Check {
 	return fthealth.Check{
 		BusinessImpact:   "Cannot read/write concepts via this writer",
 		Name:             "Check connectivity to Neo4j - neoUrl is a parameter in hieradata for this service",
@@ -56,4 +72,11 @@ func (h *ConceptsHandler) checkNeo4jAvailability() (string, error) {
 		return "Could not connect to database!", err
 	}
 	return "", nil
+}
+
+func gtgCheck(handler func() (string, error)) gtg.Status {
+	if _, err := handler(); err != nil {
+		return gtg.Status{GoodToGo: false, Message: err.Error()}
+	}
+	return gtg.Status{GoodToGo: true}
 }

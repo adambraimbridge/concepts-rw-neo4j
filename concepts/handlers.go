@@ -3,12 +3,13 @@ package concepts
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/Financial-Times/transactionid-utils-go"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"io"
-	"net/http"
 )
 
 type ConceptsHandler struct {
@@ -25,7 +26,7 @@ func (h *ConceptsHandler) RegisterHandlers(router *mux.Router, path string) *mux
 	return router
 }
 
-func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
+func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
 
@@ -35,7 +36,7 @@ func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 
 	var body io.Reader = r.Body
 	dec := json.NewDecoder(body)
-	inst, docUUID, err := hh.ConceptsService.DecodeJSON(dec)
+	inst, docUUID, err := h.ConceptsService.DecodeJSON(dec)
 
 	if err != nil {
 		writeJSONError(w, err.Error(), http.StatusBadRequest)
@@ -47,7 +48,7 @@ func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedIds, err := hh.ConceptsService.Write(inst, transID)
+	updatedIds, err := h.ConceptsService.Write(inst, transID)
 
 	if err != nil {
 		switch e := err.(type) {
@@ -76,13 +77,13 @@ func (hh *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hh *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
+func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
 
 	transID := transactionidutils.GetTransactionIDFromRequest(r)
 
-	obj, found, err := hh.ConceptsService.Read(uuid, transID)
+	obj, found, err := h.ConceptsService.Read(uuid, transID)
 
 	w.Header().Add("Content-Type", "application/json")
 	w.Header().Set("X-Request-Id", transID)

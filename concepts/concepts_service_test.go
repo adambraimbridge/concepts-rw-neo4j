@@ -1038,9 +1038,9 @@ func deleteConcordedNodes(t *testing.T, uuids ...string) {
 }
 
 func getIdentifierValue(t *testing.T, uuidPropertyName string, uuid string, label string) string {
-	results := []struct {
+	var results []struct {
 		Value string `json:"i.value"`
-	}{}
+	}
 
 	query := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`
@@ -1061,9 +1061,9 @@ func getIdentifierValue(t *testing.T, uuidPropertyName string, uuid string, labe
 }
 
 func verifyAggregateHashIsCorrect(t *testing.T, concept AggregatedConcept, testName string) {
-	results := []struct {
+	var results []struct {
 		Hash string `json:"a.aggregateHash"`
-	}{}
+	}
 
 	query := &neoism.CypherQuery{
 		Statement: `
@@ -1076,7 +1076,7 @@ func verifyAggregateHashIsCorrect(t *testing.T, concept AggregatedConcept, testN
 	}
 	err := db.CypherBatch([]*neoism.CypherQuery{query})
 	assert.NoError(t, err, fmt.Sprintf("Error while retrieving concept hash"))
-	fmt.Sprintf("Results are %v\n", results)
+	fmt.Printf("Results are %v\n", results)
 
 	conceptHash, _ := hashstructure.Hash(concept, nil)
 	hashAsString := strconv.FormatUint(conceptHash, 10)

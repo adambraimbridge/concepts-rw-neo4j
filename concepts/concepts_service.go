@@ -34,7 +34,7 @@ func NewConceptService(cypherRunner neoutils.NeoConnection) ConceptService {
 }
 
 //Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
-func (s ConceptService) Initialise() error {
+func (s *ConceptService) Initialise() error {
 	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
 	})
@@ -118,7 +118,7 @@ type equivalenceResult struct {
 }
 
 //Read - read service
-func (s ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
+func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	results := []neoAggregatedConcept{}
 
 	query := &neoism.CypherQuery{
@@ -290,7 +290,7 @@ func (s ConceptService) Read(uuid string, transID string) (interface{}, bool, er
 	return aggregatedConcept, true, nil
 }
 
-func (s ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
+func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 	uuidsToUpdate := UpdatedConcepts{}
@@ -399,7 +399,7 @@ func (s ConceptService) Write(thing interface{}, transID string) (interface{}, e
 
 	logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
 	for _, query := range queryBatch {
-		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %s", query))
+		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
 	}
 
 	if err = s.conn.CypherBatch(queryBatch); err != nil {
@@ -468,7 +468,7 @@ func filterIdsThatAreUniqueToFirstList(firstListIds []string, secondListIds []st
 }
 
 //Handle new source nodes that have been added to current concordance
-func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transID string) ([]*neoism.CypherQuery, error) {
+func (s *ConceptService) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transID string) ([]*neoism.CypherQuery, error) {
 	result := []equivalenceResult{}
 	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
 
@@ -537,7 +537,7 @@ func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, pre
 func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 	logger.WithField("UUID", prefUUID).Debug("Deleting orphaned prefUUID node")
 	equivQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {prefUUID:{id}}) DELETE t`,
+		Statement: `MATCH (t:Thing {prefUUID:{id}}) DETACH DELETE t`,
 		Parameters: map[string]interface{}{
 			"id": prefUUID,
 		},
@@ -546,7 +546,7 @@ func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 }
 
 //Clear down current concept node
-func (s ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
+func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
 	acUUID := ac.PrefUUID
 	sourceUuids := getSourceIds(ac.SourceRepresentations)
 
@@ -756,7 +756,7 @@ func addRelationship(conceptID string, relationshipIDs []string, relationshipTyp
 }
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
-func (s ConceptService) writeCanonicalNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
+func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
 	allProps := setProps(concept, concept.UUID, false)
 	logger.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
@@ -884,14 +884,14 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 }
 
 //DecodeJSON - decode json
-func (s ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
+func (s *ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
 	sub := AggregatedConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.PrefUUID, err
 }
 
 //Check - checker
-func (s ConceptService) Check() error {
+func (s *ConceptService) Check() error {
 	return neoutils.Check(s.conn)
 }
 

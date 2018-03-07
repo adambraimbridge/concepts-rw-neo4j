@@ -24,6 +24,7 @@ const (
 	basicConceptUUID           = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
 	anotherBasicConceptUUID    = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
 	yetAnotherBasicConceptUUID = "f7e3fe2d-7496-4d42-b19f-378094efd263"
+	simpleSmartlogicTopicUUID  = "abd38d90-2152-11e8-9ac1-da24cd01f044"
 	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
 	membershipRoleUUID        = "f807193d-337b-412f-b32c-afa14b385819"
@@ -268,6 +269,15 @@ func getPrefUUIDAsASource() AggregatedConcept {
 				AuthorityValue: "1234",
 				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 			},
+			{
+				UUID:           sourceId_2,
+				PrefLabel:      "Even worse Label",
+				Type:           "Brand",
+				Strapline:      "Bad strapline",
+				DescriptionXML: "<p>More stuff</p>",
+				Authority:      "TME",
+				AuthorityValue: "123bc3xwa456-TME",
+			},
 		},
 	}
 }
@@ -311,6 +321,60 @@ func getTransferSourceConcordance() AggregatedConcept {
 			},
 		},
 	}
+}
+
+func getTransferMultipleSourceConcordance() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:       simpleSmartlogicTopicUUID,
+		PrefLabel:      "The Best Label",
+		Type:           "Topic",
+		Strapline:      "Keeping it simple",
+		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+		ImageURL:       "http://media.ft.com/brand.png",
+		EmailAddress:   "simple@ft.com",
+		FacebookPage:   "#facebookFTComment",
+		TwitterHandle:  "@ftComment",
+		ScopeNote:      "Comments about stuff",
+		ShortLabel:     "Label",
+		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+		SourceRepresentations: []Concept{
+			{
+				UUID:           simpleSmartlogicTopicUUID,
+				PrefLabel:      "A decent label",
+				Type:           "Topic",
+				Strapline:      "Keeping it simple",
+				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+				ImageURL:       "http://media.ft.com/brand.png",
+				Authority:      "Smartlogic",
+				AuthorityValue: simpleSmartlogicTopicUUID,
+			},
+			{
+				UUID:           basicConceptUUID,
+				PrefLabel:      "The Best Label",
+				Type:           "Section",
+				Strapline:      "Keeping it simple",
+				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+				ImageURL:       "http://media.ft.com/brand.png",
+				EmailAddress:   "simple@ft.com",
+				FacebookPage:   "#facebookFTComment",
+				TwitterHandle:  "@ftComment",
+				ScopeNote:      "Comments about stuff",
+				ShortLabel:     "Label",
+				Authority:      "TME",
+				AuthorityValue: "1234",
+				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
+			},
+			{
+				UUID:           yetAnotherBasicConceptUUID,
+				PrefLabel:      "Concept PrefLabel",
+				Type:           "Section",
+				Authority:      "TME",
+				AuthorityValue: "randomTmeID",
+				Aliases:        []string{"oneLabel", "secondLabel"},
+			},
+		},
+	}
+
 }
 
 // A lone concept should always have matching pref labels and uuid at the src system level and the top level - We are
@@ -362,6 +426,23 @@ func getYetAnotherFullLoneAggregatedConcept() AggregatedConcept {
 			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 		}},
 	}
+}
+
+func getLoneTmeSection() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  yetAnotherBasicConceptUUID,
+		PrefLabel: "Concept PrefLabel",
+		Type:      "Section",
+		SourceRepresentations: []Concept{{
+			UUID:           yetAnotherBasicConceptUUID,
+			PrefLabel:      "Concept PrefLabel",
+			Type:           "Section",
+			Authority:      "TME",
+			AuthorityValue: "randomTmeID",
+			Aliases:        []string{"oneLabel", "secondLabel"},
+		}},
+	}
+
 }
 
 func getFullConcordedAggregatedConcept() AggregatedConcept {
@@ -707,12 +788,13 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	singleConcordanceToDualConcordanceUpdatesBoth := testStruct{testName: "singleConcordanceToDualConcordanceUpdatesBoth", setUpConcept: getSingleConcordance(), testConcept: getDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
 	dualConcordanceToSingleConcordanceUpdatesBoth := testStruct{testName: "dualConcordanceToSingleConcordanceUpdatesBoth", setUpConcept: getDualConcordance(), testConcept: getSingleConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
 	errorsOnAddingConcordanceOfCanonicalNode := testStruct{testName: "errorsOnAddingConcordanceOfCanonicalNode", setUpConcept: getDualConcordance(), testConcept: getPrefUUIDAsASource(), returnedError: "Cannot currently process this record as it will break an existing concordance with prefUuid: bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}
+	oldCanonicalRemovedWhenSingleConcordancebecomesSource := testStruct{testName: "oldCanonicalRemovedWhenSingleConcordancebecomesSource", setUpConcept: getSingleConcordance(), testConcept: getPrefUUIDAsASource(), uuidsToCheck: []string{anotherBasicConceptUUID, basicConceptUUID, sourceId_2}, returnedError: "", updatedConcepts: UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, basicConceptUUID, sourceId_2}}}
 	transferSourceFromOtherConcordanceToAnother := testStruct{testName: "transferSourceFromOtherConcordanceToAnother", setUpConcept: getDualConcordance(), testConcept: getTransferSourceConcordance(), uuidsToCheck: []string{anotherBasicConceptUUID, sourceId_1, basicConceptUUID}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, sourceId_1}}}
 	addThirdSourceToDualConcordanceUpdateAll := testStruct{testName: "addThirdSourceToDualConcordanceUpdateAll", setUpConcept: getDualConcordance(), testConcept: getTriConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1, sourceId_2}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1, sourceId_2}}}
 	triConcordanceToDualConcordanceUpdatesAll := testStruct{testName: "triConcordanceToDualConcordanceUpdatesAll", setUpConcept: getTriConcordance(), testConcept: getDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1, sourceId_2}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1, sourceId_2}}}
 	dataChangesOnCanonicalUpdateBoth := testStruct{testName: "dataChangesOnCanonicalUpdateBoth", setUpConcept: getDualConcordance(), testConcept: getUpdatedDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
 
-	scenarios := []testStruct{singleConcordanceNoChangesNoUpdates, dualConcordanceNoChangesNoUpdates, singleConcordanceToDualConcordanceUpdatesBoth, dualConcordanceToSingleConcordanceUpdatesBoth, errorsOnAddingConcordanceOfCanonicalNode, transferSourceFromOtherConcordanceToAnother, addThirdSourceToDualConcordanceUpdateAll, triConcordanceToDualConcordanceUpdatesAll, dataChangesOnCanonicalUpdateBoth}
+	scenarios := []testStruct{singleConcordanceNoChangesNoUpdates, dualConcordanceNoChangesNoUpdates, singleConcordanceToDualConcordanceUpdatesBoth, dualConcordanceToSingleConcordanceUpdatesBoth, errorsOnAddingConcordanceOfCanonicalNode, transferSourceFromOtherConcordanceToAnother, addThirdSourceToDualConcordanceUpdateAll, triConcordanceToDualConcordanceUpdatesAll, dataChangesOnCanonicalUpdateBoth, oldCanonicalRemovedWhenSingleConcordancebecomesSource}
 
 	for _, scenario := range scenarios {
 		cleanDB(t)
@@ -743,6 +825,28 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		cleanDB(t)
 	}
 
+}
+
+func TestMultipleConcordancesAreHandled(t *testing.T) {
+	cleanDB(t)
+	defer cleanDB(t)
+
+	_, err := conceptsDriver.Write(getFullLoneAggregatedConcept(), "test_tid")
+	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
+
+
+	_, err = conceptsDriver.Write(getLoneTmeSection(), "test_tid")
+	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
+
+
+	_, err = conceptsDriver.Write(getTransferMultipleSourceConcordance(), "test_tid")
+	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
+
+	concept, found, err := conceptsDriver.Read(simpleSmartlogicTopicUUID, "test_tid")
+	assert.NoError(t, err, "Should be able to read concept with no problems")
+	assert.True(t, found, "Concept should exist")
+	assert.NotNil(t, concept, "Concept should be populated")
+	readConceptAndCompare(t, getTransferMultipleSourceConcordance(), "TestMultipleConcordancesAreHandled")
 }
 
 func TestInvalidTypesThrowError(t *testing.T) {
@@ -992,9 +1096,9 @@ func getConceptService(t *testing.T) ConceptService {
 }
 
 func cleanDB(t *testing.T) {
-	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID)
-	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID)
-	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID)
+	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID, simpleSmartlogicTopicUUID)
+	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID, simpleSmartlogicTopicUUID)
+	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID, simpleSmartlogicTopicUUID)
 }
 
 func deleteSourceNodes(t *testing.T, uuids ...string) {

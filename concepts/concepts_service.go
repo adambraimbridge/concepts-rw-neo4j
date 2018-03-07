@@ -502,13 +502,13 @@ func (s *ConceptService) handleTransferConcordance(updatedSourceIds []string, pr
 		logger.WithField("UUID", result[0].SourceUUID).Debug("Existing prefUUID is " + result[0].PrefUUID + " equivalence count is " + strconv.Itoa(result[0].Equivalence))
 		// Source has no existing concordance and will be handled by clearDownExistingNodes function
 		if result[0].Equivalence == 0 {
-			break
+			continue
 		} else if result[0].Equivalence == 1 {
 			// Source has existing concordance to itself, after transfer old pref uuid node will need to be cleaned up
 			if result[0].SourceUUID == result[0].PrefUUID {
 				logger.WithTransactionID(transID).WithUUID(prefUUID).Debugf("Pref uuid node for source %s will need to be deleted as its source will be removed", result[0].SourceUUID)
 				deleteLonePrefUuidQueries = append(deleteLonePrefUuidQueries, deleteLonePrefUuid(result[0].PrefUUID))
-				break
+				continue
 			} else {
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := fmt.Errorf("This source id: %s the only concordance to a non-matching node with prefUuid: %s", result[0].SourceUUID, result[0].PrefUUID)
@@ -526,7 +526,7 @@ func (s *ConceptService) handleTransferConcordance(updatedSourceIds []string, pr
 			} else {
 				// Source was concorded to different concordance. Data on existing concordance is now out of data
 				logger.WithTransactionID(transID).WithUUID(prefUUID).WithField("alert_tag", "ConceptLoadingStaleData").Infof("Need to re-ingest concordance record for prefUuid: % as source: %s has been removed.", result[0].PrefUUID, result[0].SourceUUID)
-				break
+				continue
 			}
 		}
 	}
@@ -548,12 +548,11 @@ func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 //Clear down current concept node
 func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
 	acUUID := ac.PrefUUID
-	sourceUuids := getSourceIds(ac.SourceRepresentations)
 
 	queryBatch := []*neoism.CypherQuery{}
 
-	for _, id := range sourceUuids {
-		deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
+	for _, sr := range ac.SourceRepresentations {
+		deletePreviousSourceIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
@@ -567,14 +566,14 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			SET t={uuid:{id}}
 			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
-				"id": id,
+				"id": sr.UUID,
 			},
 		}
-		queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
+		queryBatch = append(queryBatch, deletePreviousSourceIdentifiersLabelsAndPropertiesQuery)
 	}
 
 	//cleanUP all the previous Equivalent to relationships
-	deletePreviousIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
+	deletePreviousCanonicalIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`MATCH (t:Thing {prefUUID:{acUUID}})
 			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
 			REMOVE t:%s
@@ -584,7 +583,7 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			"acUUID": acUUID,
 		},
 	}
-	queryBatch = append(queryBatch, deletePreviousIdentifiersLabelsAndPropertiesQuery)
+	queryBatch = append(queryBatch, deletePreviousCanonicalIdentifiersLabelsAndPropertiesQuery)
 
 	return queryBatch
 }

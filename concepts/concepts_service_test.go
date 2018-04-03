@@ -608,6 +608,20 @@ func getMembershipRole() AggregatedConcept {
 		}}}
 }
 
+func getBoardRole() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  membershipRoleUUID,
+		PrefLabel: "BoardRole Pref Label",
+		Type:      "BoardRole",
+		SourceRepresentations: []Concept{{
+			UUID:           membershipRoleUUID,
+			PrefLabel:      "BoardRole Pref Label",
+			Type:           "BoardRole",
+			Authority:      "Smartlogic",
+			AuthorityValue: "987654321",
+		}}}
+}
+
 func getMembership() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:         membershipUUID,
@@ -685,6 +699,7 @@ func TestWriteService(t *testing.T) {
 		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied", UpdatedConcepts{UpdatedIds: []string{}}},
 		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a MembershipRole", getMembershipRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
+		{"Creates All Values Present for a BoardRole", getBoardRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
 		{"Creates All Values Present for a Membership", getMembership(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
@@ -834,10 +849,8 @@ func TestMultipleConcordancesAreHandled(t *testing.T) {
 	_, err := conceptsDriver.Write(getFullLoneAggregatedConcept(), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
-
 	_, err = conceptsDriver.Write(getLoneTmeSection(), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
-
 
 	_, err = conceptsDriver.Write(getTransferMultipleSourceConcordance(), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")

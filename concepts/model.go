@@ -67,6 +67,7 @@ var constraintMap = map[string]string{
 	"Person":               "uuid",
 	"Organisation":         "uuid",
 	"MembershipRole":       "uuid",
+	"BoardRole":            "uuid",
 	"Membership":           "uuid",
 	"UPPIdentifier":        "value",
 	"TMEIdentifier":        "value",
@@ -77,6 +78,7 @@ var constraintMap = map[string]string{
 var conceptLabels = [...]string{
 	"Concept", "Classification", "Section", "Subject", "SpecialReport", "Topic",
 	"Location", "Genre", "Brand", "Person", "Organisation", "MembershipRole", "Membership",
+	"BoardRole",
 }
 
 // Map of authority and nodelabel for identifiers - we should be removing

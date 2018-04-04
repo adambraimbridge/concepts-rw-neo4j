@@ -747,6 +747,7 @@ func TestWriteService(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
+			defer cleanDB(t)
 			// Create the related and broader than concepts
 			for _, relatedConcept := range test.otherRelatedConcepts {
 				_, err := conceptsDriver.Write(relatedConcept, "")

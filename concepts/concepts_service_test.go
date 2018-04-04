@@ -31,6 +31,7 @@ const (
 	membershipRoleUUID        = "f807193d-337b-412f-b32c-afa14b385819"
 	organisationUUID          = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
 	personUUID                = "35946807-0205-4fc1-8516-bb1ae141659b"
+	financialInstrumentUUID   = "475b7b59-66d5-47e2-a273-adc3d1ba8286"
 	membershipUUID            = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 	anotherMembershipRoleUUID = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
 	anotherOrganisationUUID   = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
@@ -643,6 +644,24 @@ func getMembership() AggregatedConcept {
 		}}}
 }
 
+func getFinancialInstrument() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  financialInstrumentUUID,
+		PrefLabel: "FinancialInstrument Pref Label",
+		Type:      "FinancialInstrument",
+		FigiCode:  "12345",
+		IssuedBy:  "organisationUUID",
+		SourceRepresentations: []Concept{{
+			UUID:           financialInstrumentUUID,
+			PrefLabel:      "FinancialInstrument Pref Label",
+			Type:           "FinancialInstrument",
+			Authority:      "Smartlogic",
+			AuthorityValue: "746464",
+			FigiCode:       "12345",
+			IssuedBy:       "organisationUUID",
+		}}}
+}
+
 func getUpdatedMembership() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:         membershipUUID,
@@ -702,6 +721,7 @@ func TestWriteService(t *testing.T) {
 		{"Creates All Values Present for a MembershipRole", getMembershipRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
 		{"Creates All Values Present for a BoardRole", getBoardRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{boardRoleUUID}}},
 		{"Creates All Values Present for a Membership", getMembership(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipUUID}}},
+		{"Creates All Values Present for a FinancialInstrument", getFinancialInstrument(), nil, "", UpdatedConcepts{UpdatedIds: []string{financialInstrumentUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a HAS_BROADER relationship", getConceptWithHasBroader(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},

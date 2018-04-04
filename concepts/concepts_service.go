@@ -84,6 +84,11 @@ type neoAggregatedConcept struct {
 	PersonUUID            string       `json:"personUUID,omitempty"`
 	MembershipRoles       []string     `json:"membershipRoles,omitempty"`
 	AggregateHash         string       `json:"aggregateHash,omitempty"`
+
+	InceptionDate   *time.Time `json:"inceptionDate,omitempty"`
+	TerminationDate *time.Time `json:"terminationDate,omitempty"`
+	FigiCode        string     `json:"figiCode,omitempty"`
+	IssuedBy        string     `json:"issuedBy,omitempty"`
 }
 
 type neoConcept struct {
@@ -109,6 +114,11 @@ type neoConcept struct {
 	OrganisationUUID  string   `json:"organisationUUID,omitempty"`
 	PersonUUID        string   `json:"personUUID,omitempty"`
 	MembershipRoles   []string `json:"membershipRoles,omitempty"`
+
+	InceptionDate   *time.Time `json:"inceptionDate,omitempty"`
+	TerminationDate *time.Time `json:"terminationDate,omitempty"`
+	FigiCode        string     `json:"figiCode,omitempty"`
+	IssuedBy        string     `json:"issuedBy,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -125,27 +135,67 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		Statement: `
 				MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
 				OPTIONAL MATCH (node)-[:HAS_ORGANISATION]->(org:Thing)
-				WITH canonical, node, org.uuid as organisationUUID
+				// OPTIONAL MATCH (node)-[:ISSUED_BY]->(issuer:Thing)
 				OPTIONAL MATCH (node)-[:HAS_MEMBER]->(person:Thing)
-				WITH canonical, node, organisationUUID, person.uuid as personUUID
 				OPTIONAL MATCH (node)-[:IS_RELATED_TO]->(related:Thing)
-				WITH canonical, node, collect(related.uuid) as relUUIDS, organisationUUID, personUUID
 				OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
-				WITH canonical, node, relUUIDS, organisationUUID, personUUID, collect(broader.uuid) as broaderUUIDs
 				OPTIONAL MATCH (node)-[:HAS_ROLE]->(role:Thing)
-				WITH canonical, node, relUUIDS, organisationUUID, personUUID, broaderUUIDs, collect(role.uuid) as membershipRoles
 				OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
-				WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
-				canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
-				canonical.emailAddress as emailAddress, canonical.facebookPage as facebookPage, canonical.twitterHandle as twitterHandle,
-				canonical.scopeNote as scopeNote, canonical.shortLabel as shortLabel, canonical.aggregateHash as aggregateHash, organisationUUID, personUUID, membershipRoles,
-				{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue,
-				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, emailAddress: node.emailAddress,
-				facebookPage: node.facebookPage,twitterHandle: node.twitterHandle, scopeNote: node.scopeNote, shortLabel: node.shortLabel,
-				aliases: node.aliases,descriptionXML: node.descriptionXML, imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid),
-				relatedUUIDs:relUUIDS, broaderUUIDs:broaderUUIDs, organisationUUID: organisationUUID, personUUID: personUUID, membershipRoles: membershipRoles} as sources
-				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, emailAddress,
-				facebookPage, twitterHandle, scopeNote, shortLabel, organisationUUID, personUUID, membershipRoles, aggregateHash, collect(sources) as sourceRepresentations `,
+				WITH
+					canonical,
+					org,
+					// issuer,
+					person,
+					related,
+					broader,
+					role,
+					parent,
+					{
+						uuid: node.uuid,
+						prefLabel: node.prefLabel,
+						authority: node.authority,
+						authorityValue: node.authorityValue,
+						types: labels(node),
+						lastModifiedEpoch: node.lastModifiedEpoch,
+						emailAddress: node.emailAddress,
+						facebookPage: node.facebookPage,
+						twitterHandle: node.twitterHandle,
+						scopeNote: node.scopeNote,
+						shortLabel: node.shortLabel,
+						aliases: node.aliases,
+						descriptionXML: node.descriptionXML,
+						imageUrl: node.imageUrl,
+						strapline: node.strapline,
+						parentUUIDs: collect(parent.uuid),
+						relatedUUIDs: collect(related.uuid),
+						broaderUUIDs: collect(broader.uuid),
+						organisationUUID: org.uuid,
+						personUUID: person.uuid,
+						membershipRoles: collect(role.uuid),
+						figiCode: node.figiCode,
+						issuedBy: node.issuedBy
+					} as sources
+				RETURN
+					canonical.prefUUID as prefUUID,
+					canonical.prefLabel as prefLabel,
+					labels(canonical) as types,
+					canonical.aliases as aliases,
+					canonical.descriptionXML as descriptionXML,
+					canonical.strapline as strapline,
+					canonical.imageUrl as imageUrl,
+					canonical.emailAddress as emailAddress,
+					canonical.facebookPage as facebookPage,
+					canonical.twitterHandle as twitterHandle,
+					canonical.scopeNote as scopeNote,
+					canonical.shortLabel as shortLabel,
+					canonical.aggregateHash as aggregateHash,
+					org.uuid as organisationUUID,
+					person.uuid as personUUID,
+					collect(role.uuid) as membershipRoles,
+					canonical.figiCode as figiCode,
+					canonical.issuedBy as issuedBy,
+					collect(sources) as sourceRepresentations
+		`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -185,6 +235,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		PersonUUID:       results[0].PersonUUID,
 		OrganisationUUID: results[0].OrganisationUUID,
 		AggregatedHash:   results[0].AggregateHash,
+		FigiCode:         results[0].FigiCode,
+		IssuedBy:         results[0].IssuedBy,
 	}
 
 	if len(results[0].MembershipRoles) > 0 {
@@ -280,6 +332,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		concept.ScopeNote = srcConcept.ScopeNote
 		concept.PersonUUID = srcConcept.PersonUUID
 		concept.OrganisationUUID = srcConcept.OrganisationUUID
+		concept.FigiCode = srcConcept.FigiCode
+		concept.IssuedBy = srcConcept.IssuedBy
 		sourceConcepts = append(sourceConcepts, concept)
 	}
 
@@ -704,6 +758,30 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			},
 		}
 		queryBatch = append(queryBatch, writePerson)
+	}
+
+	if concept.FigiCode != "" && concept.IssuedBy != "" {
+		writeRole := &neoism.CypherQuery{
+			Statement: `MERGE (fi:Thing {
+							uuid: {fiUUID},
+							prefLabel: {fiPrefLabel},
+							figiCode: {fiCode},
+							authority: {fiAuthority},
+							authorityValue: {fiAuthorityValue}
+						})
+						MERGE (fi)-[:ISSUED_BY]->(org:Thing{uuid:{orgUUID}})
+							ON CREATE SET org.uuid = {orgUUID}
+						`,
+			Parameters: neoism.Props{
+				"fiUUID":           concept.UUID,
+				"fiCode":           concept.FigiCode,
+				"fiPrefLabel":      concept.PrefLabel,
+				"fiAuthority":      concept.Authority,
+				"fiAuthorityValue": concept.AuthorityValue,
+				"orgUUID":          concept.IssuedBy,
+			},
+		}
+		queryBatch = append(queryBatch, writeRole)
 	}
 
 	if len(concept.MembershipRoles) > 0 {

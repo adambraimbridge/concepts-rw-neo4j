@@ -27,6 +27,7 @@ const (
 	simpleSmartlogicTopicUUID  = "abd38d90-2152-11e8-9ac1-da24cd01f044"
 	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
+	boardRoleUUID             = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
 	membershipRoleUUID        = "f807193d-337b-412f-b32c-afa14b385819"
 	organisationUUID          = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
 	personUUID                = "35946807-0205-4fc1-8516-bb1ae141659b"
@@ -608,6 +609,20 @@ func getMembershipRole() AggregatedConcept {
 		}}}
 }
 
+func getBoardRole() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  boardRoleUUID,
+		PrefLabel: "BoardRole Pref Label",
+		Type:      "BoardRole",
+		SourceRepresentations: []Concept{{
+			UUID:           boardRoleUUID,
+			PrefLabel:      "BoardRole Pref Label",
+			Type:           "BoardRole",
+			Authority:      "Smartlogic",
+			AuthorityValue: "987654321",
+		}}}
+}
+
 func getMembership() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:         membershipUUID,
@@ -685,6 +700,7 @@ func TestWriteService(t *testing.T) {
 		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied", UpdatedConcepts{UpdatedIds: []string{}}},
 		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a MembershipRole", getMembershipRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
+		{"Creates All Values Present for a BoardRole", getBoardRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{boardRoleUUID}}},
 		{"Creates All Values Present for a Membership", getMembership(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
@@ -834,10 +850,8 @@ func TestMultipleConcordancesAreHandled(t *testing.T) {
 	_, err := conceptsDriver.Write(getFullLoneAggregatedConcept(), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
-
 	_, err = conceptsDriver.Write(getLoneTmeSection(), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
-
 
 	_, err = conceptsDriver.Write(getTransferMultipleSourceConcordance(), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")

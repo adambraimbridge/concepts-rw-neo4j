@@ -611,11 +611,11 @@ func getMembershipRole() AggregatedConcept {
 
 func getBoardRole() AggregatedConcept {
 	return AggregatedConcept{
-		PrefUUID:  membershipRoleUUID,
+		PrefUUID:  boardRoleUUID,
 		PrefLabel: "BoardRole Pref Label",
 		Type:      "BoardRole",
 		SourceRepresentations: []Concept{{
-			UUID:           membershipRoleUUID,
+			UUID:           boardRoleUUID,
 			PrefLabel:      "BoardRole Pref Label",
 			Type:           "BoardRole",
 			Authority:      "Smartlogic",
@@ -700,7 +700,7 @@ func TestWriteService(t *testing.T) {
 		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied", UpdatedConcepts{UpdatedIds: []string{}}},
 		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a MembershipRole", getMembershipRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
-		{"Creates All Values Present for a BoardRole", getBoardRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
+		{"Creates All Values Present for a BoardRole", getBoardRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{boardRoleUUID}}},
 		{"Creates All Values Present for a Membership", getMembership(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},

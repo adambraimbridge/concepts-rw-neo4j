@@ -27,6 +27,7 @@ const (
 	simpleSmartlogicTopicUUID  = "abd38d90-2152-11e8-9ac1-da24cd01f044"
 	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
+	boardRoleUUID             = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
 	membershipRoleUUID        = "f807193d-337b-412f-b32c-afa14b385819"
 	organisationUUID          = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
 	personUUID                = "35946807-0205-4fc1-8516-bb1ae141659b"

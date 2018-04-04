@@ -84,11 +84,9 @@ type neoAggregatedConcept struct {
 	PersonUUID            string       `json:"personUUID,omitempty"`
 	MembershipRoles       []string     `json:"membershipRoles,omitempty"`
 	AggregateHash         string       `json:"aggregateHash,omitempty"`
+	FigiCode              string       `json:"figiCode,omitempty"`
+	IssuedBy              string       `json:"issuedBy,omitempty"`
 
-	InceptionDate   *time.Time `json:"inceptionDate,omitempty"`
-	TerminationDate *time.Time `json:"terminationDate,omitempty"`
-	FigiCode        string     `json:"figiCode,omitempty"`
-	IssuedBy        string     `json:"issuedBy,omitempty"`
 }
 
 type neoConcept struct {
@@ -114,11 +112,9 @@ type neoConcept struct {
 	OrganisationUUID  string   `json:"organisationUUID,omitempty"`
 	PersonUUID        string   `json:"personUUID,omitempty"`
 	MembershipRoles   []string `json:"membershipRoles,omitempty"`
+	FigiCode          string   `json:"figiCode,omitempty"`
+	IssuedBy          string   `json:"issuedBy,omitempty"`
 
-	InceptionDate   *time.Time `json:"inceptionDate,omitempty"`
-	TerminationDate *time.Time `json:"terminationDate,omitempty"`
-	FigiCode        string     `json:"figiCode,omitempty"`
-	IssuedBy        string     `json:"issuedBy,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -135,7 +131,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		Statement: `
 				MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
 				OPTIONAL MATCH (node)-[:HAS_ORGANISATION]->(org:Thing)
-				// OPTIONAL MATCH (node)-[:ISSUED_BY]->(issuer:Thing)
+				OPTIONAL MATCH (node)-[:ISSUED_BY]->(issuer:Thing)
 				OPTIONAL MATCH (node)-[:HAS_MEMBER]->(person:Thing)
 				OPTIONAL MATCH (node)-[:IS_RELATED_TO]->(related:Thing)
 				OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
@@ -144,7 +140,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				WITH
 					canonical,
 					org,
-					// issuer,
+					issuer,
 					person,
 					related,
 					broader,
@@ -173,7 +169,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 						personUUID: person.uuid,
 						membershipRoles: collect(role.uuid),
 						figiCode: node.figiCode,
-						issuedBy: node.issuedBy
+						issuedBy: issuer.uuid
 					} as sources
 				RETURN
 					canonical.prefUUID as prefUUID,
@@ -193,9 +189,9 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					person.uuid as personUUID,
 					collect(role.uuid) as membershipRoles,
 					canonical.figiCode as figiCode,
-					canonical.issuedBy as issuedBy,
+					issuer.uuid as issuedBy,
 					collect(sources) as sourceRepresentations
-		`,
+			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -657,6 +653,8 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		TwitterHandle:  aggregatedConcept.TwitterHandle,
 		ScopeNote:      aggregatedConcept.ScopeNote,
 		ShortLabel:     aggregatedConcept.ShortLabel,
+		FigiCode:       aggregatedConcept.FigiCode,
+		IssuedBy:       aggregatedConcept.IssuedBy,
 		Hash:           aggregatedConcept.AggregatedHash,
 	}
 
@@ -760,28 +758,18 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		queryBatch = append(queryBatch, writePerson)
 	}
 
-	if concept.FigiCode != "" && concept.IssuedBy != "" {
-		writeRole := &neoism.CypherQuery{
-			Statement: `MERGE (fi:Thing {
-							uuid: {fiUUID},
-							prefLabel: {fiPrefLabel},
-							figiCode: {fiCode},
-							authority: {fiAuthority},
-							authorityValue: {fiAuthorityValue}
-						})
+	if uuid != "" && concept.FigiCode != "" && concept.IssuedBy != "" {
+		writeFinIns := &neoism.CypherQuery{
+			Statement: `MERGE (fi:Thing {uuid: {fiUUID}})
 						MERGE (fi)-[:ISSUED_BY]->(org:Thing{uuid:{orgUUID}})
 							ON CREATE SET org.uuid = {orgUUID}
 						`,
 			Parameters: neoism.Props{
-				"fiUUID":           concept.UUID,
-				"fiCode":           concept.FigiCode,
-				"fiPrefLabel":      concept.PrefLabel,
-				"fiAuthority":      concept.Authority,
-				"fiAuthorityValue": concept.AuthorityValue,
-				"orgUUID":          concept.IssuedBy,
+				"fiUUID":  concept.UUID,
+				"orgUUID": concept.IssuedBy,
 			},
 		}
-		queryBatch = append(queryBatch, writeRole)
+		queryBatch = append(queryBatch, writeFinIns)
 	}
 
 	if len(concept.MembershipRoles) > 0 {
@@ -914,6 +902,9 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	}
 	if concept.Strapline != "" {
 		nodeProps["strapline"] = concept.Strapline
+	}
+	if concept.FigiCode != "" {
+		nodeProps["figiCode"] = concept.FigiCode
 	}
 
 	if isSource {

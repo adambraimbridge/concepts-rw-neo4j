@@ -93,6 +93,7 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"TME":        "TMEIdentifier",
 	"UPP":        "UPPIdentifier",
 	"Smartlogic": "SmartlogicIdentifier",
+	"FACTSET":    "FactsetIdentifier",
 }
 
 var ConceptTypePaths = []string{

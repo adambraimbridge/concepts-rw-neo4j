@@ -14,6 +14,10 @@ import (
 	"github.com/mitchellh/hashstructure"
 )
 
+const (
+	iso8601DateOnly = "2006-01-02"
+)
+
 //Service - CypherDriver - CypherDriver
 type ConceptService struct {
 	conn neoutils.NeoConnection
@@ -133,7 +137,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				OPTIONAL MATCH (node)-[:HAS_MEMBER]->(person:Thing)
 				OPTIONAL MATCH (node)-[:IS_RELATED_TO]->(related:Thing)
 				OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
-				OPTIONAL MATCH (node)-[:HAS_ROLE]->(role:Thing)
+				OPTIONAL MATCH (node)-[roleRel:HAS_ROLE]->(role:Thing)
 				OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
 				WITH
 					canonical,
@@ -165,9 +169,19 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 						broaderUUIDs: collect(broader.uuid),
 						organisationUUID: org.uuid,
 						personUUID: person.uuid,
-						membershipRoles: collect(role.uuid),
 						figiCode: node.figiCode,
-						issuedBy: issuer.uuid
+						issuedBy: issuer.uuid,
+						membershipRoles: collect({
+							membershipRoleUUID: role.uuid,
+							inceptionDate: roleRel.inceptionDate,
+							terminationDate: roleRel.terminationDate,
+							inceptionDateEpoch: roleRel.inceptionDateEpoch,
+							terminationDateEpoch: roleRel.terminationDateEpoch
+						}),
+						inceptionDate: node.inceptionDate,
+						terminationDate: node.terminationDate,
+						inceptionDateEpoch: node.inceptionDateEpoch,
+						terminationDateEpoch: node.terminationDateEpoch
 					} as sources
 				RETURN
 					canonical.prefUUID as prefUUID,
@@ -185,10 +199,13 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					canonical.aggregateHash as aggregateHash,
 					org.uuid as organisationUUID,
 					person.uuid as personUUID,
-					collect(role.uuid) as membershipRoles,
 					canonical.figiCode as figiCode,
 					issuer.uuid as issuedBy,
-					collect(sources) as sourceRepresentations
+					collect(sources) as sourceRepresentations,
+					canonical.inceptionDate as inceptionDate,
+					canonical.terminationDate as terminationDate,
+					canonical.inceptionDateEpoch as inceptionDateEpoch,
+					canonical.terminationDateEpoch as terminationDateEpoch
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -214,36 +231,28 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 
 	var sourceConcepts []Concept
 	aggregatedConcept := AggregatedConcept{
-		PrefUUID:         results[0].PrefUUID,
-		PrefLabel:        results[0].PrefLabel,
-		Type:             typeName,
-		ImageURL:         results[0].ImageURL,
-		DescriptionXML:   results[0].DescriptionXML,
-		Strapline:        results[0].Strapline,
-		Aliases:          results[0].Aliases,
-		EmailAddress:     results[0].EmailAddress,
-		FacebookPage:     results[0].FacebookPage,
-		TwitterHandle:    results[0].TwitterHandle,
-		ScopeNote:        results[0].ScopeNote,
-		ShortLabel:       results[0].ShortLabel,
-		PersonUUID:       results[0].PersonUUID,
-		OrganisationUUID: results[0].OrganisationUUID,
-		AggregatedHash:   results[0].AggregateHash,
-		FigiCode:         results[0].FigiCode,
-		IssuedBy:         results[0].IssuedBy,
-	}
-
-	if len(results[0].MembershipRoles) > 0 {
-		var uuids = []string{}
-		//TODO do this differently but I get a "" back from the cypher!
-		for _, uuid := range results[0].MembershipRoles {
-			if uuid != "" {
-				uuids = append(uuids, uuid)
-			}
-		}
-		if len(uuids) > 0 {
-			aggregatedConcept.MembershipRoles = uuids
-		}
+		PrefUUID:             results[0].PrefUUID,
+		PrefLabel:            results[0].PrefLabel,
+		Type:                 typeName,
+		ImageURL:             results[0].ImageURL,
+		DescriptionXML:       results[0].DescriptionXML,
+		Strapline:            results[0].Strapline,
+		Aliases:              results[0].Aliases,
+		EmailAddress:         results[0].EmailAddress,
+		FacebookPage:         results[0].FacebookPage,
+		TwitterHandle:        results[0].TwitterHandle,
+		ScopeNote:            results[0].ScopeNote,
+		ShortLabel:           results[0].ShortLabel,
+		PersonUUID:           results[0].PersonUUID,
+		OrganisationUUID:     results[0].OrganisationUUID,
+		AggregatedHash:       results[0].AggregateHash,
+		FigiCode:             results[0].FigiCode,
+		IssuedBy:             results[0].IssuedBy,
+		MembershipRoles:      results[0].MembershipRoles,
+		InceptionDate:        results[0].InceptionDate,
+		TerminationDate:      results[0].TerminationDate,
+		InceptionDateEpoch:   results[0].InceptionDateEpoch,
+		TerminationDateEpoch: results[0].TerminationDateEpoch,
 	}
 
 	for _, srcConcept := range results[0].SourceRepresentations {
@@ -297,19 +306,6 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			}
 		}
 
-		if len(srcConcept.MembershipRoles) > 0 {
-			uuids = []string{}
-			//TODO do this differently but I get a "" back from the cypher!
-			for _, uuid := range srcConcept.MembershipRoles {
-				if uuid != "" {
-					uuids = append(uuids, uuid)
-				}
-			}
-			if len(uuids) > 0 {
-				concept.MembershipRoles = uuids
-			}
-		}
-
 		concept.UUID = srcConcept.UUID
 		concept.PrefLabel = srcConcept.PrefLabel
 		concept.Authority = srcConcept.Authority
@@ -359,6 +355,76 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Read request for existing concordance resulted in error")
 		return uuidsToUpdate, err
+	}
+
+	if aggregatedConceptToWrite.InceptionDate != "" {
+		it, err := time.Parse(iso8601DateOnly, aggregatedConceptToWrite.InceptionDate)
+		if err != nil {
+			return uuidsToUpdate, errors.New("Aggregated concept had invalid inceptionDate")
+		}
+		aggregatedConceptToWrite.InceptionDateEpoch = it.Unix()
+	}
+
+	if aggregatedConceptToWrite.TerminationDate != "" {
+		tt, err := time.Parse(iso8601DateOnly, aggregatedConceptToWrite.TerminationDate)
+		if err != nil {
+			return uuidsToUpdate, errors.New("Aggregated concept had invalid TerminationDate")
+		}
+		aggregatedConceptToWrite.TerminationDateEpoch = tt.Unix()
+	}
+
+	for i, role := range aggregatedConceptToWrite.MembershipRoles {
+		if role.InceptionDate != "" {
+			it, err := time.Parse(iso8601DateOnly, role.InceptionDate)
+			if err != nil {
+				return uuidsToUpdate, errors.New("Aggregated concept source had invalid inceptionDate")
+			}
+			aggregatedConceptToWrite.MembershipRoles[i].InceptionDateEpoch = it.Unix()
+		}
+
+		if role.TerminationDate != "" {
+			tt, err := time.Parse(iso8601DateOnly, role.TerminationDate)
+			if err != nil {
+				return uuidsToUpdate, errors.New("Aggregated concept source role had invalid TerminationDate")
+			}
+			aggregatedConceptToWrite.MembershipRoles[i].TerminationDateEpoch = tt.Unix()
+		}
+	}
+
+	for i, source := range aggregatedConceptToWrite.SourceRepresentations {
+		if source.InceptionDate != "" {
+			it, err := time.Parse(iso8601DateOnly, source.InceptionDate)
+			if err != nil {
+				return uuidsToUpdate, errors.New("Aggregated concept source had invalid inceptionDate")
+			}
+			aggregatedConceptToWrite.SourceRepresentations[i].InceptionDateEpoch = it.Unix()
+		}
+
+		if source.TerminationDate != "" {
+			tt, err := time.Parse(iso8601DateOnly, source.TerminationDate)
+			if err != nil {
+				return uuidsToUpdate, errors.New("Aggregated concept source had invalid TerminationDate")
+			}
+			aggregatedConceptToWrite.SourceRepresentations[i].TerminationDateEpoch = tt.Unix()
+		}
+
+		for i, role := range source.MembershipRoles {
+			if role.InceptionDate != "" {
+				it, err := time.Parse(iso8601DateOnly, role.InceptionDate)
+				if err != nil {
+					return uuidsToUpdate, errors.New("Aggregated concept source had invalid inceptionDate")
+				}
+				source.MembershipRoles[i].InceptionDateEpoch = it.Unix()
+			}
+
+			if role.TerminationDate != "" {
+				tt, err := time.Parse(iso8601DateOnly, role.TerminationDate)
+				if err != nil {
+					return uuidsToUpdate, errors.New("Aggregated concept source role had invalid TerminationDate")
+				}
+				source.MembershipRoles[i].TerminationDateEpoch = tt.Unix()
+			}
+		}
 	}
 
 	var queryBatch []*neoism.CypherQuery
@@ -837,17 +903,41 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		queryBatch = append(queryBatch, writeFinIns)
 	}
 
-	if len(concept.MembershipRoles) > 0 {
-		for _, membershipRoleUUID := range concept.MembershipRoles {
+	if uuid != "" && len(concept.MembershipRoles) > 0 {
+		for _, membershipRole := range concept.MembershipRoles {
+			params := neoism.Props{
+				"inceptionDate":        nil,
+				"inceptionDateEpoch":   nil,
+				"terminationDate":      nil,
+				"terminationDateEpoch": nil,
+				"roleUUID":             membershipRole.RoleUUID,
+				"nodeUUID":             concept.UUID,
+			}
+			if membershipRole.InceptionDate != "" {
+				params["inceptionDate"] = membershipRole.InceptionDate
+			}
+			if membershipRole.InceptionDateEpoch > 0 {
+				params["inceptionDateEpoch"] = membershipRole.InceptionDateEpoch
+			}
+			if membershipRole.TerminationDate != "" {
+				params["terminationDate"] = membershipRole.TerminationDate
+			}
+			if membershipRole.TerminationDateEpoch > 0 {
+				params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
+			}
 			writeParent := &neoism.CypherQuery{
-				Statement: `MERGE (membership:Thing {uuid: {uuid}})
-		  	   				MERGE (roleupp:Identifier:UPPIdentifier{value:{mmbUuid}})
-                            MERGE (roleupp)-[:IDENTIFIES]->(role:Thing) ON CREATE SET role.uuid = {mmbUuid}
-		            		MERGE (membership)-[:HAS_ROLE]->(role)	`,
-				Parameters: neoism.Props{
-					"mmbUuid": membershipRoleUUID,
-					"uuid":    concept.UUID,
-				},
+				Statement: `MERGE (node:Thing{uuid: {nodeUUID}})
+							MERGE (role:Thing{uuid: {roleUUID}})
+								ON CREATE SET
+									role.uuid = {roleUUID}
+							MERGE (node)-[rel:HAS_ROLE]->(role)
+								ON CREATE SET
+									rel.inceptionDate = {inceptionDate},
+									rel.inceptionDateEpoch = {inceptionDateEpoch},
+									rel.terminationDate = {terminationDate},
+									rel.terminationDateEpoch = {terminationDateEpoch}
+							`,
+				Parameters: params,
 			}
 			queryBatch = append(queryBatch, writeParent)
 		}
@@ -970,6 +1060,19 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	}
 	if concept.FigiCode != "" {
 		nodeProps["figiCode"] = concept.FigiCode
+	}
+
+	if concept.InceptionDate != "" {
+		nodeProps["inceptionDate"] = concept.InceptionDate
+	}
+	if concept.TerminationDate != "" {
+		nodeProps["terminationDate"] = concept.TerminationDate
+	}
+	if concept.InceptionDateEpoch > 0 {
+		nodeProps["inceptionDateEpoch"] = concept.InceptionDateEpoch
+	}
+	if concept.TerminationDateEpoch > 0 {
+		nodeProps["terminationDateEpoch"] = concept.TerminationDateEpoch
 	}
 
 	if isSource {

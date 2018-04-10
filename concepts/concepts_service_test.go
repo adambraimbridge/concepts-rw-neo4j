@@ -33,6 +33,7 @@ const (
 	personUUID                = "35946807-0205-4fc1-8516-bb1ae141659b"
 	financialInstrumentUUID   = "475b7b59-66d5-47e2-a273-adc3d1ba8286"
 	financialOrgUUID          = "4290f028-05e9-4c2d-9f11-61ec59ba081a"
+	anotherFinancialOrgUUID   = "230e3a74-694a-4d94-8294-6a45ec1ced26"
 	membershipUUID            = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 	anotherMembershipRoleUUID = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
 	anotherOrganisationUUID   = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
@@ -664,6 +665,25 @@ func getFinancialInstrument() AggregatedConcept {
 	}
 }
 
+func getUpdatedFinancialInstrument() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  financialInstrumentUUID,
+		PrefLabel: "FinancialInstrument Pref Label",
+		Type:      "FinancialInstrument",
+		FigiCode:  "123457",
+		IssuedBy:  anotherFinancialOrgUUID,
+		SourceRepresentations: []Concept{{
+			UUID:           financialInstrumentUUID,
+			PrefLabel:      "FinancialInstrument Pref Label",
+			Type:           "FinancialInstrument",
+			Authority:      "FACTSET",
+			AuthorityValue: "746464",
+			FigiCode:       "123457",
+			IssuedBy:       anotherFinancialOrgUUID,
+		}},
+	}
+}
+
 func getUpdatedMembership() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:         membershipUUID,
@@ -820,6 +840,26 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	assert.Equal(t, []string{anotherMembershipRoleUUID}, updatedMemebership.MembershipRoles)
 	assert.Equal(t, anotherOrganisationUUID, updatedMemebership.OrganisationUUID)
 	assert.Equal(t, anotherPersonUUID, updatedMemebership.PersonUUID)
+}
+
+func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {
+	defer cleanDB(t)
+
+	_, err := conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	_, err = conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+
+	_, err = conceptsDriver.Write(getUpdatedFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	_, err = conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
 }
 
 func TestWriteService_HandlingConcordance(t *testing.T) {
@@ -1163,6 +1203,7 @@ func cleanDB(t *testing.T) {
 		boardRoleUUID,
 		financialInstrumentUUID,
 		financialOrgUUID,
+		anotherFinancialOrgUUID,
 	)
 	deleteSourceNodes(t,
 		parentUuid,
@@ -1184,6 +1225,7 @@ func cleanDB(t *testing.T) {
 		boardRoleUUID,
 		financialInstrumentUUID,
 		financialOrgUUID,
+		anotherFinancialOrgUUID,
 	)
 	deleteConcordedNodes(t,
 		parentUuid,
@@ -1205,6 +1247,7 @@ func cleanDB(t *testing.T) {
 		boardRoleUUID,
 		financialInstrumentUUID,
 		financialOrgUUID,
+		anotherFinancialOrgUUID,
 	)
 }
 

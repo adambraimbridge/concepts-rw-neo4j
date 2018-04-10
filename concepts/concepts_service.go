@@ -86,7 +86,6 @@ type neoAggregatedConcept struct {
 	AggregateHash         string       `json:"aggregateHash,omitempty"`
 	FigiCode              string       `json:"figiCode,omitempty"`
 	IssuedBy              string       `json:"issuedBy,omitempty"`
-
 }
 
 type neoConcept struct {
@@ -114,7 +113,6 @@ type neoConcept struct {
 	MembershipRoles   []string `json:"membershipRoles,omitempty"`
 	FigiCode          string   `json:"figiCode,omitempty"`
 	IssuedBy          string   `json:"issuedBy,omitempty"`
-
 }
 
 type equivalenceResult struct {
@@ -412,6 +410,18 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			queryBatch = append(queryBatch, query)
 		}
 
+		if existingAggregateConcept.IssuedBy != aggregatedConceptToWrite.IssuedBy {
+			err := fmt.Errorf(
+				"Figi code for concept with prefUUID %s changed from %s to %s",
+				existingAggregateConcept.PrefUUID,
+				existingAggregateConcept.IssuedBy,
+				aggregatedConceptToWrite.IssuedBy,
+			)
+			logger.WithTransactionID(transID).
+				WithUUID(existingAggregateConcept.PrefUUID).
+				WithField("alert_tag", "ConceptLoadingFigiChanged").Error(err)
+		}
+
 		for _, idToUnconcord := range listToUnconcord {
 			for _, concept := range existingAggregateConcept.SourceRepresentations {
 				if idToUnconcord == concept.UUID {
@@ -612,9 +622,10 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[ho:HAS_ORGANISATION]->(org)
 			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->(memb)
 			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->(mr)
+			OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr, issuerRel`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -719,12 +730,13 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	for _, parentUUID := range concept.ParentUUIDs {
 		writeParent := &neoism.CypherQuery{
 			Statement: `MERGE (o:Thing {uuid: {uuid}})
-						MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})
-						MERGE (parentupp)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {paUuid}
-						MERGE (o)-[:HAS_PARENT]->(p)	`,
+						MERGE (parentupp:Identifier:UPPIdentifier {value: {parentUUID}})
+						MERGE (parent:Thing {uuid: {parentUUID}})
+						MERGE (parentupp)-[:IDENTIFIES]->(parent)
+						MERGE (o)-[:HAS_PARENT]->(parent)	`,
 			Parameters: neoism.Props{
-				"paUuid": parentUUID,
-				"uuid":   concept.UUID,
+				"parentUUID": parentUUID,
+				"uuid":       concept.UUID,
 			},
 		}
 		queryBatch = append(queryBatch, writeParent)
@@ -733,11 +745,12 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if concept.OrganisationUUID != "" {
 		writeOrganisation := &neoism.CypherQuery{
 			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-		  	   				MERGE (orgupp:Identifier:UPPIdentifier{value:{orgUuid}})
-                            MERGE (orgupp)-[:IDENTIFIES]->(org:Thing) ON CREATE SET org.uuid = {orgUuid}
-		            		MERGE (membership)-[:HAS_ORGANISATION]->(org)`,
+						MERGE (orgupp:Identifier:UPPIdentifier {value: {orgUUID}})
+						MERGE (org:Thing {uuid: {orgUUID}})
+						MERGE (orgupp)-[:IDENTIFIES]->(org)
+						MERGE (membership)-[:HAS_ORGANISATION]->(org)`,
 			Parameters: neoism.Props{
-				"orgUuid": concept.OrganisationUUID,
+				"orgUUID": concept.OrganisationUUID,
 				"uuid":    concept.UUID,
 			},
 		}
@@ -747,11 +760,12 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if concept.PersonUUID != "" {
 		writePerson := &neoism.CypherQuery{
 			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-		  	   				MERGE (personupp:Identifier:UPPIdentifier{value:{personUuid}})
-                            MERGE (personupp)-[:IDENTIFIES]->(person:Thing) ON CREATE SET person.uuid = {personUuid}
-		            		MERGE (membership)-[:HAS_MEMBER]->(person)`,
+						MERGE (personupp:Identifier:UPPIdentifier {value: {personUUID}})
+						MERGE (person:Thing {uuid: {personUUID}})
+						MERGE (personupp)-[:IDENTIFIES]->(person)
+						MERGE (membership)-[:HAS_MEMBER]->(person)`,
 			Parameters: neoism.Props{
-				"personUuid": concept.PersonUUID,
+				"personUUID": concept.PersonUUID,
 				"uuid":       concept.UUID,
 			},
 		}
@@ -761,8 +775,8 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if uuid != "" && concept.FigiCode != "" && concept.IssuedBy != "" {
 		writeFinIns := &neoism.CypherQuery{
 			Statement: `MERGE (fi:Thing {uuid: {fiUUID}})
-						MERGE (fi)-[:ISSUED_BY]->(org:Thing{uuid:{orgUUID}})
-							ON CREATE SET org.uuid = {orgUUID}
+						MERGE (org:Thing {uuid: {orgUUID}})
+						MERGE (fi)-[:ISSUED_BY]->(org)
 						`,
 			Parameters: neoism.Props{
 				"fiUUID":  concept.UUID,

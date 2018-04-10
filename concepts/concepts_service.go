@@ -888,7 +888,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	queryBatch = append(queryBatch, createConceptQuery)
 
 	// If no UUID then it is the canonical node and will not have identifier nodes
-	if uuid != "" {
+	if uuid != "" && concept.Type != "Membership" {
 		queryBatch = append(queryBatch, addIdentifierNodes(uuid, concept.Authority, concept.AuthorityValue)...)
 	}
 

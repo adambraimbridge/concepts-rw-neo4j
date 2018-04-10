@@ -743,23 +743,31 @@ func getUpdatedFinancialInstrument() AggregatedConcept {
 
 func getUpdatedMembership() AggregatedConcept {
 	return AggregatedConcept{
-		PrefUUID:         membershipUUID,
-		PrefLabel:        "Membership Pref Label",
-		Type:             "Membership",
-		OrganisationUUID: anotherOrganisationUUID,
-		PersonUUID:       anotherPersonUUID,
+		PrefUUID:             membershipUUID,
+		PrefLabel:            "Membership Pref Label",
+		Type:                 "Membership",
+		OrganisationUUID:     anotherOrganisationUUID,
+		PersonUUID:           anotherPersonUUID,
+		InceptionDate:        anotherMembershipRole.InceptionDate,
+		TerminationDate:      anotherMembershipRole.TerminationDate,
+		InceptionDateEpoch:   anotherMembershipRole.InceptionDateEpoch,
+		TerminationDateEpoch: anotherMembershipRole.TerminationDateEpoch,
 		MembershipRoles: []MembershipRole{
 			anotherMembershipRole,
 		},
 		SourceRepresentations: []Concept{
 			{
-				UUID:             membershipUUID,
-				PrefLabel:        "Membership Pref Label",
-				Type:             "Membership",
-				Authority:        "Smartlogic",
-				AuthorityValue:   "746464",
-				OrganisationUUID: anotherOrganisationUUID,
-				PersonUUID:       anotherPersonUUID,
+				UUID:                 membershipUUID,
+				PrefLabel:            "Membership Pref Label",
+				Type:                 "Membership",
+				Authority:            "Smartlogic",
+				AuthorityValue:       "746464",
+				OrganisationUUID:     anotherOrganisationUUID,
+				PersonUUID:           anotherPersonUUID,
+				InceptionDate:        anotherMembershipRole.InceptionDate,
+				TerminationDate:      anotherMembershipRole.TerminationDate,
+				InceptionDateEpoch:   anotherMembershipRole.InceptionDateEpoch,
+				TerminationDateEpoch: anotherMembershipRole.TerminationDateEpoch,
 				MembershipRoles: []MembershipRole{
 					anotherMembershipRole,
 				},

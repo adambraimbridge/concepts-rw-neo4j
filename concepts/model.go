@@ -68,38 +68,6 @@ type Concept struct {
 	IssuedBy             string           `json:"issuedBy,omitempty"`
 }
 
-// UpdateMode is the mode for updating node or relationship
-type UpdateMode int
-
-const (
-	// Skip doesn't update the node or relation
-	Skip UpdateMode = 1 << iota
-	// SkipLabel doesn't update the label
-	SkipLabel
-	// SkipAttributes doesn't update the attributes
-	SkipAttributes
-	// SkipRelated doesn't update the related nodes, nor the relations
-	SkipRelated
-	// MergeAttributes will not remove missing attributes
-	MergeAttributes
-	// MergeRelated will not remove missing relations
-	MergeRelated
-)
-
-type Node struct {
-	UUID       string `neo:"type:primary"`
-	Relations  []*Relation
-	Labels     []string
-	Attributes map[string]interface{}
-}
-
-type Relation struct {
-	From       *Node
-	To         *Node
-	Name       string
-	Attributes map[string]interface{}
-}
-
 type UpdatedConcepts struct {
 	UpdatedIds []string `json:"updatedIDs"`
 }

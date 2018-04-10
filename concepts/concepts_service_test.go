@@ -49,18 +49,23 @@ const (
 
 var (
 	membershipRole = MembershipRole{
-		RoleUUID:        "f807193d-337b-412f-b32c-afa14b385819",
-		InceptionDate:   "2016-01-01",
-		TerminationDate: "2017-02-02",
+		RoleUUID:             "f807193d-337b-412f-b32c-afa14b385819",
+		InceptionDate:        "2016-01-01",
+		InceptionDateEpoch:   1451606400,
+		TerminationDate:      "2017-02-02",
+		TerminationDateEpoch: 1485993600,
 	}
 	anotherMembershipRole = MembershipRole{
-		RoleUUID:      "fe94adc6-ca44-438f-ad8f-0188d4a74987",
-		InceptionDate: "2011-06-27",
+		RoleUUID:           "fe94adc6-ca44-438f-ad8f-0188d4a74987",
+		InceptionDate:      "2011-06-27",
+		InceptionDateEpoch: 1309132800,
 	}
 	anotherMembershipRole2 = MembershipRole{
-		RoleUUID:        "83102635-e6d5-3c48-9d5f-ab34c1401c22",
-		InceptionDate:   "2009-09-10",
-		TerminationDate: "2013-02-20",
+		RoleUUID:             "83102635-e6d5-3c48-9d5f-ab34c1401c22",
+		InceptionDate:        "2009-09-10",
+		InceptionDateEpoch:   1252540800,
+		TerminationDate:      "2013-02-20",
+		TerminationDateEpoch: 1361318400,
 	}
 )
 
@@ -869,6 +874,8 @@ func TestWriteService(t *testing.T) {
 func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	cleanDB(t)
 	defer cleanDB(t)
+
+	//
 
 	_, err := conceptsDriver.Write(getMembership(), "test_tid")
 	assert.NoError(t, err, "Failed to write membership")

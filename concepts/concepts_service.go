@@ -182,7 +182,14 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 						terminationDate: node.terminationDate,
 						inceptionDateEpoch: node.inceptionDateEpoch,
 						terminationDateEpoch: node.terminationDateEpoch
-					} as sources
+					} as sources,
+					collect({
+						membershipRoleUUID: role.uuid,
+						inceptionDate: roleRel.inceptionDate,
+						terminationDate: roleRel.terminationDate,
+						inceptionDateEpoch: roleRel.inceptionDateEpoch,
+						terminationDateEpoch: roleRel.terminationDateEpoch
+					}) as membershipRoles
 				RETURN
 					canonical.prefUUID as prefUUID,
 					canonical.prefLabel as prefLabel,
@@ -205,7 +212,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					canonical.inceptionDate as inceptionDate,
 					canonical.terminationDate as terminationDate,
 					canonical.inceptionDateEpoch as inceptionDateEpoch,
-					canonical.terminationDateEpoch as terminationDateEpoch
+					canonical.terminationDateEpoch as terminationDateEpoch,
+					membershipRoles as membershipRoles
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -248,7 +256,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		AggregatedHash:       results[0].AggregateHash,
 		FigiCode:             results[0].FigiCode,
 		IssuedBy:             results[0].IssuedBy,
-		MembershipRoles:      results[0].MembershipRoles,
+		MembershipRoles:      cleanMembershipRoles(results[0].MembershipRoles),
 		InceptionDate:        results[0].InceptionDate,
 		TerminationDate:      results[0].TerminationDate,
 		InceptionDateEpoch:   results[0].InceptionDateEpoch,
@@ -306,6 +314,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			}
 		}
 
+		srcConcept.MembershipRoles = cleanMembershipRoles(srcConcept.MembershipRoles)
+
 		concept.UUID = srcConcept.UUID
 		concept.PrefLabel = srcConcept.PrefLabel
 		concept.Authority = srcConcept.Authority
@@ -357,75 +367,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		return uuidsToUpdate, err
 	}
 
-	if aggregatedConceptToWrite.InceptionDate != "" {
-		it, err := time.Parse(iso8601DateOnly, aggregatedConceptToWrite.InceptionDate)
-		if err != nil {
-			return uuidsToUpdate, errors.New("Aggregated concept had invalid inceptionDate")
-		}
-		aggregatedConceptToWrite.InceptionDateEpoch = it.Unix()
-	}
-
-	if aggregatedConceptToWrite.TerminationDate != "" {
-		tt, err := time.Parse(iso8601DateOnly, aggregatedConceptToWrite.TerminationDate)
-		if err != nil {
-			return uuidsToUpdate, errors.New("Aggregated concept had invalid TerminationDate")
-		}
-		aggregatedConceptToWrite.TerminationDateEpoch = tt.Unix()
-	}
-
-	for i, role := range aggregatedConceptToWrite.MembershipRoles {
-		if role.InceptionDate != "" {
-			it, err := time.Parse(iso8601DateOnly, role.InceptionDate)
-			if err != nil {
-				return uuidsToUpdate, errors.New("Aggregated concept source had invalid inceptionDate")
-			}
-			aggregatedConceptToWrite.MembershipRoles[i].InceptionDateEpoch = it.Unix()
-		}
-
-		if role.TerminationDate != "" {
-			tt, err := time.Parse(iso8601DateOnly, role.TerminationDate)
-			if err != nil {
-				return uuidsToUpdate, errors.New("Aggregated concept source role had invalid TerminationDate")
-			}
-			aggregatedConceptToWrite.MembershipRoles[i].TerminationDateEpoch = tt.Unix()
-		}
-	}
-
-	for i, source := range aggregatedConceptToWrite.SourceRepresentations {
-		if source.InceptionDate != "" {
-			it, err := time.Parse(iso8601DateOnly, source.InceptionDate)
-			if err != nil {
-				return uuidsToUpdate, errors.New("Aggregated concept source had invalid inceptionDate")
-			}
-			aggregatedConceptToWrite.SourceRepresentations[i].InceptionDateEpoch = it.Unix()
-		}
-
-		if source.TerminationDate != "" {
-			tt, err := time.Parse(iso8601DateOnly, source.TerminationDate)
-			if err != nil {
-				return uuidsToUpdate, errors.New("Aggregated concept source had invalid TerminationDate")
-			}
-			aggregatedConceptToWrite.SourceRepresentations[i].TerminationDateEpoch = tt.Unix()
-		}
-
-		for i, role := range source.MembershipRoles {
-			if role.InceptionDate != "" {
-				it, err := time.Parse(iso8601DateOnly, role.InceptionDate)
-				if err != nil {
-					return uuidsToUpdate, errors.New("Aggregated concept source had invalid inceptionDate")
-				}
-				source.MembershipRoles[i].InceptionDateEpoch = it.Unix()
-			}
-
-			if role.TerminationDate != "" {
-				tt, err := time.Parse(iso8601DateOnly, role.TerminationDate)
-				if err != nil {
-					return uuidsToUpdate, errors.New("Aggregated concept source role had invalid TerminationDate")
-				}
-				source.MembershipRoles[i].TerminationDateEpoch = tt.Unix()
-			}
-		}
-	}
+	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(AggregatedConcept)
 
 	var queryBatch []*neoism.CypherQuery
 	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
@@ -1143,4 +1085,53 @@ func (re requestError) Error() string {
 //InvalidRequestDetails - Specific error for providing bad request (400) back
 func (re requestError) InvalidRequestDetails() string {
 	return re.details
+}
+
+func processMembershipRoles(v interface{}) interface{} {
+	switch c := v.(type) {
+	case AggregatedConcept:
+		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
+		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
+		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
+		for _, s := range c.SourceRepresentations {
+			processMembershipRoles(s)
+		}
+	case Concept:
+		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
+		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
+		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
+	case MembershipRole:
+		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
+		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
+	}
+	return v
+}
+
+func cleanMembershipRoles(m []MembershipRole) []MembershipRole {
+	deleted := 0
+	for i := range m {
+		j := i - deleted
+		if m[j].RoleUUID == "" {
+			m = m[:j+copy(m[j:], m[j+1:])]
+			deleted++
+			continue
+		}
+		m[j].InceptionDateEpoch = getEpoch(m[j].InceptionDate)
+		m[j].TerminationDateEpoch = getEpoch(m[j].TerminationDate)
+	}
+
+	if len(m) == 0 {
+		return nil
+	}
+
+	return m
+}
+
+func getEpoch(t string) int64 {
+	if t == "" {
+		return 0
+	}
+
+	tt, _ := time.Parse(iso8601DateOnly, t)
+	return tt.Unix()
 }

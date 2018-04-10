@@ -119,29 +119,18 @@ func main() {
 		conceptsService.Initialise()
 
 		handler := concepts.ConceptsHandler{ConceptsService: &conceptsService}
-
-		services := map[string]concepts.ConceptService{}
-		for _, path := range concepts.ConceptTypePaths {
-			services[path] = conceptsService
-		}
-
-		runServerWithParams(handler, services, appConf)
+		runServerWithParams(handler, concepts.ConceptTypePaths, appConf)
 	}
 	logger.Infof("Application started with args %s", os.Args)
 	app.Run(os.Args)
 }
 
-func runServerWithParams(handler concepts.ConceptsHandler, services map[string]concepts.ConceptService, appConf ServerConf) {
+func runServerWithParams(handler concepts.ConceptsHandler, paths []string, appConf ServerConf) {
 	outputMetricsIfRequired(appConf.GraphiteTCPAddress, appConf.GraphitePrefix, appConf.LogMetrics)
 
 	router := mux.NewRouter()
 	logger.Info("Registering handlers")
-	for path, service := range services {
-		err := service.Initialise()
-		if err != nil {
-			logger.Fatalf("Service for path %s could not startup, err=%s", path, err)
-		}
-
+	for _, path := range paths {
 		router = handler.RegisterHandlers(router, path)
 	}
 

@@ -3,9 +3,12 @@ jobs:
   build:
     working_directory: /go/src/github.com/Financial-Times/concepts-rw-neo4j
     docker:
-      - image: circleci/golang:1.8
+      - image: circleci/golang:1.10
         environment:
-          TEST_DIR: /tmp/test-results
+          GOPATH: /go
+          CIRCLE_TEST_REPORTS: /tmp/test-results
+          CIRCLE_COVERAGE_REPORT: /tmp/coverage-results
+          CIRCLE_ARTIFACTS: /tmp/artifacts
       - image: neo4j:3.2.2-enterprise
         environment:
           NEO4J_AUTH: none
@@ -18,13 +21,16 @@ jobs:
           command: sudo chown -R circleci:circleci /go/src
       - run:
           name: Create test folder
-          command: mkdir -p $TEST_DIR
+          command: |
+            mkdir -p ${CIRCLE_TEST_REPORTS}
+            mkdir -p ${CIRCLE_COVERAGE_REPORT}
       - run:
           name: External Dependancies
           command: |
             go get -u github.com/kardianos/govendor
             go get -u github.com/jstemmer/go-junit-report
             go get -u github.com/mattn/goveralls
+            go get -u github.com/haya14busa/goverage
       - run:
           name: Govendor Sync
           command: govendor sync -v
@@ -34,27 +40,11 @@ jobs:
       - run:
           name: Run Tests
           command: |
-            echo "mode: atomic" > $TEST_DIR/coverage.out
-            PACKAGES=`govendor list -no-status +local`
-            PACKAGES_LIST=`govendor list -no-status +local | paste -sd ',' -`
-            EXIT_CODE=0
-            for PKG in $PACKAGES; do
-              echo =-= $PKG
-              govendor test -v -race -coverpkg=$PACKAGES_LIST -coverprofile=$TEST_DIR/profile.out $PKG; __EXIT_CODE__=$?
-              if [ "$__EXIT_CODE__" -ne "0" ]; then
-                EXIT_CODE=$__EXIT_CODE__
-              fi
-              if [ -f $TEST_DIR/profile.out ]; then
-                tail -n +2 $TEST_DIR/profile.out >> $TEST_DIR/coverage.out; rm $TEST_DIR/profile.out
-              fi
-            done
-            exit $EXIT_CODE
+            govendor test -race -v -coverprofile=${CIRCLE_COVERAGE_REPORT}/coverage.out +local | go-junit-report > ${CIRCLE_TEST_REPORTS}/junit.xml
+            sed -i "/_mock/d" ${CIRCLE_COVERAGE_REPORT}/coverage.out
       - run:
-          name: Upload to Coveralls
-          command: goveralls -coverprofile=$TEST_DIR/coverage.out -service=circle-ci -repotoken=$COVERALLS_TOKEN
-      - store_artifacts:
-          path: /tmp/test-results
-          destination: raw-test-output
+          name: Upload Coverage
+          command: /go/bin/goveralls -coverprofile=${CIRCLE_COVERAGE_REPORT}/coverage.out -service=circle-ci -repotoken=$COVERALLS_TOKEN
       - store_test_results:
           path: /tmp/test-results
   docker_build:

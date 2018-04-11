@@ -452,16 +452,16 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 	// check that the issuer is not already related to a different org
 	if aggregatedConceptToWrite.IssuedBy != "" {
-		orgRes := []map[string]string{}
+		fiRes := []map[string]string{}
 		issuerQuery := &neoism.CypherQuery{
 			Statement: `
-					MATCH (issuer:Thing {uuid: {issuerUUID}})<-[:ISSUED_BY]-(org)
-					RETURN org.uuid AS orgUUID
+					MATCH (issuer:Thing {uuid: {issuerUUID}})<-[:ISSUED_BY]-(fi)
+					RETURN fi.uuid AS fiUUID
 				`,
 			Parameters: map[string]interface{}{
 				"issuerUUID": aggregatedConceptToWrite.IssuedBy,
 			},
-			Result: &orgRes,
+			Result: &fiRes,
 		}
 		if err := s.conn.CypherBatch([]*neoism.CypherQuery{issuerQuery}); err != nil {
 			logger.WithError(err).
@@ -471,21 +471,21 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			return uuidsToUpdate, err
 		}
 
-		if len(orgRes) > 0 {
-			for _, org := range orgRes {
-				orgUUID, ok := org["orgUUID"]
+		if len(fiRes) > 0 {
+			for _, fi := range fiRes {
+				fiUUID, ok := fi["fiUUID"]
 				if !ok {
 					continue
 				}
 
-				if orgUUID == aggregatedConceptToWrite.PrefUUID {
+				if fiUUID == aggregatedConceptToWrite.PrefUUID {
 					continue
 				}
 
 				err := fmt.Errorf(
 					"Issuer for %s was changed from %s to %s",
 					aggregatedConceptToWrite.IssuedBy,
-					orgUUID,
+					fiUUID,
 					aggregatedConceptToWrite.PrefUUID,
 				)
 				logger.WithTransactionID(transID).
@@ -495,13 +495,13 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 				deleteIssuerRelations := &neoism.CypherQuery{
 					Statement: `
 					MATCH (issuer:Thing {uuid: {issuerUUID}})
-					MATCH (org:Thing {uuid: {orgUUID}})
-					MATCH (issuer)<-[issuerRel:ISSUED_BY]-(org)
+					MATCH (fi:Thing {uuid: {fiUUID}})
+					MATCH (issuer)<-[issuerRel:ISSUED_BY]-(fi)
 					DELETE issuerRel
 				`,
 					Parameters: map[string]interface{}{
 						"issuerUUID": aggregatedConceptToWrite.IssuedBy,
-						"orgUUID":    orgUUID,
+						"fiUUID":     fiUUID,
 					},
 				}
 				queryBatch = append(queryBatch, deleteIssuerRelations)

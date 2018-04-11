@@ -749,7 +749,6 @@ func TestConnectivityCheck(t *testing.T) {
 }
 
 func TestWriteService(t *testing.T) {
-	cleanDB(t)
 	defer cleanDB(t)
 
 	tests := []struct {
@@ -951,7 +950,6 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 }
 
 func TestMultipleConcordancesAreHandled(t *testing.T) {
-	cleanDB(t)
 	defer cleanDB(t)
 
 	_, err := conceptsDriver.Write(getFullLoneAggregatedConcept(), "test_tid")

@@ -27,17 +27,18 @@ const (
 	simpleSmartlogicTopicUUID  = "abd38d90-2152-11e8-9ac1-da24cd01f044"
 	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
-	boardRoleUUID             = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
-	membershipRoleUUID        = "f807193d-337b-412f-b32c-afa14b385819"
-	organisationUUID          = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
-	personUUID                = "35946807-0205-4fc1-8516-bb1ae141659b"
-	financialInstrumentUUID   = "475b7b59-66d5-47e2-a273-adc3d1ba8286"
-	financialOrgUUID          = "4290f028-05e9-4c2d-9f11-61ec59ba081a"
-	anotherFinancialOrgUUID   = "230e3a74-694a-4d94-8294-6a45ec1ced26"
-	membershipUUID            = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
-	anotherMembershipRoleUUID = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
-	anotherOrganisationUUID   = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
-	anotherPersonUUID         = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
+	boardRoleUUID                     = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
+	membershipRoleUUID                = "f807193d-337b-412f-b32c-afa14b385819"
+	organisationUUID                  = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
+	personUUID                        = "35946807-0205-4fc1-8516-bb1ae141659b"
+	financialInstrumentUUID           = "475b7b59-66d5-47e2-a273-adc3d1ba8286"
+	financialInstrumentSameIssuerUUID = "08c6066c-9356-4e96-abd5-9a4f3726724a"
+	financialOrgUUID                  = "4290f028-05e9-4c2d-9f11-61ec59ba081a"
+	anotherFinancialOrgUUID           = "230e3a74-694a-4d94-8294-6a45ec1ced26"
+	membershipUUID                    = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+	anotherMembershipRoleUUID         = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
+	anotherOrganisationUUID           = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
+	anotherPersonUUID                 = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
@@ -665,6 +666,25 @@ func getFinancialInstrument() AggregatedConcept {
 	}
 }
 
+func getFinancialInstrumentWithSameIssuer() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  financialInstrumentSameIssuerUUID,
+		PrefLabel: "FinancialInstrument Pref Label 2",
+		Type:      "FinancialInstrument",
+		FigiCode:  "12345678",
+		IssuedBy:  financialOrgUUID,
+		SourceRepresentations: []Concept{{
+			UUID:           financialInstrumentSameIssuerUUID,
+			PrefLabel:      "FinancialInstrument Pref Label 2",
+			Type:           "FinancialInstrument",
+			Authority:      "FACTSET",
+			AuthorityValue: "19283671",
+			FigiCode:       "12345678",
+			IssuedBy:       financialOrgUUID,
+		}},
+	}
+}
+
 func getUpdatedFinancialInstrument() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:  financialInstrumentUUID,
@@ -860,6 +880,20 @@ func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {
 	assert.NoError(t, err, "Failed to write financial instrument")
 
 	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+}
+
+func TestFinancialInstrumentIssuerOrgRelationRemoved(t *testing.T) {
+	defer cleanDB(t)
+
+	_, err := conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+
+	_, err = conceptsDriver.Write(getFinancialInstrumentWithSameIssuer(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrumentWithSameIssuer(), "TestFinancialInstrumentExistingIssuedByRemoved")
 }
 
 func TestWriteService_HandlingConcordance(t *testing.T) {

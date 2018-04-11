@@ -410,18 +410,6 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			queryBatch = append(queryBatch, query)
 		}
 
-		if existingAggregateConcept.IssuedBy != aggregatedConceptToWrite.IssuedBy {
-			err := fmt.Errorf(
-				"Figi code for concept with prefUUID %s changed from %s to %s",
-				existingAggregateConcept.PrefUUID,
-				existingAggregateConcept.IssuedBy,
-				aggregatedConceptToWrite.IssuedBy,
-			)
-			logger.WithTransactionID(transID).
-				WithUUID(existingAggregateConcept.PrefUUID).
-				WithField("alert_tag", "ConceptLoadingFigiChanged").Error(err)
-		}
-
 		for _, idToUnconcord := range listToUnconcord {
 			for _, concept := range existingAggregateConcept.SourceRepresentations {
 				if idToUnconcord == concept.UUID {
@@ -462,10 +450,70 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
 	}
 
+	// check that the issuer is not already related to a different org
+	if aggregatedConceptToWrite.IssuedBy != "" {
+		orgRes := []map[string]string{}
+		issuerQuery := &neoism.CypherQuery{
+			Statement: `
+					MATCH (issuer:Thing {uuid: {issuerUUID}})<-[:ISSUED_BY]-(org)
+					RETURN org.uuid AS orgUUID
+				`,
+			Parameters: map[string]interface{}{
+				"issuerUUID": aggregatedConceptToWrite.IssuedBy,
+			},
+			Result: &orgRes,
+		}
+		if err := s.conn.CypherBatch([]*neoism.CypherQuery{issuerQuery}); err != nil {
+			logger.WithError(err).
+				WithTransactionID(transID).
+				WithUUID(aggregatedConceptToWrite.PrefUUID).
+				Error("Could not get existing issuer.")
+			return uuidsToUpdate, err
+		}
+
+		if len(orgRes) > 0 {
+			for _, org := range orgRes {
+				orgUUID, ok := org["orgUUID"]
+				if !ok {
+					continue
+				}
+
+				if orgUUID == aggregatedConceptToWrite.PrefUUID {
+					continue
+				}
+
+				err := fmt.Errorf(
+					"Issuer for %s was changed from %s to %s",
+					aggregatedConceptToWrite.IssuedBy,
+					orgUUID,
+					aggregatedConceptToWrite.PrefUUID,
+				)
+				logger.WithTransactionID(transID).
+					WithUUID(aggregatedConceptToWrite.PrefUUID).
+					WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Error(err)
+
+				deleteIssuerRelations := &neoism.CypherQuery{
+					Statement: `
+					MATCH (issuer:Thing {uuid: {issuerUUID}})
+					MATCH (org:Thing {uuid: {orgUUID}})
+					MATCH (issuer)<-[issuerRel:ISSUED_BY]-(org)
+					DELETE issuerRel
+				`,
+					Parameters: map[string]interface{}{
+						"issuerUUID": aggregatedConceptToWrite.IssuedBy,
+						"orgUUID":    orgUUID,
+					},
+				}
+				queryBatch = append(queryBatch, deleteIssuerRelations)
+			}
+		}
+	}
+
 	if err = s.conn.CypherBatch(queryBatch); err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error executing neo4j write queries. Concept NOT written.")
 		return uuidsToUpdate, err
 	}
+
 	logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("Concept written to db")
 	return uuidsToUpdate, nil
 }

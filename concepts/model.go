@@ -113,20 +113,3 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"Smartlogic": "SmartlogicIdentifier",
 	"FACTSET":    "FactsetIdentifier",
 }
-
-var ConceptTypePaths = []string{
-	"brands",
-	"topics",
-	"subjects",
-	"special-reports",
-	"genres",
-	"locations",
-	"sections",
-	"alphaville-series",
-	"people",
-	"organisations",
-	"membershiproles",
-	"memberships",
-	"boardroles",
-	"financial-instruments",
-}

@@ -11,6 +11,7 @@ import (
 type mockConceptService struct {
 	mock.Mock
 	uuid         string
+	conceptType  string
 	transID      string
 	uuidList     []string
 	failParse    bool
@@ -18,9 +19,6 @@ type mockConceptService struct {
 	failRead     bool
 	failConflict bool
 	failCheck    bool
-}
-
-type mockServiceData struct {
 }
 
 func (dS *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
@@ -38,22 +36,28 @@ func (dS *mockConceptService) Write(thing interface{}, transID string) (interfac
 	return mockList, nil
 }
 
-func (dS *mockConceptService) Read(uuid string, transID string) (thing interface{}, found bool, err error) {
+func (dS *mockConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	if dS.failRead {
 		return nil, false, errors.New("TEST failing to READ")
 	}
 	if uuid == dS.uuid {
-		return mockServiceData{}, true, nil
+		return AggregatedConcept{
+			PrefUUID: dS.uuid,
+			Type:     dS.conceptType,
+		}, true, nil
 	}
 	dS.transID = transID
 	return nil, false, nil
 }
 
-func (dS *mockConceptService) DecodeJSON(*json.Decoder) (thing interface{}, identity string, err error) {
+func (dS *mockConceptService) DecodeJSON(*json.Decoder) (interface{}, string, error) {
 	if dS.failParse {
 		return "", "", errors.New("TEST failing to DECODE")
 	}
-	return mockServiceData{}, dS.uuid, nil
+	return AggregatedConcept{
+		PrefUUID: dS.uuid,
+		Type:     dS.conceptType,
+	}, dS.uuid, nil
 }
 
 func (dS *mockConceptService) Check() error {

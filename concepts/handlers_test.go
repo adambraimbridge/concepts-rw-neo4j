@@ -22,17 +22,81 @@ func TestPutHandler(t *testing.T) {
 		contentType string // Contents of the Content-Type header
 		body        string
 	}{
-		{"Success", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID}, http.StatusOK, "", "{\"updatedIDs\":null}"},
-		{"ParseError", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID, failParse: true}, http.StatusBadRequest, "", errorMessage("TEST failing to DECODE")},
-		{"UUIDMisMatch", newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999")), &mockConceptService{uuid: knownUUID}, http.StatusBadRequest, "", errorMessage("Uuids from payload and request, respectively, do not match: '12345' '99999'")},
-		{"WriteFailed", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID, failWrite: true}, http.StatusServiceUnavailable, "", errorMessage("TEST failing to WRITE")},
-		{"WriteFailedDueToConflict", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID, failConflict: true}, http.StatusConflict, "", errorMessage("")},
+		{
+			name: "Success",
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			mockService: &mockConceptService{
+				uuid:        knownUUID,
+				conceptType: "Dummy",
+			},
+			statusCode:  http.StatusOK,
+			contentType: "",
+			body:        "{\"updatedIDs\":null}",
+		},
+		{
+			name: "ParseError",
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			mockService: &mockConceptService{
+				uuid:        knownUUID,
+				conceptType: "Dummy",
+				failParse:   true,
+			},
+			statusCode:  http.StatusBadRequest,
+			contentType: "",
+			body:        errorMessage("TEST failing to DECODE"),
+		},
+		{
+			name: "UUIDMisMatch",
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999")),
+			mockService: &mockConceptService{
+				uuid:        knownUUID,
+				conceptType: "Dummy",
+			},
+			statusCode:  http.StatusBadRequest,
+			contentType: "",
+			body:        errorMessage("Uuids from payload and request, respectively, do not match: '12345' '99999'"),
+		},
+		{
+			name: "WriteFailed",
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			mockService: &mockConceptService{
+				uuid:        knownUUID,
+				conceptType: "Dummy",
+				failWrite:   true,
+			},
+			statusCode:  http.StatusServiceUnavailable,
+			contentType: "",
+			body:        errorMessage("TEST failing to WRITE"),
+		},
+		{
+			name: "WriteFailedDueToConflict",
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			mockService: &mockConceptService{
+				uuid:         knownUUID,
+				conceptType:  "Dummy",
+				failConflict: true,
+			},
+			statusCode:  http.StatusConflict,
+			contentType: "",
+			body:        errorMessage(""),
+		},
+		{
+			name: "BadConceptOrPath",
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			mockService: &mockConceptService{
+				uuid:        knownUUID,
+				conceptType: "not-dummy",
+			},
+			statusCode:  http.StatusBadRequest,
+			contentType: "",
+			body:        errorMessage("Concept type does not match path"),
+		},
 	}
 
 	for _, test := range tests {
 		r := mux.NewRouter()
 		handler := ConceptsHandler{test.mockService}
-		handler.RegisterHandlers(r, "dummies")
+		handler.RegisterHandlers(r)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, test.req)
 		assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
@@ -50,15 +114,57 @@ func TestGetHandler(t *testing.T) {
 		contentType string // Contents of the Content-Type header
 		body        string
 	}{
-		{"Success", newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID}, http.StatusOK, "", "{}\n"},
-		{"NotFound", newRequest("GET", fmt.Sprintf("/dummies/%s", "99999")), &mockConceptService{uuid: knownUUID}, http.StatusNotFound, "", "{\"message\":\"Concept with prefUUID 99999 not found in db.\"}"},
-		{"ReadError", newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID, failRead: true}, http.StatusServiceUnavailable, "", errorMessage("TEST failing to READ")},
+		{
+			name: "Success",
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
+			ds: &mockConceptService{
+				uuid:        knownUUID,
+				conceptType: "Dummy",
+			},
+			statusCode:  http.StatusOK,
+			contentType: "",
+			body:        "{\"prefUUID\":\"12345\",\"type\":\"Dummy\"}\n",
+		},
+		{
+			name: "NotFound",
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", "99999")),
+			ds: &mockConceptService{
+				uuid:        knownUUID,
+				conceptType: "Dummy",
+			},
+			statusCode:  http.StatusNotFound,
+			contentType: "",
+			body:        "{\"message\":\"Concept with prefUUID 99999 not found in db.\"}",
+		},
+		{
+			name: "ReadError",
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
+			ds: &mockConceptService{
+				uuid:        knownUUID,
+				conceptType: "Dummy",
+				failRead:    true,
+			},
+			statusCode:  http.StatusServiceUnavailable,
+			contentType: "",
+			body:        errorMessage("TEST failing to READ"),
+		},
+		{
+			name: "BadConceptOrPath",
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
+			ds: &mockConceptService{
+				uuid:        knownUUID,
+				conceptType: "not-dummy",
+			},
+			statusCode:  http.StatusBadRequest,
+			contentType: "",
+			body:        errorMessage("Concept type does not match path"),
+		},
 	}
 
 	for _, test := range tests {
 		r := mux.NewRouter()
 		handler := ConceptsHandler{test.ds}
-		handler.RegisterHandlers(r, "dummies")
+		handler.RegisterHandlers(r)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, test.req)
 		assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))

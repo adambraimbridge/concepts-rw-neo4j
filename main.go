@@ -119,20 +119,18 @@ func main() {
 		conceptsService.Initialise()
 
 		handler := concepts.ConceptsHandler{ConceptsService: &conceptsService}
-		runServerWithParams(handler, concepts.ConceptTypePaths, appConf)
+		runServerWithParams(handler, appConf)
 	}
 	logger.Infof("Application started with args %s", os.Args)
 	app.Run(os.Args)
 }
 
-func runServerWithParams(handler concepts.ConceptsHandler, paths []string, appConf ServerConf) {
+func runServerWithParams(handler concepts.ConceptsHandler, appConf ServerConf) {
 	outputMetricsIfRequired(appConf.GraphiteTCPAddress, appConf.GraphitePrefix, appConf.LogMetrics)
 
 	router := mux.NewRouter()
 	logger.Info("Registering handlers")
-	for _, path := range paths {
-		router = handler.RegisterHandlers(router, path)
-	}
+	handler.RegisterHandlers(router)
 
 	mr := handler.RegisterAdminHandlers(router, appConf.AppSystemCode, appConf.AppName, appDescription, appConf.RequestLoggingOn)
 

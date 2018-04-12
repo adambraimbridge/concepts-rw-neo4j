@@ -662,6 +662,7 @@ func getMembership() AggregatedConcept {
 		TerminationDateEpoch: membershipRole.TerminationDateEpoch,
 		MembershipRoles: []MembershipRole{
 			membershipRole,
+			anotherMembershipRole,
 		},
 		SourceRepresentations: []Concept{
 			{
@@ -678,6 +679,7 @@ func getMembership() AggregatedConcept {
 				TerminationDateEpoch: membershipRole.TerminationDateEpoch,
 				MembershipRoles: []MembershipRole{
 					membershipRole,
+					anotherMembershipRole,
 				},
 			},
 		},
@@ -810,11 +812,11 @@ func TestWriteService(t *testing.T) {
 		errStr               string
 		updatedConcepts      UpdatedConcepts
 	}{
-		// {"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied", UpdatedConcepts{UpdatedIds: []string{}}},
-		// {"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		// {"Creates All Values Present for a MembershipRole", getMembershipRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
-		// {"Creates All Values Present for a BoardRole", getBoardRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{boardRoleUUID}}},
-		// {"Creates All Values Present for a Membership", getMembership(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipUUID}}},
+		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied", UpdatedConcepts{UpdatedIds: []string{}}},
+		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
+		{"Creates All Values Present for a MembershipRole", getMembershipRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
+		{"Creates All Values Present for a BoardRole", getBoardRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{boardRoleUUID}}},
+		{"Creates All Values Present for a Membership", getMembership(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipUUID}}},
 		{
 			testName:             "Creates All Values Present for a FinancialInstrument",
 			aggregatedConcept:    getFinancialInstrument(),
@@ -826,14 +828,14 @@ func TestWriteService(t *testing.T) {
 				},
 			},
 		},
-		// {"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		// {"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		// {"Creates All Values Present for a Concept with a HAS_BROADER relationship", getConceptWithHasBroader(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		// {"Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing", getConceptWithHasBroaderToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		// {"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, basicConceptUUID}}},
-		// {"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		// {"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label `TMEIdentifier` and property `value` = '1234'", UpdatedConcepts{UpdatedIds: []string{}}},
-		// {"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request", UpdatedConcepts{UpdatedIds: []string{}}},
+		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
+		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
+		{"Creates All Values Present for a Concept with a HAS_BROADER relationship", getConceptWithHasBroader(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
+		{"Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing", getConceptWithHasBroaderToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
+		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, basicConceptUUID}}},
+		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
+		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label `TMEIdentifier` and property `value` = '1234'", UpdatedConcepts{UpdatedIds: []string{}}},
+		{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request", UpdatedConcepts{UpdatedIds: []string{}}},
 	}
 
 	for _, test := range tests {
@@ -883,8 +885,6 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	cleanDB(t)
 	defer cleanDB(t)
 
-	//
-
 	_, err := conceptsDriver.Write(getMembership(), "test_tid")
 	assert.NoError(t, err, "Failed to write membership")
 
@@ -895,8 +895,8 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	originalMembership := AggregatedConcept{}
 	json.Unmarshal(ab, &originalMembership)
 
-	assert.Equal(t, len(originalMembership.MembershipRoles), 1)
-	assert.Equal(t, []MembershipRole{membershipRole}, originalMembership.MembershipRoles)
+	assert.Equal(t, len(originalMembership.MembershipRoles), 2)
+	assert.True(t, reflect.DeepEqual([]MembershipRole{membershipRole, anotherMembershipRole}, originalMembership.MembershipRoles))
 	assert.Equal(t, organisationUUID, originalMembership.OrganisationUUID)
 	assert.Equal(t, personUUID, originalMembership.PersonUUID)
 
@@ -1149,23 +1149,9 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName string) {
 	actual, found, err := conceptsDriver.Read(expected.PrefUUID, "")
 	actualConcept := actual.(AggregatedConcept)
-	sort.Slice(expected.SourceRepresentations, func(i, j int) bool {
-		return expected.SourceRepresentations[i].UUID < expected.SourceRepresentations[j].UUID
-	})
 
-	sort.Slice(actualConcept.SourceRepresentations, func(i, j int) bool {
-		return actualConcept.SourceRepresentations[i].UUID < actualConcept.SourceRepresentations[j].UUID
-	})
-	// if expected.MembershipRoles != nil || len(expected.MembershipRoles) > 0 {
-	// 	sort.Slice(expected.MembershipRoles, func(i, j int) bool {
-	// 		return expected.MembershipRoles[i] < expected.MembershipRoles[j]
-	// 	})
-	// }
-	// if actualConcept.MembershipRoles != nil || len(actualConcept.MembershipRoles) > 0 {
-	// 	sort.Slice(actualConcept.MembershipRoles, func(i, j int) bool {
-	// 		return actualConcept.MembershipRoles[i] < actualConcept.MembershipRoles[j]
-	// 	})
-	// }
+	// assert.True(t, reflect.DeepEqual(actualConcept.SourceRepresentations, expected.SourceRepresentations))
+	assert.True(t, reflect.DeepEqual(actualConcept.MembershipRoles, expected.MembershipRoles))
 
 	assert.NoError(t, err, "Unexpected Error occurred")
 	assert.True(t, found, "Concept has not been found")
@@ -1216,16 +1202,8 @@ func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName st
 				})
 			}
 
-			// if expected.SourceRepresentations[i].MembershipRoles != nil || len(expected.SourceRepresentations[i].MembershipRoles) > 0 {
-			// 	sort.Slice(expected.SourceRepresentations[i].MembershipRoles, func(i, j int) bool {
-			// 		return expected.SourceRepresentations[i].MembershipRoles[i] < expected.SourceRepresentations[i].MembershipRoles[j]
-			// 	})
-			// }
-			// if actualConcept.SourceRepresentations[i].MembershipRoles != nil || len(actualConcept.SourceRepresentations[i].MembershipRoles) > 0 {
-			// 	sort.Slice(actualConcept.SourceRepresentations[i].MembershipRoles, func(i, j int) bool {
-			// 		return actualConcept.SourceRepresentations[i].MembershipRoles[i] < actualConcept.SourceRepresentations[i].MembershipRoles[j]
-			// 	})
-			// }
+			assert.True(t, reflect.DeepEqual(expected.SourceRepresentations[i].MembershipRoles, actualConcept.SourceRepresentations[i].MembershipRoles))
+
 			assert.Equal(t, expected.SourceRepresentations[i].RelatedUUIDs, concept.RelatedUUIDs, fmt.Sprintf("Actual concept related uuids differs from expected: ConceptId: %s", concept.UUID))
 			assert.Equal(t, expected.SourceRepresentations[i].PrefLabel, concept.PrefLabel, fmt.Sprintf("Actual concept pref label differs from expected: ConceptId: %s", concept.UUID))
 			assert.Equal(t, expected.SourceRepresentations[i].Type, concept.Type, fmt.Sprintf("Actual concept type differs from expected: ConceptId: %s", concept.UUID))

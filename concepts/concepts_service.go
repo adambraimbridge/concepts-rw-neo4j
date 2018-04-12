@@ -139,89 +139,81 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 
 	query := &neoism.CypherQuery{
 		Statement: `
-				MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
-				OPTIONAL MATCH (node)-[:HAS_ORGANISATION]->(org:Thing)
-				OPTIONAL MATCH (node)-[:ISSUED_BY]->(issuer:Thing)
-				OPTIONAL MATCH (node)-[:HAS_MEMBER]->(person:Thing)
-				OPTIONAL MATCH (node)-[:IS_RELATED_TO]->(related:Thing)
-				OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
-				OPTIONAL MATCH (node)-[roleRel:HAS_ROLE]->(role:Thing)
-				OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
-				WITH
-					canonical,
-					org,
-					issuer,
-					person,
-					related,
-					broader,
-					role,
-					parent,
-					{
-						uuid: node.uuid,
-						prefLabel: node.prefLabel,
-						authority: node.authority,
-						authorityValue: node.authorityValue,
-						types: labels(node),
-						lastModifiedEpoch: node.lastModifiedEpoch,
-						emailAddress: node.emailAddress,
-						facebookPage: node.facebookPage,
-						twitterHandle: node.twitterHandle,
-						scopeNote: node.scopeNote,
-						shortLabel: node.shortLabel,
-						aliases: node.aliases,
-						descriptionXML: node.descriptionXML,
-						imageUrl: node.imageUrl,
-						strapline: node.strapline,
-						parentUUIDs: collect(parent.uuid),
-						relatedUUIDs: collect(related.uuid),
-						broaderUUIDs: collect(broader.uuid),
-						organisationUUID: org.uuid,
-						personUUID: person.uuid,
-						figiCode: node.figiCode,
-						issuedBy: issuer.uuid,
-						membershipRoles: collect({
-							membershipRoleUUID: role.uuid,
-							inceptionDate: roleRel.inceptionDate,
-							terminationDate: roleRel.terminationDate,
-							inceptionDateEpoch: roleRel.inceptionDateEpoch,
-							terminationDateEpoch: roleRel.terminationDateEpoch
-						}),
-						inceptionDate: node.inceptionDate,
-						terminationDate: node.terminationDate,
-						inceptionDateEpoch: node.inceptionDateEpoch,
-						terminationDateEpoch: node.terminationDateEpoch
-					} as sources,
-					collect({
+			MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
+			OPTIONAL MATCH (node)-[:HAS_ORGANISATION]->(org:Thing)
+			OPTIONAL MATCH (node)-[:ISSUED_BY]->(issuer:Thing)
+			OPTIONAL MATCH (node)-[:HAS_MEMBER]->(person:Thing)
+			OPTIONAL MATCH (node)-[:IS_RELATED_TO]->(related:Thing)
+			OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
+			OPTIONAL MATCH (node)-[roleRel:HAS_ROLE]->(role:Thing)
+			OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
+			WITH
+				canonical,
+				org,
+				issuer,
+				person,
+				related,
+				broader,
+				role,
+				parent,
+				{
+					uuid: node.uuid,
+					prefLabel: node.prefLabel,
+					authority: node.authority,
+					authorityValue: node.authorityValue,
+					types: labels(node),
+					lastModifiedEpoch: node.lastModifiedEpoch,
+					emailAddress: node.emailAddress,
+					facebookPage: node.facebookPage,
+					twitterHandle: node.twitterHandle,
+					scopeNote: node.scopeNote,
+					shortLabel: node.shortLabel,
+					aliases: node.aliases,
+					descriptionXML: node.descriptionXML,
+					imageUrl: node.imageUrl,
+					strapline: node.strapline,
+					parentUUIDs: collect(parent.uuid),
+					relatedUUIDs: collect(related.uuid),
+					broaderUUIDs: collect(broader.uuid),
+					organisationUUID: org.uuid,
+					personUUID: person.uuid,
+					figiCode: node.figiCode,
+					issuedBy: issuer.uuid,
+					membershipRoles: collect({
 						membershipRoleUUID: role.uuid,
 						inceptionDate: roleRel.inceptionDate,
 						terminationDate: roleRel.terminationDate,
 						inceptionDateEpoch: roleRel.inceptionDateEpoch,
 						terminationDateEpoch: roleRel.terminationDateEpoch
-					}) as membershipRoles
-				RETURN
-					canonical.prefUUID as prefUUID,
-					canonical.prefLabel as prefLabel,
-					labels(canonical) as types,
-					canonical.aliases as aliases,
-					canonical.descriptionXML as descriptionXML,
-					canonical.strapline as strapline,
-					canonical.imageUrl as imageUrl,
-					canonical.emailAddress as emailAddress,
-					canonical.facebookPage as facebookPage,
-					canonical.twitterHandle as twitterHandle,
-					canonical.scopeNote as scopeNote,
-					canonical.shortLabel as shortLabel,
-					canonical.aggregateHash as aggregateHash,
-					org.uuid as organisationUUID,
-					person.uuid as personUUID,
-					canonical.figiCode as figiCode,
-					issuer.uuid as issuedBy,
-					collect(sources) as sourceRepresentations,
-					canonical.inceptionDate as inceptionDate,
-					canonical.terminationDate as terminationDate,
-					canonical.inceptionDateEpoch as inceptionDateEpoch,
-					canonical.terminationDateEpoch as terminationDateEpoch,
-					membershipRoles as membershipRoles
+					}),
+					inceptionDate: node.inceptionDate,
+					terminationDate: node.terminationDate,
+					inceptionDateEpoch: node.inceptionDateEpoch,
+					terminationDateEpoch: node.terminationDateEpoch
+				} as sources
+			RETURN
+				canonical.prefUUID as prefUUID,
+				canonical.prefLabel as prefLabel,
+				labels(canonical) as types,
+				canonical.aliases as aliases,
+				canonical.descriptionXML as descriptionXML,
+				canonical.strapline as strapline,
+				canonical.imageUrl as imageUrl,
+				canonical.emailAddress as emailAddress,
+				canonical.facebookPage as facebookPage,
+				canonical.twitterHandle as twitterHandle,
+				canonical.scopeNote as scopeNote,
+				canonical.shortLabel as shortLabel,
+				canonical.aggregateHash as aggregateHash,
+				org.uuid as organisationUUID,
+				person.uuid as personUUID,
+				canonical.figiCode as figiCode,
+				issuer.uuid as issuedBy,
+				collect(sources) as sourceRepresentations,
+				canonical.inceptionDate as inceptionDate,
+				canonical.terminationDate as terminationDate,
+				canonical.inceptionDateEpoch as inceptionDateEpoch,
+				canonical.terminationDateEpoch as terminationDateEpoch
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -264,7 +256,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		AggregatedHash:       results[0].AggregateHash,
 		FigiCode:             results[0].FigiCode,
 		IssuedBy:             results[0].IssuedBy,
-		MembershipRoles:      cleanMembershipRoles(results[0].MembershipRoles),
+		MembershipRoles:      []MembershipRole{},
 		InceptionDate:        results[0].InceptionDate,
 		TerminationDate:      results[0].TerminationDate,
 		InceptionDateEpoch:   results[0].InceptionDateEpoch,
@@ -323,6 +315,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		}
 
 		srcConcept.MembershipRoles = cleanMembershipRoles(srcConcept.MembershipRoles)
+
+		aggregatedConcept.MembershipRoles = append(aggregatedConcept.MembershipRoles, srcConcept.MembershipRoles...)
 
 		concept.UUID = srcConcept.UUID
 		concept.PrefLabel = srcConcept.PrefLabel

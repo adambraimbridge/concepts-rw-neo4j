@@ -34,6 +34,17 @@ func TestPutHandler(t *testing.T) {
 			body:        "{\"updatedIDs\":null}",
 		},
 		{
+			name: "RegularPathSuccess",
+			req:  newRequest("PUT", fmt.Sprintf("/financial-instruments/%s", knownUUID)),
+			mockService: &mockConceptService{
+				uuid:        knownUUID,
+				conceptType: "FinancialInstrument",
+			},
+			statusCode:  http.StatusOK,
+			contentType: "",
+			body:        "{\"updatedIDs\":null}",
+		},
+		{
 			name: "ParseError",
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
 			mockService: &mockConceptService{

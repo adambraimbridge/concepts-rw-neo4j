@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/Financial-Times/transactionid-utils-go"
@@ -16,11 +17,10 @@ import (
 
 var irregularConceptTypePaths = map[string]string{
 	"AlphavilleSeries": "alphaville-series",
-	"MembershipRole":   "membership-roles",
-	"Person":           "people",
 	"BoardRole":        "membership-roles",
-	"PublicCompany":    "organisations",
 	"Dummy":            "dummies",
+	"Person":           "people",
+	"PublicCompany":    "organisations",
 }
 
 type ConceptsHandler struct {
@@ -139,9 +139,18 @@ func checkConceptTypeAgainstPath(conceptType, path string) error {
 		return nil
 	}
 
-	if strings.ToLower(conceptType)+"s" == path {
+	if toSnakeCase(conceptType)+"s" == path {
 		return nil
 	}
 
 	return errors.New("path does not match content type")
+}
+
+var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
+var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")
+
+func toSnakeCase(str string) string {
+	snake := matchFirstCap.ReplaceAllString(str, "${1}-${2}")
+	snake = matchAllCap.ReplaceAllString(snake, "${1}-${2}")
+	return strings.ToLower(snake)
 }

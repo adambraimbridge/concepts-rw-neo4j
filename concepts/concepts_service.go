@@ -825,9 +825,12 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			Statement: `MERGE (fi:Thing {uuid: {fiUUID}})
 						MERGE (org:Thing {uuid: {orgUUID}})
 						MERGE (fi)-[:ISSUED_BY]->(org)
+						MERGE (fiupp:Identifier:FIGIIdentifier {value: {fiCode}})
+						MERGE (fiupp)-[:IDENTIFIES]->(fi)
 						`,
 			Parameters: neoism.Props{
 				"fiUUID":  concept.UUID,
+				"fiCode":  concept.FigiCode,
 				"orgUUID": concept.IssuedBy,
 			},
 		}

@@ -10,6 +10,7 @@ import (
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/bradfitz/slice"
 	"github.com/jmcvetta/neoism"
 	"github.com/mitchellh/hashstructure"
 )
@@ -321,7 +322,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 
 	aggregatedConcept.SourceRepresentations = sourceConcepts
 	logger.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
-	return aggregatedConcept, true, nil
+	return cleanConcept(aggregatedConcept), true, nil
 }
 
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
@@ -1133,4 +1134,28 @@ func filterSlice(a []string) []string {
 	}
 
 	return a
+}
+
+func cleanConcept(c AggregatedConcept) AggregatedConcept {
+	c.AggregatedHash = ""
+	for j := range c.SourceRepresentations {
+		c.SourceRepresentations[j].LastModifiedEpoch = 0
+		c.SourceRepresentations[j].InceptionDateEpoch = 0
+		c.SourceRepresentations[j].TerminationDateEpoch = 0
+		for i := range c.SourceRepresentations[j].MembershipRoles {
+			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
+			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
+		}
+		slice.Sort(c.SourceRepresentations[j].MembershipRoles[:], func(k, l int) bool {
+			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
+		})
+	}
+	for i := range c.MembershipRoles {
+		c.MembershipRoles[i].InceptionDateEpoch = 0
+		c.MembershipRoles[i].TerminationDateEpoch = 0
+	}
+	slice.Sort(c.SourceRepresentations[:], func(k, l int) bool {
+		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
+	})
+	return c
 }

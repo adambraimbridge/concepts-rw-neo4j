@@ -12,7 +12,6 @@ import (
 
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	"github.com/bradfitz/slice"
 	"github.com/jmcvetta/neoism"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/mitchellh/hashstructure"
@@ -1008,6 +1007,8 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	originalMembership := AggregatedConcept{}
 	json.Unmarshal(ab, &originalMembership)
 
+	originalMembership = cleanConcept(originalMembership)
+
 	assert.Equal(t, len(originalMembership.MembershipRoles), 2)
 	assert.True(t, reflect.DeepEqual([]MembershipRole{membershipRole, anotherMembershipRole}, originalMembership.MembershipRoles))
 	assert.Equal(t, organisationUUID, originalMembership.OrganisationUUID)
@@ -1564,30 +1565,6 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 			assert.NoError(t, err, scenario.testName)
 		}
 	}
-}
-
-func cleanConcept(c AggregatedConcept) AggregatedConcept {
-	c.AggregatedHash = ""
-	for j := range c.SourceRepresentations {
-		c.SourceRepresentations[j].LastModifiedEpoch = 0
-		c.SourceRepresentations[j].InceptionDateEpoch = 0
-		c.SourceRepresentations[j].TerminationDateEpoch = 0
-		for i := range c.SourceRepresentations[j].MembershipRoles {
-			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
-			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
-		}
-		slice.Sort(c.SourceRepresentations[j].MembershipRoles[:], func(k, l int) bool {
-			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
-		})
-	}
-	for i := range c.MembershipRoles {
-		c.MembershipRoles[i].InceptionDateEpoch = 0
-		c.MembershipRoles[i].TerminationDateEpoch = 0
-	}
-	slice.Sort(c.SourceRepresentations[:], func(k, l int) bool {
-		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
-	})
-	return c
 }
 
 func readConceptAndCompare(t *testing.T, actual AggregatedConcept, testName string) {

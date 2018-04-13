@@ -1002,7 +1002,7 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 
 	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	ab, err := json.Marshal(result)
+	ab, err := json.Marshal(cleanHash(result.(AggregatedConcept)))
 
 	originalMembership := AggregatedConcept{}
 	json.Unmarshal(ab, &originalMembership)
@@ -1019,7 +1019,7 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 
 	updatedResult, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	cd, err := json.Marshal(updatedResult)
+	cd, err := json.Marshal(cleanHash(updatedResult.(AggregatedConcept)))
 
 	updatedMemebership := AggregatedConcept{}
 	json.Unmarshal(cd, &updatedMemebership)
@@ -1245,7 +1245,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		assert.Equal(t, scenario.updatedConcepts, updatedConcepts, "Test "+scenario.testName+" failed: Updated uuid list differs from expected")
 
 		for _, id := range scenario.uuidsToCheck {
-			concept, found, err := conceptsDriver.Read(id, tid)
+			conceptIf, found, err := conceptsDriver.Read(id, tid)
+			concept := cleanHash(conceptIf.(AggregatedConcept))
 			if found {
 				assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 				assert.True(t, found, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
@@ -1273,7 +1274,8 @@ func TestMultipleConcordancesAreHandled(t *testing.T) {
 	_, err = conceptsDriver.Write(getTransferMultipleSourceConcordance(), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
-	concept, found, err := conceptsDriver.Read(simpleSmartlogicTopicUUID, "test_tid")
+	conceptIf, found, err := conceptsDriver.Read(simpleSmartlogicTopicUUID, "test_tid")
+	concept := cleanHash(conceptIf.(AggregatedConcept))
 	assert.NoError(t, err, "Should be able to read concept with no problems")
 	assert.True(t, found, "Concept should exist")
 	assert.NotNil(t, concept, "Concept should be populated")
@@ -1571,8 +1573,8 @@ func readConceptAndCompare(t *testing.T, actual AggregatedConcept, testName stri
 	expectedIf, found, err := conceptsDriver.Read(actual.PrefUUID, "")
 	expected := expectedIf.(AggregatedConcept)
 
-	expected = cleanConcept(expected)
-	actual = cleanConcept(actual)
+	expected = cleanHash(cleanConcept(expected))
+	actual = cleanHash(cleanConcept(actual))
 
 	assert.Equal(t, expected, actual)
 	assert.NoError(t, err, "Unexpected Error occurred")
@@ -1616,6 +1618,7 @@ func cleanDB(t *testing.T) {
 		anotherPersonUUID,
 		simpleSmartlogicTopicUUID,
 		boardRoleUUID,
+		financialInstrumentSameIssuerUUID,
 		financialInstrumentUUID,
 		financialOrgUUID,
 		anotherFinancialOrgUUID,
@@ -1638,6 +1641,7 @@ func cleanDB(t *testing.T) {
 		anotherPersonUUID,
 		simpleSmartlogicTopicUUID,
 		boardRoleUUID,
+		financialInstrumentSameIssuerUUID,
 		financialInstrumentUUID,
 		financialOrgUUID,
 		anotherFinancialOrgUUID,
@@ -1660,6 +1664,7 @@ func cleanDB(t *testing.T) {
 		anotherPersonUUID,
 		simpleSmartlogicTopicUUID,
 		boardRoleUUID,
+		financialInstrumentSameIssuerUUID,
 		financialInstrumentUUID,
 		financialOrgUUID,
 		anotherFinancialOrgUUID,

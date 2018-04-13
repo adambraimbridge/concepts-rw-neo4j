@@ -9,56 +9,54 @@ type MembershipRole struct {
 }
 
 type AggregatedConcept struct {
-	PrefUUID              string    `json:"prefUUID,omitempty"`
-	PrefLabel             string    `json:"prefLabel,omitempty"`
-	Type                  string    `json:"type,omitempty"`
-	Aliases               []string  `json:"aliases,omitempty"`
-	Strapline             string    `json:"strapline,omitempty"`
-	DescriptionXML        string    `json:"descriptionXML,omitempty"`
-	ImageURL              string    `json:"_imageUrl,omitempty"`
-	EmailAddress          string    `json:"emailAddress,omitempty"`
-	FacebookPage          string    `json:"facebookPage,omitempty"`
-	TwitterHandle         string    `json:"twitterHandle,omitempty"`
-	ScopeNote             string    `json:"scopeNote,omitempty"`
-	ShortLabel            string    `json:"shortLabel,omitempty"`
-	OrganisationUUID      string    `json:"organisationUUID,omitempty"`
-	PersonUUID            string    `json:"personUUID,omitempty"`
-	AggregatedHash        string    `json:"aggregateHash,omitempty"`
-	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
-
-	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
-	InceptionDate        string           `json:"inceptionDate,omitempty"`
-	TerminationDate      string           `json:"terminationDate,omitempty"`
-	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
-	FigiCode             string           `json:"figiCode,omitempty"`
-	IssuedBy             string           `json:"issuedBy,omitempty"`
+	PrefUUID              string           `json:"prefUUID,omitempty"`
+	PrefLabel             string           `json:"prefLabel,omitempty"`
+	Type                  string           `json:"type,omitempty"`
+	Aliases               []string         `json:"aliases,omitempty"`
+	Strapline             string           `json:"strapline,omitempty"`
+	DescriptionXML        string           `json:"descriptionXML,omitempty"`
+	ImageURL              string           `json:"_imageUrl,omitempty"`
+	EmailAddress          string           `json:"emailAddress,omitempty"`
+	FacebookPage          string           `json:"facebookPage,omitempty"`
+	TwitterHandle         string           `json:"twitterHandle,omitempty"`
+	ScopeNote             string           `json:"scopeNote,omitempty"`
+	ShortLabel            string           `json:"shortLabel,omitempty"`
+	OrganisationUUID      string           `json:"organisationUUID,omitempty"`
+	PersonUUID            string           `json:"personUUID,omitempty"`
+	AggregatedHash        string           `json:"aggregateHash,omitempty"`
+	SourceRepresentations []Concept        `json:"sourceRepresentations,omitempty"`
+	MembershipRoles       []MembershipRole `json:"membershipRoles,omitempty"`
+	InceptionDate         string           `json:"inceptionDate,omitempty"`
+	TerminationDate       string           `json:"terminationDate,omitempty"`
+	InceptionDateEpoch    int64            `json:"inceptionDateEpoch,omitempty"`
+	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
+	FigiCode              string           `json:"figiCode,omitempty"`
+	IssuedBy              string           `json:"issuedBy,omitempty"`
 }
 
 // Concept - could be any concept genre, subject etc
 type Concept struct {
-	UUID              string   `json:"uuid,omitempty"`
-	PrefLabel         string   `json:"prefLabel,omitempty"`
-	Type              string   `json:"type,omitempty"`
-	Authority         string   `json:"authority,omitempty"`
-	AuthorityValue    string   `json:"authorityValue,omitempty"`
-	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`
-	Aliases           []string `json:"aliases,omitempty"`
-	ParentUUIDs       []string `json:"parentUUIDs,omitempty"`
-	Strapline         string   `json:"strapline,omitempty"`
-	DescriptionXML    string   `json:"descriptionXML,omitempty"`
-	ImageURL          string   `json:"_imageUrl,omitempty"`
-	EmailAddress      string   `json:"emailAddress,omitempty"`
-	FacebookPage      string   `json:"facebookPage,omitempty"`
-	TwitterHandle     string   `json:"twitterHandle,omitempty"`
-	ScopeNote         string   `json:"scopeNote,omitempty"`
-	ShortLabel        string   `json:"shortLabel,omitempty"`
-	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
-	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
-	OrganisationUUID  string   `json:"organisationUUID,omitempty"`
-	PersonUUID        string   `json:"personUUID,omitempty"`
-	Hash              string   `json:"hash,omitempty"`
-
+	UUID                 string           `json:"uuid,omitempty"`
+	PrefLabel            string           `json:"prefLabel,omitempty"`
+	Type                 string           `json:"type,omitempty"`
+	Authority            string           `json:"authority,omitempty"`
+	AuthorityValue       string           `json:"authorityValue,omitempty"`
+	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
+	Aliases              []string         `json:"aliases,omitempty"`
+	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
+	Strapline            string           `json:"strapline,omitempty"`
+	DescriptionXML       string           `json:"descriptionXML,omitempty"`
+	ImageURL             string           `json:"_imageUrl,omitempty"`
+	EmailAddress         string           `json:"emailAddress,omitempty"`
+	FacebookPage         string           `json:"facebookPage,omitempty"`
+	TwitterHandle        string           `json:"twitterHandle,omitempty"`
+	ScopeNote            string           `json:"scopeNote,omitempty"`
+	ShortLabel           string           `json:"shortLabel,omitempty"`
+	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
+	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
+	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
+	PersonUUID           string           `json:"personUUID,omitempty"`
+	Hash                 string           `json:"hash,omitempty"`
 	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
 	InceptionDate        string           `json:"inceptionDate,omitempty"`
 	TerminationDate      string           `json:"terminationDate,omitempty"`

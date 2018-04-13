@@ -149,12 +149,23 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
 			WITH
 				canonical,
+				node,
+				role,
+				roleRel,
 				org,
 				issuer,
 				person,
 				related,
 				broader,
-				role,
+				parent
+				ORDER BY node.uuid, role.uuid
+			WITH
+				canonical,
+				org,
+				issuer,
+				person,
+				related,
+				broader,
 				parent,
 				{
 					uuid: node.uuid,
@@ -190,7 +201,14 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					terminationDate: node.terminationDate,
 					inceptionDateEpoch: node.inceptionDateEpoch,
 					terminationDateEpoch: node.terminationDateEpoch
-				} as sources
+				} as sources,
+				collect({
+					membershipRoleUUID: role.uuid,
+					inceptionDate: roleRel.inceptionDate,
+					terminationDate: roleRel.terminationDate,
+					inceptionDateEpoch: roleRel.inceptionDateEpoch,
+					terminationDateEpoch: roleRel.terminationDateEpoch
+				}) as membershipRoles
 			RETURN
 				canonical.prefUUID as prefUUID,
 				canonical.prefLabel as prefLabel,
@@ -213,7 +231,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				canonical.inceptionDate as inceptionDate,
 				canonical.terminationDate as terminationDate,
 				canonical.inceptionDateEpoch as inceptionDateEpoch,
-				canonical.terminationDateEpoch as terminationDateEpoch
+				canonical.terminationDateEpoch as terminationDateEpoch,
+				membershipRoles
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -237,112 +256,69 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		return AggregatedConcept{}, false, err
 	}
 
-	var sourceConcepts []Concept
 	aggregatedConcept := AggregatedConcept{
-		PrefUUID:             results[0].PrefUUID,
-		PrefLabel:            results[0].PrefLabel,
-		Type:                 typeName,
-		ImageURL:             results[0].ImageURL,
-		DescriptionXML:       results[0].DescriptionXML,
-		Strapline:            results[0].Strapline,
-		Aliases:              results[0].Aliases,
-		EmailAddress:         results[0].EmailAddress,
-		FacebookPage:         results[0].FacebookPage,
-		TwitterHandle:        results[0].TwitterHandle,
-		ScopeNote:            results[0].ScopeNote,
-		ShortLabel:           results[0].ShortLabel,
-		PersonUUID:           results[0].PersonUUID,
-		OrganisationUUID:     results[0].OrganisationUUID,
-		AggregatedHash:       results[0].AggregateHash,
-		FigiCode:             results[0].FigiCode,
-		IssuedBy:             results[0].IssuedBy,
-		MembershipRoles:      []MembershipRole{},
-		InceptionDate:        results[0].InceptionDate,
-		TerminationDate:      results[0].TerminationDate,
-		InceptionDateEpoch:   results[0].InceptionDateEpoch,
-		TerminationDateEpoch: results[0].TerminationDateEpoch,
+		PrefUUID:         results[0].PrefUUID,
+		PrefLabel:        results[0].PrefLabel,
+		Type:             typeName,
+		AggregatedHash:   results[0].AggregateHash,
+		Aliases:          results[0].Aliases,
+		Strapline:        results[0].Strapline,
+		DescriptionXML:   results[0].DescriptionXML,
+		ImageURL:         results[0].ImageURL,
+		EmailAddress:     results[0].EmailAddress,
+		FacebookPage:     results[0].FacebookPage,
+		TwitterHandle:    results[0].TwitterHandle,
+		ScopeNote:        results[0].ScopeNote,
+		ShortLabel:       results[0].ShortLabel,
+		OrganisationUUID: results[0].OrganisationUUID,
+		PersonUUID:       results[0].PersonUUID,
+		MembershipRoles:  results[0].MembershipRoles,
+		InceptionDate:    results[0].InceptionDate,
+		TerminationDate:  results[0].TerminationDate,
+		FigiCode:         results[0].FigiCode,
+		IssuedBy:         results[0].IssuedBy,
 	}
 
+	sourceConcepts := []Concept{}
 	for _, srcConcept := range results[0].SourceRepresentations {
-		var concept Concept
 		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
 		if err != nil {
 			logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Returned source concept had no recognized type")
 			return AggregatedConcept{}, false, err
 		}
-		if len(srcConcept.Aliases) > 0 {
-			concept.Aliases = srcConcept.Aliases
+
+		concept := Concept{
+			Aliases:           filterSlice(srcConcept.Aliases),
+			Type:              conceptType,
+			Authority:         srcConcept.Authority,
+			AuthorityValue:    srcConcept.AuthorityValue,
+			BroaderUUIDs:      filterSlice(srcConcept.BroaderUUIDs),
+			DescriptionXML:    srcConcept.DescriptionXML,
+			EmailAddress:      srcConcept.EmailAddress,
+			FacebookPage:      srcConcept.FacebookPage,
+			FigiCode:          srcConcept.FigiCode,
+			ImageURL:          srcConcept.ImageURL,
+			InceptionDate:     srcConcept.InceptionDate,
+			IssuedBy:          srcConcept.IssuedBy,
+			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
+			MembershipRoles:   cleanMembershipRoles(srcConcept.MembershipRoles),
+			OrganisationUUID:  srcConcept.OrganisationUUID,
+			ParentUUIDs:       filterSlice(srcConcept.ParentUUIDs),
+			PersonUUID:        srcConcept.PersonUUID,
+			PrefLabel:         srcConcept.PrefLabel,
+			RelatedUUIDs:      filterSlice(srcConcept.RelatedUUIDs),
+			ScopeNote:         srcConcept.ScopeNote,
+			ShortLabel:        srcConcept.ShortLabel,
+			Strapline:         srcConcept.Strapline,
+			TerminationDate:   srcConcept.TerminationDate,
+			TwitterHandle:     srcConcept.TwitterHandle,
+			UUID:              srcConcept.UUID,
 		}
-
-		uuids := []string{}
-
-		if len(srcConcept.ParentUUIDs) > 0 {
-			//TODO do this differently but I get a "" back from the cypher!
-			for _, uuid := range srcConcept.ParentUUIDs {
-				if uuid != "" {
-					uuids = append(uuids, uuid)
-				}
-			}
-			if len(uuids) > 0 {
-				concept.ParentUUIDs = uuids
-			}
-		}
-
-		if len(srcConcept.RelatedUUIDs) > 0 {
-			uuids = []string{}
-			//TODO do this differently but I get a "" back from the cypher!
-			for _, uuid := range srcConcept.RelatedUUIDs {
-				if uuid != "" {
-					uuids = append(uuids, uuid)
-				}
-			}
-			if len(uuids) > 0 {
-				concept.RelatedUUIDs = uuids
-			}
-		}
-
-		if len(srcConcept.BroaderUUIDs) > 0 {
-			uuids = []string{}
-			//TODO do this differently but I get a "" back from the cypher!
-			for _, uuid := range srcConcept.BroaderUUIDs {
-				if uuid != "" {
-					uuids = append(uuids, uuid)
-				}
-			}
-			if len(uuids) > 0 {
-				concept.BroaderUUIDs = uuids
-			}
-		}
-
-		srcConcept.MembershipRoles = cleanMembershipRoles(srcConcept.MembershipRoles)
-
-		aggregatedConcept.MembershipRoles = append(aggregatedConcept.MembershipRoles, srcConcept.MembershipRoles...)
-
-		concept.UUID = srcConcept.UUID
-		concept.PrefLabel = srcConcept.PrefLabel
-		concept.Authority = srcConcept.Authority
-		concept.AuthorityValue = srcConcept.AuthorityValue
-		concept.Type = conceptType
-		concept.LastModifiedEpoch = srcConcept.LastModifiedEpoch
-		concept.ImageURL = srcConcept.ImageURL
-		concept.Strapline = srcConcept.Strapline
-		concept.DescriptionXML = srcConcept.DescriptionXML
-		concept.FacebookPage = srcConcept.FacebookPage
-		concept.EmailAddress = srcConcept.EmailAddress
-		concept.TwitterHandle = srcConcept.TwitterHandle
-		concept.ShortLabel = srcConcept.ShortLabel
-		concept.ScopeNote = srcConcept.ScopeNote
-		concept.PersonUUID = srcConcept.PersonUUID
-		concept.OrganisationUUID = srcConcept.OrganisationUUID
-		concept.FigiCode = srcConcept.FigiCode
-		concept.IssuedBy = srcConcept.IssuedBy
 		sourceConcepts = append(sourceConcepts, concept)
 	}
 
 	aggregatedConcept.SourceRepresentations = sourceConcepts
-
 	logger.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
-
 	return aggregatedConcept, true, nil
 }
 
@@ -711,20 +687,24 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept AggregatedConcept) []*neoism.CypherQuery {
 	// Create a sourceConcept from the canonical information - WITH NO UUID
 	concept := Concept{
-		PrefLabel:      aggregatedConcept.PrefLabel,
-		Aliases:        aggregatedConcept.Aliases,
-		Strapline:      aggregatedConcept.Strapline,
-		DescriptionXML: aggregatedConcept.DescriptionXML,
-		ImageURL:       aggregatedConcept.ImageURL,
-		Type:           aggregatedConcept.Type,
-		EmailAddress:   aggregatedConcept.EmailAddress,
-		FacebookPage:   aggregatedConcept.FacebookPage,
-		TwitterHandle:  aggregatedConcept.TwitterHandle,
-		ScopeNote:      aggregatedConcept.ScopeNote,
-		ShortLabel:     aggregatedConcept.ShortLabel,
-		FigiCode:       aggregatedConcept.FigiCode,
-		IssuedBy:       aggregatedConcept.IssuedBy,
-		Hash:           aggregatedConcept.AggregatedHash,
+		PrefLabel:            aggregatedConcept.PrefLabel,
+		Aliases:              aggregatedConcept.Aliases,
+		Strapline:            aggregatedConcept.Strapline,
+		DescriptionXML:       aggregatedConcept.DescriptionXML,
+		ImageURL:             aggregatedConcept.ImageURL,
+		Type:                 aggregatedConcept.Type,
+		EmailAddress:         aggregatedConcept.EmailAddress,
+		FacebookPage:         aggregatedConcept.FacebookPage,
+		TwitterHandle:        aggregatedConcept.TwitterHandle,
+		ScopeNote:            aggregatedConcept.ScopeNote,
+		ShortLabel:           aggregatedConcept.ShortLabel,
+		FigiCode:             aggregatedConcept.FigiCode,
+		IssuedBy:             aggregatedConcept.IssuedBy,
+		Hash:                 aggregatedConcept.AggregatedHash,
+		InceptionDate:        aggregatedConcept.InceptionDate,
+		TerminationDate:      aggregatedConcept.TerminationDate,
+		InceptionDateEpoch:   aggregatedConcept.InceptionDateEpoch,
+		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
 	}
 
 	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
@@ -1136,4 +1116,19 @@ func getEpoch(t string) int64 {
 
 	tt, _ := time.Parse(iso8601DateOnly, t)
 	return tt.Unix()
+}
+
+func filterSlice(a []string) []string {
+	r := []string{}
+	for _, str := range a {
+		if str != "" {
+			r = append(r, str)
+		}
+	}
+
+	if len(r) == 0 {
+		return nil
+	}
+
+	return a
 }

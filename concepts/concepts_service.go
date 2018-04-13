@@ -139,17 +139,17 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 
 	query := &neoism.CypherQuery{
 		Statement: `
-			MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
-			OPTIONAL MATCH (node)-[:HAS_ORGANISATION]->(org:Thing)
-			OPTIONAL MATCH (node)-[:ISSUED_BY]->(issuer:Thing)
-			OPTIONAL MATCH (node)-[:HAS_MEMBER]->(person:Thing)
-			OPTIONAL MATCH (node)-[:IS_RELATED_TO]->(related:Thing)
-			OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
-			OPTIONAL MATCH (node)-[roleRel:HAS_ROLE]->(role:Thing)
-			OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
+			MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+			OPTIONAL MATCH (source)-[:HAS_ORGANISATION]->(org:Thing)
+			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
+			OPTIONAL MATCH (source)-[:HAS_MEMBER]->(person:Thing)
+			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
+			OPTIONAL MATCH (source)-[:HAS_BROADER]->(broader:Thing)
+			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
+			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
 			WITH
 				canonical,
-				node,
+				source,
 				role,
 				roleRel,
 				org,
@@ -158,7 +158,9 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				related,
 				broader,
 				parent
-				ORDER BY node.uuid, role.uuid
+				ORDER BY
+					source.uuid,
+					role.uuid
 			WITH
 				canonical,
 				org,
@@ -168,27 +170,27 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				broader,
 				parent,
 				{
-					uuid: node.uuid,
-					prefLabel: node.prefLabel,
-					authority: node.authority,
-					authorityValue: node.authorityValue,
-					types: labels(node),
-					lastModifiedEpoch: node.lastModifiedEpoch,
-					emailAddress: node.emailAddress,
-					facebookPage: node.facebookPage,
-					twitterHandle: node.twitterHandle,
-					scopeNote: node.scopeNote,
-					shortLabel: node.shortLabel,
-					aliases: node.aliases,
-					descriptionXML: node.descriptionXML,
-					imageUrl: node.imageUrl,
-					strapline: node.strapline,
+					uuid: source.uuid,
+					prefLabel: source.prefLabel,
+					authority: source.authority,
+					authorityValue: source.authorityValue,
+					types: labels(source),
+					lastModifiedEpoch: source.lastModifiedEpoch,
+					emailAddress: source.emailAddress,
+					facebookPage: source.facebookPage,
+					twitterHandle: source.twitterHandle,
+					scopeNote: source.scopeNote,
+					shortLabel: source.shortLabel,
+					aliases: source.aliases,
+					descriptionXML: source.descriptionXML,
+					imageUrl: source.imageUrl,
+					strapline: source.strapline,
 					parentUUIDs: collect(parent.uuid),
 					relatedUUIDs: collect(related.uuid),
 					broaderUUIDs: collect(broader.uuid),
 					organisationUUID: org.uuid,
 					personUUID: person.uuid,
-					figiCode: node.figiCode,
+					figiCode: source.figiCode,
 					issuedBy: issuer.uuid,
 					membershipRoles: collect({
 						membershipRoleUUID: role.uuid,
@@ -197,10 +199,10 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 						inceptionDateEpoch: roleRel.inceptionDateEpoch,
 						terminationDateEpoch: roleRel.terminationDateEpoch
 					}),
-					inceptionDate: node.inceptionDate,
-					terminationDate: node.terminationDate,
-					inceptionDateEpoch: node.inceptionDateEpoch,
-					terminationDateEpoch: node.terminationDateEpoch
+					inceptionDate: source.inceptionDate,
+					terminationDate: source.terminationDate,
+					inceptionDateEpoch: source.inceptionDateEpoch,
+					terminationDateEpoch: source.terminationDateEpoch
 				} as sources,
 				collect({
 					membershipRoleUUID: role.uuid,
@@ -272,7 +274,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		ShortLabel:       results[0].ShortLabel,
 		OrganisationUUID: results[0].OrganisationUUID,
 		PersonUUID:       results[0].PersonUUID,
-		MembershipRoles:  results[0].MembershipRoles,
+		MembershipRoles:  cleanMembershipRoles(results[0].MembershipRoles),
 		InceptionDate:    results[0].InceptionDate,
 		TerminationDate:  results[0].TerminationDate,
 		FigiCode:         results[0].FigiCode,

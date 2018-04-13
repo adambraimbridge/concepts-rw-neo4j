@@ -12,6 +12,7 @@ import (
 
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/bradfitz/slice"
 	"github.com/jmcvetta/neoism"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/mitchellh/hashstructure"
@@ -1575,11 +1576,17 @@ func cleanConcept(c AggregatedConcept) AggregatedConcept {
 			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
 			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
 		}
+		slice.Sort(c.SourceRepresentations[j].MembershipRoles[:], func(k, l int) bool {
+			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
+		})
 	}
 	for i := range c.MembershipRoles {
 		c.MembershipRoles[i].InceptionDateEpoch = 0
 		c.MembershipRoles[i].TerminationDateEpoch = 0
 	}
+	slice.Sort(c.SourceRepresentations[:], func(k, l int) bool {
+		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
+	})
 	return c
 }
 

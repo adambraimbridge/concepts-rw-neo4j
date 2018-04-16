@@ -676,6 +676,31 @@ func getMembership() AggregatedConcept {
 	}
 }
 
+func getOldMembership() Concept {
+	return Concept{
+		UUID:             membershipUUID,
+		PrefLabel:        "Membership Pref Label",
+		Type:             "Membership",
+		Authority:        "Smartlogic",
+		AuthorityValue:   "746464",
+		OrganisationUUID: organisationUUID,
+		PersonUUID:       personUUID,
+		InceptionDate:    "2016-01-01T00:00:00Z",
+		TerminationDate:  "2017-02-02T00:00:00Z",
+		MembershipRoles: []MembershipRole{
+			MembershipRole{
+				RoleUUID:        "f807193d-337b-412f-b32c-afa14b385819",
+				InceptionDate:   "2016-01-01T00:00:00Z",
+				TerminationDate: "2017-02-02T00:00:00Z",
+			}, MembershipRole{
+				RoleUUID:        "f807193d-337b-412f-b32c-afa14b385819",
+				InceptionDate:   "2016-01-01T00:00:00Z",
+				TerminationDate: "2017-02-02T00:00:00Z",
+			},
+		},
+	}
+}
+
 func getFinancialInstrument() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:  financialInstrumentUUID,
@@ -1028,6 +1053,31 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	assert.Equal(t, []MembershipRole{anotherMembershipRole}, updatedMemebership.MembershipRoles)
 	assert.Equal(t, anotherOrganisationUUID, updatedMemebership.OrganisationUUID)
 	assert.Equal(t, anotherPersonUUID, updatedMemebership.PersonUUID)
+}
+
+func TestWriteMemberships_FixOldData(t *testing.T) {
+	defer cleanDB(t)
+
+	queries := createNodeQueries(getOldMembership(), "", membershipUUID)
+	err := db.CypherBatch(queries)
+	assert.NoError(t, err, "Failed to write source")
+
+	_, err = conceptsDriver.Write(getMembership(), "test_tid")
+	assert.NoError(t, err, "Failed to write membership")
+
+	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
+	assert.NoError(t, err, "Failed to read membership")
+	ab, err := json.Marshal(cleanHash(result.(AggregatedConcept)))
+
+	originalMembership := AggregatedConcept{}
+	json.Unmarshal(ab, &originalMembership)
+
+	originalMembership = cleanConcept(originalMembership)
+
+	assert.Equal(t, len(originalMembership.MembershipRoles), 2)
+	assert.True(t, reflect.DeepEqual([]MembershipRole{membershipRole, anotherMembershipRole}, originalMembership.MembershipRoles))
+	assert.Equal(t, organisationUUID, originalMembership.OrganisationUUID)
+	assert.Equal(t, personUUID, originalMembership.PersonUUID)
 }
 
 func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {

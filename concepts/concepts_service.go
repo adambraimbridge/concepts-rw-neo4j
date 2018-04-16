@@ -419,6 +419,12 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		if err != nil {
 			return uuidsToUpdate, err
 		}
+
+		clearDownQuery := s.clearDownExistingNodes(aggregatedConceptToWrite)
+		for _, query := range clearDownQuery {
+			queryBatch = append(queryBatch, query)
+		}
+
 		//Concept is new, send notification of all source ids
 		for _, source := range aggregatedConceptToWrite.SourceRepresentations {
 			updatedUUIDList = append(updatedUUIDList, source.UUID)

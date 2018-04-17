@@ -2,9 +2,12 @@ package concepts
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/Financial-Times/transactionid-utils-go"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
@@ -12,23 +15,29 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var irregularConceptTypePaths = map[string]string{
+	"AlphavilleSeries": "alphaville-series",
+	"BoardRole":        "membership-roles",
+	"Dummy":            "dummies",
+	"Person":           "people",
+	"PublicCompany":    "organisations",
+}
+
 type ConceptsHandler struct {
 	ConceptsService ConceptServicer
 }
 
-func (h *ConceptsHandler) RegisterHandlers(router *mux.Router, path string) *mux.Router {
-	urlPath := fmt.Sprintf("/%s/{uuid}", path)
-	rwHandler := handlers.MethodHandler{
+func (h *ConceptsHandler) RegisterHandlers(router *mux.Router) {
+	router.Handle("/{concept_type}/{uuid}", handlers.MethodHandler{
 		"GET": http.HandlerFunc(h.GetConcept),
 		"PUT": http.HandlerFunc(h.PutConcept),
-	}
-	router.Handle(urlPath, rwHandler)
-	return router
+	})
 }
 
 func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
+	conceptType := vars["concept_type"]
 
 	transID := transactionidutils.GetTransactionIDFromRequest(r)
 	w.Header().Add("Content-Type", "application/json")
@@ -45,6 +54,12 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 
 	if docUUID != uuid {
 		writeJSONError(w, fmt.Sprintf("Uuids from payload and request, respectively, do not match: '%v' '%v'", docUUID, uuid), http.StatusBadRequest)
+		return
+	}
+
+	agConcept := inst.(AggregatedConcept)
+	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
+		writeJSONError(w, "Concept type does not match path", http.StatusBadRequest)
 		return
 	}
 
@@ -81,6 +96,7 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
+	conceptType := vars["concept_type"]
 
 	transID := transactionidutils.GetTransactionIDFromRequest(r)
 
@@ -100,6 +116,12 @@ func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	agConcept := obj.(AggregatedConcept)
+	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
+		writeJSONError(w, "Concept type does not match path", http.StatusBadRequest)
+		return
+	}
+
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(obj); err != nil {
 		writeJSONError(w, err.Error(), http.StatusInternalServerError)
@@ -110,4 +132,25 @@ func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 func writeJSONError(w http.ResponseWriter, errorMsg string, statusCode int) {
 	w.WriteHeader(statusCode)
 	fmt.Fprintln(w, fmt.Sprintf("{\"message\": \"%s\"}", errorMsg))
+}
+
+func checkConceptTypeAgainstPath(conceptType, path string) error {
+	if ipath, ok := irregularConceptTypePaths[conceptType]; ok && ipath != "" {
+		return nil
+	}
+
+	if toSnakeCase(conceptType)+"s" == path {
+		return nil
+	}
+
+	return errors.New("path does not match content type")
+}
+
+var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
+var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")
+
+func toSnakeCase(str string) string {
+	snake := matchFirstCap.ReplaceAllString(str, "${1}-${2}")
+	snake = matchAllCap.ReplaceAllString(snake, "${1}-${2}")
+	return strings.ToLower(snake)
 }

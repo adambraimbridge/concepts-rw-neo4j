@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -27,20 +26,41 @@ const (
 	simpleSmartlogicTopicUUID  = "abd38d90-2152-11e8-9ac1-da24cd01f044"
 	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
-	boardRoleUUID             = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
-	membershipRoleUUID        = "f807193d-337b-412f-b32c-afa14b385819"
-	organisationUUID          = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
-	personUUID                = "35946807-0205-4fc1-8516-bb1ae141659b"
-	membershipUUID            = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
-	anotherMembershipRoleUUID = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
-	anotherOrganisationUUID   = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
-	anotherPersonUUID         = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
+	boardRoleUUID                     = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
+	membershipRoleUUID                = "f807193d-337b-412f-b32c-afa14b385819"
+	organisationUUID                  = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
+	personUUID                        = "35946807-0205-4fc1-8516-bb1ae141659b"
+	financialInstrumentUUID           = "475b7b59-66d5-47e2-a273-adc3d1ba8286"
+	financialInstrumentSameIssuerUUID = "08c6066c-9356-4e96-abd5-9a4f3726724a"
+	financialOrgUUID                  = "4290f028-05e9-4c2d-9f11-61ec59ba081a"
+	anotherFinancialOrgUUID           = "230e3a74-694a-4d94-8294-6a45ec1ced26"
+	membershipUUID                    = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+	anotherMembershipRoleUUID         = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
+	anotherOrganisationUUID           = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
+	anotherPersonUUID                 = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
 	sourceId_3 = "5b1d8c31-dfe4-4326-b6a9-6227cb59af1f"
 
 	unknownThingUUID = "b5d7c6b5-db7d-4bce-9d6a-f62195571f92"
+)
+
+var (
+	membershipRole = MembershipRole{
+		RoleUUID:        "f807193d-337b-412f-b32c-afa14b385819",
+		InceptionDate:   "2016-01-01",
+		TerminationDate: "2017-02-02",
+	}
+	anotherMembershipRole = MembershipRole{
+		RoleUUID:      "fe94adc6-ca44-438f-ad8f-0188d4a74987",
+		InceptionDate: "2011-06-27",
+	}
+	anotherMembershipRole2 = MembershipRole{
+		RoleUUID:        "83102635-e6d5-3c48-9d5f-ab34c1401c22",
+		InceptionDate:   "2009-09-10",
+		TerminationDate: "2013-02-20",
+	}
 )
 
 //Reusable Neo4J connection
@@ -597,11 +617,11 @@ func getConceptWithHasBroader() AggregatedConcept {
 
 func getMembershipRole() AggregatedConcept {
 	return AggregatedConcept{
-		PrefUUID:  membershipRoleUUID,
+		PrefUUID:  membershipRole.RoleUUID,
 		PrefLabel: "MembershipRole Pref Label",
 		Type:      "MembershipRole",
 		SourceRepresentations: []Concept{{
-			UUID:           membershipRoleUUID,
+			UUID:           membershipRole.RoleUUID,
 			PrefLabel:      "MembershipRole Pref Label",
 			Type:           "MembershipRole",
 			Authority:      "Smartlogic",
@@ -630,17 +650,112 @@ func getMembership() AggregatedConcept {
 		Type:             "Membership",
 		OrganisationUUID: organisationUUID,
 		PersonUUID:       personUUID,
-		MembershipRoles:  []string{membershipRoleUUID},
+		InceptionDate:    membershipRole.InceptionDate,
+		TerminationDate:  membershipRole.TerminationDate,
+		MembershipRoles: []MembershipRole{
+			membershipRole,
+			anotherMembershipRole,
+		},
+		SourceRepresentations: []Concept{
+			{
+				UUID:             membershipUUID,
+				PrefLabel:        "Membership Pref Label",
+				Type:             "Membership",
+				Authority:        "Smartlogic",
+				AuthorityValue:   "746464",
+				OrganisationUUID: organisationUUID,
+				PersonUUID:       personUUID,
+				InceptionDate:    membershipRole.InceptionDate,
+				TerminationDate:  membershipRole.TerminationDate,
+				MembershipRoles: []MembershipRole{
+					membershipRole,
+					anotherMembershipRole,
+				},
+			},
+		},
+	}
+}
+
+func getOldMembership() Concept {
+	return Concept{
+		UUID:             membershipUUID,
+		PrefLabel:        "Membership Pref Label",
+		Type:             "Membership",
+		Authority:        "Smartlogic",
+		AuthorityValue:   "746464",
+		OrganisationUUID: organisationUUID,
+		PersonUUID:       personUUID,
+		InceptionDate:    "2016-01-01T00:00:00Z",
+		TerminationDate:  "2017-02-02T00:00:00Z",
+		MembershipRoles: []MembershipRole{
+			MembershipRole{
+				RoleUUID:        "f807193d-337b-412f-b32c-afa14b385819",
+				InceptionDate:   "2016-01-01T00:00:00Z",
+				TerminationDate: "2017-02-02T00:00:00Z",
+			}, MembershipRole{
+				RoleUUID:        "f807193d-337b-412f-b32c-afa14b385819",
+				InceptionDate:   "2016-01-01T00:00:00Z",
+				TerminationDate: "2017-02-02T00:00:00Z",
+			},
+		},
+	}
+}
+
+func getFinancialInstrument() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  financialInstrumentUUID,
+		PrefLabel: "FinancialInstrument Pref Label",
+		Type:      "FinancialInstrument",
+		FigiCode:  "12345",
+		IssuedBy:  financialOrgUUID,
 		SourceRepresentations: []Concept{{
-			UUID:             membershipUUID,
-			PrefLabel:        "Membership Pref Label",
-			Type:             "Membership",
-			Authority:        "Smartlogic",
-			AuthorityValue:   "746464",
-			OrganisationUUID: organisationUUID,
-			PersonUUID:       personUUID,
-			MembershipRoles:  []string{membershipRoleUUID},
-		}}}
+			UUID:           financialInstrumentUUID,
+			PrefLabel:      "FinancialInstrument Pref Label",
+			Type:           "FinancialInstrument",
+			Authority:      "FACTSET",
+			AuthorityValue: "746464",
+			FigiCode:       "12345",
+			IssuedBy:       financialOrgUUID,
+		}},
+	}
+}
+
+func getFinancialInstrumentWithSameIssuer() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  financialInstrumentSameIssuerUUID,
+		PrefLabel: "FinancialInstrument Pref Label 2",
+		Type:      "FinancialInstrument",
+		FigiCode:  "12345678",
+		IssuedBy:  financialOrgUUID,
+		SourceRepresentations: []Concept{{
+			UUID:           financialInstrumentSameIssuerUUID,
+			PrefLabel:      "FinancialInstrument Pref Label 2",
+			Type:           "FinancialInstrument",
+			Authority:      "FACTSET",
+			AuthorityValue: "19283671",
+			FigiCode:       "12345678",
+			IssuedBy:       financialOrgUUID,
+		}},
+	}
+}
+
+func getUpdatedFinancialInstrument() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  financialInstrumentUUID,
+		PrefLabel: "FinancialInstrument Pref Label",
+		Type:      "FinancialInstrument",
+		FigiCode:  "123457",
+		IssuedBy:  anotherFinancialOrgUUID,
+		SourceRepresentations: []Concept{{
+			UUID:           financialInstrumentUUID,
+			PrefLabel:      "FinancialInstrument Pref Label",
+			Type:           "FinancialInstrument",
+			Authority:      "FACTSET",
+			AuthorityValue: "746464",
+			FigiCode:       "123457",
+			IssuedBy:       anotherFinancialOrgUUID,
+		}},
+	}
 }
 
 func getUpdatedMembership() AggregatedConcept {
@@ -650,17 +765,28 @@ func getUpdatedMembership() AggregatedConcept {
 		Type:             "Membership",
 		OrganisationUUID: anotherOrganisationUUID,
 		PersonUUID:       anotherPersonUUID,
-		MembershipRoles:  []string{anotherMembershipRoleUUID},
-		SourceRepresentations: []Concept{{
-			UUID:             membershipUUID,
-			PrefLabel:        "Membership Pref Label",
-			Type:             "Membership",
-			Authority:        "Smartlogic",
-			AuthorityValue:   "746464",
-			OrganisationUUID: anotherOrganisationUUID,
-			PersonUUID:       anotherPersonUUID,
-			MembershipRoles:  []string{anotherMembershipRoleUUID},
-		}}}
+		InceptionDate:    anotherMembershipRole.InceptionDate,
+		TerminationDate:  anotherMembershipRole.TerminationDate,
+		MembershipRoles: []MembershipRole{
+			anotherMembershipRole,
+		},
+		SourceRepresentations: []Concept{
+			{
+				UUID:             membershipUUID,
+				PrefLabel:        "Membership Pref Label",
+				Type:             "Membership",
+				Authority:        "Smartlogic",
+				AuthorityValue:   "746464",
+				OrganisationUUID: anotherOrganisationUUID,
+				PersonUUID:       anotherPersonUUID,
+				InceptionDate:    anotherMembershipRole.InceptionDate,
+				TerminationDate:  anotherMembershipRole.TerminationDate,
+				MembershipRoles: []MembershipRole{
+					anotherMembershipRole,
+				},
+			},
+		},
+	}
 }
 
 func init() {
@@ -697,19 +823,158 @@ func TestWriteService(t *testing.T) {
 		errStr               string
 		updatedConcepts      UpdatedConcepts
 	}{
-		{"Throws validation error for invalid concept", AggregatedConcept{PrefUUID: basicConceptUUID}, nil, "Invalid request, no prefLabel has been supplied", UpdatedConcepts{UpdatedIds: []string{}}},
-		{"Creates All Values Present for a Lone Concept", getFullLoneAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		{"Creates All Values Present for a MembershipRole", getMembershipRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
-		{"Creates All Values Present for a BoardRole", getBoardRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{boardRoleUUID}}},
-		{"Creates All Values Present for a Membership", getMembership(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipUUID}}},
-		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		{"Creates All Values Present for a Concept with a HAS_BROADER relationship", getConceptWithHasBroader(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		{"Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing", getConceptWithHasBroaderToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		{"Creates All Values Present for a Concorded Concept", getFullConcordedAggregatedConcept(), nil, "", UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, basicConceptUUID}}},
-		{"Creates Handles Special Characters", updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
-		{"Adding Concept with existing Identifiers fails", getConcordedConceptWithConflictedIdentifier(), nil, "already exists with label `TMEIdentifier` and property `value` = '1234'", UpdatedConcepts{UpdatedIds: []string{}}},
-		{"Unknown Authority Should Fail", getUnknownAuthority(), nil, "Invalid Request", UpdatedConcepts{UpdatedIds: []string{}}},
+		{
+			testName:             "Throws validation error for invalid concept",
+			aggregatedConcept:    AggregatedConcept{PrefUUID: basicConceptUUID},
+			otherRelatedConcepts: nil,
+			errStr:               "Invalid request, no prefLabel has been supplied",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{},
+			},
+		},
+		{
+			testName:             "Creates All Values Present for a Lone Concept",
+			aggregatedConcept:    getFullLoneAggregatedConcept(),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			}},
+		{
+			testName:             "Creates All Values Present for a MembershipRole",
+			aggregatedConcept:    getMembershipRole(),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					membershipRoleUUID,
+				},
+			},
+		},
+		{
+			testName:             "Creates All Values Present for a BoardRole",
+			aggregatedConcept:    getBoardRole(),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					boardRoleUUID,
+				},
+			},
+		},
+		{
+			testName:             "Creates All Values Present for a Membership",
+			aggregatedConcept:    getMembership(),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					membershipUUID,
+				},
+			},
+		},
+		{
+			testName:             "Creates All Values Present for a FinancialInstrument",
+			aggregatedConcept:    getFinancialInstrument(),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					financialInstrumentUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a Concept with a RELATED_TO relationship",
+			aggregatedConcept: getConceptWithRelatedTo(),
+			otherRelatedConcepts: []AggregatedConcept{
+				getYetAnotherFullLoneAggregatedConcept(),
+			},
+			errStr: "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			},
+		},
+		{
+			testName:             "Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing",
+			aggregatedConcept:    getConceptWithRelatedToUnknownThing(),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a Concept with a HAS_BROADER relationship",
+			aggregatedConcept: getConceptWithHasBroader(),
+			otherRelatedConcepts: []AggregatedConcept{
+				getYetAnotherFullLoneAggregatedConcept(),
+			},
+			errStr: "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			},
+		},
+		{
+			testName:             "Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing",
+			aggregatedConcept:    getConceptWithHasBroaderToUnknownThing(),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			},
+		},
+		{
+			testName:             "Creates All Values Present for a Concorded Concept",
+			aggregatedConcept:    getFullConcordedAggregatedConcept(),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					anotherBasicConceptUUID,
+					basicConceptUUID,
+				},
+			},
+		},
+		{
+			testName:             "Creates Handles Special Characters",
+			aggregatedConcept:    updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			},
+		},
+		{
+			testName:             "Adding Concept with existing Identifiers fails",
+			aggregatedConcept:    getConcordedConceptWithConflictedIdentifier(),
+			otherRelatedConcepts: nil,
+			errStr:               "already exists with label `TMEIdentifier` and property `value` = '1234'",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{},
+			},
+		},
+		{
+			testName:             "Unknown Authority Should Fail",
+			aggregatedConcept:    getUnknownAuthority(),
+			otherRelatedConcepts: nil,
+			errStr:               "Invalid Request",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -719,7 +984,6 @@ func TestWriteService(t *testing.T) {
 			for _, relatedConcept := range test.otherRelatedConcepts {
 				_, err := conceptsDriver.Write(relatedConcept, "")
 				assert.NoError(t, err, "Failed to write related/broader concept")
-
 			}
 
 			updatedConcepts, err := conceptsDriver.Write(test.aggregatedConcept, "")
@@ -763,13 +1027,15 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 
 	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	ab, err := json.Marshal(result)
+	ab, err := json.Marshal(cleanHash(result.(AggregatedConcept)))
 
 	originalMembership := AggregatedConcept{}
 	json.Unmarshal(ab, &originalMembership)
 
-	assert.Equal(t, len(originalMembership.MembershipRoles), 1)
-	assert.Equal(t, []string{membershipRoleUUID}, originalMembership.MembershipRoles)
+	originalMembership = cleanConcept(originalMembership)
+
+	assert.Equal(t, len(originalMembership.MembershipRoles), 2)
+	assert.True(t, reflect.DeepEqual([]MembershipRole{membershipRole, anotherMembershipRole}, originalMembership.MembershipRoles))
 	assert.Equal(t, organisationUUID, originalMembership.OrganisationUUID)
 	assert.Equal(t, personUUID, originalMembership.PersonUUID)
 
@@ -778,15 +1044,74 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 
 	updatedResult, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	cd, err := json.Marshal(updatedResult)
+	cd, err := json.Marshal(cleanHash(updatedResult.(AggregatedConcept)))
 
 	updatedMemebership := AggregatedConcept{}
 	json.Unmarshal(cd, &updatedMemebership)
 
 	assert.Equal(t, len(updatedMemebership.MembershipRoles), 1)
-	assert.Equal(t, []string{anotherMembershipRoleUUID}, updatedMemebership.MembershipRoles)
+	assert.Equal(t, []MembershipRole{anotherMembershipRole}, updatedMemebership.MembershipRoles)
 	assert.Equal(t, anotherOrganisationUUID, updatedMemebership.OrganisationUUID)
 	assert.Equal(t, anotherPersonUUID, updatedMemebership.PersonUUID)
+}
+
+func TestWriteMemberships_FixOldData(t *testing.T) {
+	defer cleanDB(t)
+
+	queries := createNodeQueries(getOldMembership(), "", membershipUUID)
+	err := db.CypherBatch(queries)
+	assert.NoError(t, err, "Failed to write source")
+
+	_, err = conceptsDriver.Write(getMembership(), "test_tid")
+	assert.NoError(t, err, "Failed to write membership")
+
+	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
+	assert.NoError(t, err, "Failed to read membership")
+	ab, err := json.Marshal(cleanHash(result.(AggregatedConcept)))
+
+	originalMembership := AggregatedConcept{}
+	json.Unmarshal(ab, &originalMembership)
+
+	originalMembership = cleanConcept(originalMembership)
+
+	assert.Equal(t, len(originalMembership.MembershipRoles), 2)
+	assert.True(t, reflect.DeepEqual([]MembershipRole{membershipRole, anotherMembershipRole}, originalMembership.MembershipRoles))
+	assert.Equal(t, organisationUUID, originalMembership.OrganisationUUID)
+	assert.Equal(t, personUUID, originalMembership.PersonUUID)
+}
+
+func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {
+	defer cleanDB(t)
+
+	_, err := conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	_, err = conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+
+	_, err = conceptsDriver.Write(getUpdatedFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	_, err = conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+}
+
+func TestFinancialInstrumentIssuerOrgRelationRemoved(t *testing.T) {
+	defer cleanDB(t)
+
+	_, err := conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+
+	_, err = conceptsDriver.Write(getFinancialInstrumentWithSameIssuer(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrumentWithSameIssuer(), "TestFinancialInstrumentExistingIssuedByRemoved")
 }
 
 func TestWriteService_HandlingConcordance(t *testing.T) {
@@ -799,18 +1124,161 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		returnedError   string
 		updatedConcepts UpdatedConcepts
 	}
-	singleConcordanceNoChangesNoUpdates := testStruct{testName: "singleConcordanceNoChangesNoUpdates", setUpConcept: getSingleConcordance(), testConcept: getSingleConcordance(), uuidsToCheck: []string{basicConceptUUID}, updatedConcepts: UpdatedConcepts{UpdatedIds: emptyList}}
-	dualConcordanceNoChangesNoUpdates := testStruct{testName: "dualConcordanceNoChangesNoUpdates", setUpConcept: getDualConcordance(), testConcept: getDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: emptyList}}
-	singleConcordanceToDualConcordanceUpdatesBoth := testStruct{testName: "singleConcordanceToDualConcordanceUpdatesBoth", setUpConcept: getSingleConcordance(), testConcept: getDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
-	dualConcordanceToSingleConcordanceUpdatesBoth := testStruct{testName: "dualConcordanceToSingleConcordanceUpdatesBoth", setUpConcept: getDualConcordance(), testConcept: getSingleConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
-	errorsOnAddingConcordanceOfCanonicalNode := testStruct{testName: "errorsOnAddingConcordanceOfCanonicalNode", setUpConcept: getDualConcordance(), testConcept: getPrefUUIDAsASource(), returnedError: "Cannot currently process this record as it will break an existing concordance with prefUuid: bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}
-	oldCanonicalRemovedWhenSingleConcordancebecomesSource := testStruct{testName: "oldCanonicalRemovedWhenSingleConcordancebecomesSource", setUpConcept: getSingleConcordance(), testConcept: getPrefUUIDAsASource(), uuidsToCheck: []string{anotherBasicConceptUUID, basicConceptUUID, sourceId_2}, returnedError: "", updatedConcepts: UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, basicConceptUUID, sourceId_2}}}
-	transferSourceFromOtherConcordanceToAnother := testStruct{testName: "transferSourceFromOtherConcordanceToAnother", setUpConcept: getDualConcordance(), testConcept: getTransferSourceConcordance(), uuidsToCheck: []string{anotherBasicConceptUUID, sourceId_1, basicConceptUUID}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{anotherBasicConceptUUID, sourceId_1}}}
-	addThirdSourceToDualConcordanceUpdateAll := testStruct{testName: "addThirdSourceToDualConcordanceUpdateAll", setUpConcept: getDualConcordance(), testConcept: getTriConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1, sourceId_2}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1, sourceId_2}}}
-	triConcordanceToDualConcordanceUpdatesAll := testStruct{testName: "triConcordanceToDualConcordanceUpdatesAll", setUpConcept: getTriConcordance(), testConcept: getDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1, sourceId_2}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1, sourceId_2}}}
-	dataChangesOnCanonicalUpdateBoth := testStruct{testName: "dataChangesOnCanonicalUpdateBoth", setUpConcept: getDualConcordance(), testConcept: getUpdatedDualConcordance(), uuidsToCheck: []string{basicConceptUUID, sourceId_1}, updatedConcepts: UpdatedConcepts{UpdatedIds: []string{basicConceptUUID, sourceId_1}}}
+	singleConcordanceNoChangesNoUpdates := testStruct{
+		testName:     "singleConcordanceNoChangesNoUpdates",
+		setUpConcept: getSingleConcordance(),
+		testConcept:  getSingleConcordance(),
+		uuidsToCheck: []string{
+			basicConceptUUID,
+		},
+		updatedConcepts: UpdatedConcepts{
+			UpdatedIds: emptyList,
+		},
+	}
+	dualConcordanceNoChangesNoUpdates := testStruct{
+		testName:     "dualConcordanceNoChangesNoUpdates",
+		setUpConcept: getDualConcordance(),
+		testConcept:  getDualConcordance(),
+		uuidsToCheck: []string{
+			basicConceptUUID,
+			sourceId_1,
+		},
+		updatedConcepts: UpdatedConcepts{
+			UpdatedIds: emptyList,
+		},
+	}
+	singleConcordanceToDualConcordanceUpdatesBoth := testStruct{
+		testName:     "singleConcordanceToDualConcordanceUpdatesBoth",
+		setUpConcept: getSingleConcordance(),
+		testConcept:  getDualConcordance(),
+		uuidsToCheck: []string{
+			basicConceptUUID,
+			sourceId_1,
+		},
+		updatedConcepts: UpdatedConcepts{
+			UpdatedIds: []string{
+				basicConceptUUID,
+				sourceId_1,
+			},
+		},
+	}
+	dualConcordanceToSingleConcordanceUpdatesBoth := testStruct{
+		testName:     "dualConcordanceToSingleConcordanceUpdatesBoth",
+		setUpConcept: getDualConcordance(),
+		testConcept:  getSingleConcordance(),
+		uuidsToCheck: []string{
+			basicConceptUUID,
+			sourceId_1,
+		},
+		updatedConcepts: UpdatedConcepts{
+			UpdatedIds: []string{
+				basicConceptUUID,
+				sourceId_1,
+			},
+		},
+	}
+	errorsOnAddingConcordanceOfCanonicalNode := testStruct{
+		testName:      "errorsOnAddingConcordanceOfCanonicalNode",
+		setUpConcept:  getDualConcordance(),
+		testConcept:   getPrefUUIDAsASource(),
+		returnedError: "Cannot currently process this record as it will break an existing concordance with prefUuid: bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+	}
+	oldCanonicalRemovedWhenSingleConcordancebecomesSource := testStruct{
+		testName:     "oldCanonicalRemovedWhenSingleConcordancebecomesSource",
+		setUpConcept: getSingleConcordance(),
+		testConcept:  getPrefUUIDAsASource(),
+		uuidsToCheck: []string{
+			anotherBasicConceptUUID,
+			basicConceptUUID,
+			sourceId_2,
+		},
+		returnedError: "",
+		updatedConcepts: UpdatedConcepts{
+			UpdatedIds: []string{
+				anotherBasicConceptUUID,
+				basicConceptUUID,
+				sourceId_2,
+			},
+		},
+	}
+	transferSourceFromOtherConcordanceToAnother := testStruct{
+		testName:     "transferSourceFromOtherConcordanceToAnother",
+		setUpConcept: getDualConcordance(),
+		testConcept:  getTransferSourceConcordance(),
+		uuidsToCheck: []string{
+			anotherBasicConceptUUID,
+			sourceId_1,
+			basicConceptUUID,
+		},
+		updatedConcepts: UpdatedConcepts{
+			UpdatedIds: []string{
+				anotherBasicConceptUUID,
+				sourceId_1,
+			},
+		},
+	}
+	addThirdSourceToDualConcordanceUpdateAll := testStruct{
+		testName:     "addThirdSourceToDualConcordanceUpdateAll",
+		setUpConcept: getDualConcordance(),
+		testConcept:  getTriConcordance(),
+		uuidsToCheck: []string{
+			basicConceptUUID,
+			sourceId_1,
+			sourceId_2,
+		},
+		updatedConcepts: UpdatedConcepts{
+			UpdatedIds: []string{
+				basicConceptUUID,
+				sourceId_1,
+				sourceId_2,
+			},
+		},
+	}
+	triConcordanceToDualConcordanceUpdatesAll := testStruct{
+		testName:     "triConcordanceToDualConcordanceUpdatesAll",
+		setUpConcept: getTriConcordance(),
+		testConcept:  getDualConcordance(),
+		uuidsToCheck: []string{
+			basicConceptUUID,
+			sourceId_1,
+			sourceId_2,
+		},
+		updatedConcepts: UpdatedConcepts{
+			UpdatedIds: []string{
+				basicConceptUUID,
+				sourceId_1,
+				sourceId_2,
+			},
+		},
+	}
+	dataChangesOnCanonicalUpdateBoth := testStruct{
+		testName:     "dataChangesOnCanonicalUpdateBoth",
+		setUpConcept: getDualConcordance(),
+		testConcept:  getUpdatedDualConcordance(),
+		uuidsToCheck: []string{
+			basicConceptUUID,
+			sourceId_1,
+		},
+		updatedConcepts: UpdatedConcepts{
+			UpdatedIds: []string{
+				basicConceptUUID,
+				sourceId_1,
+			},
+		},
+	}
 
-	scenarios := []testStruct{singleConcordanceNoChangesNoUpdates, dualConcordanceNoChangesNoUpdates, singleConcordanceToDualConcordanceUpdatesBoth, dualConcordanceToSingleConcordanceUpdatesBoth, errorsOnAddingConcordanceOfCanonicalNode, transferSourceFromOtherConcordanceToAnother, addThirdSourceToDualConcordanceUpdateAll, triConcordanceToDualConcordanceUpdatesAll, dataChangesOnCanonicalUpdateBoth, oldCanonicalRemovedWhenSingleConcordancebecomesSource}
+	scenarios := []testStruct{
+		singleConcordanceNoChangesNoUpdates,
+		dualConcordanceNoChangesNoUpdates,
+		singleConcordanceToDualConcordanceUpdatesBoth,
+		dualConcordanceToSingleConcordanceUpdatesBoth,
+		errorsOnAddingConcordanceOfCanonicalNode,
+		transferSourceFromOtherConcordanceToAnother,
+		addThirdSourceToDualConcordanceUpdateAll,
+		triConcordanceToDualConcordanceUpdatesAll,
+		dataChangesOnCanonicalUpdateBoth,
+		oldCanonicalRemovedWhenSingleConcordancebecomesSource,
+	}
 
 	for _, scenario := range scenarios {
 		cleanDB(t)
@@ -827,7 +1295,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		assert.Equal(t, scenario.updatedConcepts, updatedConcepts, "Test "+scenario.testName+" failed: Updated uuid list differs from expected")
 
 		for _, id := range scenario.uuidsToCheck {
-			concept, found, err := conceptsDriver.Read(id, tid)
+			conceptIf, found, err := conceptsDriver.Read(id, tid)
+			concept := cleanHash(conceptIf.(AggregatedConcept))
 			if found {
 				assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 				assert.True(t, found, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
@@ -844,7 +1313,6 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 }
 
 func TestMultipleConcordancesAreHandled(t *testing.T) {
-	cleanDB(t)
 	defer cleanDB(t)
 
 	_, err := conceptsDriver.Write(getFullLoneAggregatedConcept(), "test_tid")
@@ -856,7 +1324,8 @@ func TestMultipleConcordancesAreHandled(t *testing.T) {
 	_, err = conceptsDriver.Write(getTransferMultipleSourceConcordance(), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
-	concept, found, err := conceptsDriver.Read(simpleSmartlogicTopicUUID, "test_tid")
+	conceptIf, found, err := conceptsDriver.Read(simpleSmartlogicTopicUUID, "test_tid")
+	concept := cleanHash(conceptIf.(AggregatedConcept))
 	assert.NoError(t, err, "Should be able to read concept with no problems")
 	assert.True(t, found, "Concept should exist")
 	assert.NotNil(t, concept, "Concept should be populated")
@@ -874,8 +1343,18 @@ func TestInvalidTypesThrowError(t *testing.T) {
 		returnedError    error
 	}
 
-	invalidPrefConceptTypeTest := testStruct{testName: "invalidPrefConceptTypeTest", prefUuid: basicConceptUUID, statementToWrite: invalidPrefConceptType, returnedError: nil}
-	invalidSourceConceptTypeTest := testStruct{testName: "invalidSourceConceptTypeTest", prefUuid: anotherBasicConceptUUID, statementToWrite: invalidSourceConceptType, returnedError: nil}
+	invalidPrefConceptTypeTest := testStruct{
+		testName:         "invalidPrefConceptTypeTest",
+		prefUuid:         basicConceptUUID,
+		statementToWrite: invalidPrefConceptType,
+		returnedError:    nil,
+	}
+	invalidSourceConceptTypeTest := testStruct{
+		testName:         "invalidSourceConceptTypeTest",
+		prefUuid:         anotherBasicConceptUUID,
+		statementToWrite: invalidSourceConceptType,
+		returnedError:    nil,
+	}
 
 	scenarios := []testStruct{invalidPrefConceptTypeTest, invalidSourceConceptTypeTest}
 
@@ -899,14 +1378,51 @@ func TestFilteringOfUniqueIds(t *testing.T) {
 		filteredList []string
 	}
 
-	emptyWhenBothListsAreEmpty := testStruct{testName: "emptyWhenBothListsAreEmpty", firstList: []string{}, secondList: []string{}, filteredList: []string{}}
-	emptyWhenListsAreTheIdentical := testStruct{testName: "emptyWhenListsAreTheIdentical", firstList: []string{"1", "2", "3"}, secondList: []string{"1", "2", "3"}, filteredList: []string{}}
-	emptyWhenListsHaveSameIdsInDifferentOrder := testStruct{testName: "emptyWhenListsHaveSameIdsInDifferentOrder", firstList: []string{"1", "2", "3"}, secondList: []string{"2", "3", "1"}, filteredList: []string{}}
-	hasCompleteFirstListWhenSecondListIsEmpty := testStruct{testName: "hasCompleteSecondListWhenFirstListIsEmpty", firstList: []string{"1", "2", "3"}, secondList: []string{}, filteredList: []string{"1", "2", "3"}}
-	properlyFiltersWhen1IdIsUnique := testStruct{testName: "properlyFiltersWhen1IdIsUnique", firstList: []string{"1", "2", "3"}, secondList: []string{"1", "2"}, filteredList: []string{"3"}}
-	properlyFiltersWhen2IdsAreUnique := testStruct{testName: "properlyFiltersWhen2IdsAreUnique", firstList: []string{"1", "2", "3"}, secondList: []string{"2"}, filteredList: []string{"1", "3"}}
+	emptyWhenBothListsAreEmpty := testStruct{
+		testName:     "emptyWhenBothListsAreEmpty",
+		firstList:    []string{},
+		secondList:   []string{},
+		filteredList: []string{},
+	}
+	emptyWhenListsAreTheIdentical := testStruct{
+		testName:     "emptyWhenListsAreTheIdentical",
+		firstList:    []string{"1", "2", "3"},
+		secondList:   []string{"1", "2", "3"},
+		filteredList: []string{},
+	}
+	emptyWhenListsHaveSameIdsInDifferentOrder := testStruct{
+		testName:     "emptyWhenListsHaveSameIdsInDifferentOrder",
+		firstList:    []string{"1", "2", "3"},
+		secondList:   []string{"2", "3", "1"},
+		filteredList: []string{},
+	}
+	hasCompleteFirstListWhenSecondListIsEmpty := testStruct{
+		testName:     "hasCompleteSecondListWhenFirstListIsEmpty",
+		firstList:    []string{"1", "2", "3"},
+		secondList:   []string{},
+		filteredList: []string{"1", "2", "3"},
+	}
+	properlyFiltersWhen1IdIsUnique := testStruct{
+		testName:     "properlyFiltersWhen1IdIsUnique",
+		firstList:    []string{"1", "2", "3"},
+		secondList:   []string{"1", "2"},
+		filteredList: []string{"3"},
+	}
+	properlyFiltersWhen2IdsAreUnique := testStruct{
+		testName:     "properlyFiltersWhen2IdsAreUnique",
+		firstList:    []string{"1", "2", "3"},
+		secondList:   []string{"2"},
+		filteredList: []string{"1", "3"},
+	}
 
-	Scenarios := []testStruct{emptyWhenBothListsAreEmpty, emptyWhenListsAreTheIdentical, emptyWhenListsHaveSameIdsInDifferentOrder, hasCompleteFirstListWhenSecondListIsEmpty, properlyFiltersWhen1IdIsUnique, properlyFiltersWhen2IdsAreUnique}
+	Scenarios := []testStruct{
+		emptyWhenBothListsAreEmpty,
+		emptyWhenListsAreTheIdentical,
+		emptyWhenListsHaveSameIdsInDifferentOrder,
+		hasCompleteFirstListWhenSecondListIsEmpty,
+		properlyFiltersWhen1IdIsUnique,
+		properlyFiltersWhen2IdsAreUnique,
+	}
 
 	for _, scenario := range Scenarios {
 		returnedList := filterIdsThatAreUniqueToFirstList(scenario.firstList, scenario.secondList)
@@ -926,14 +1442,45 @@ func TestTransferConcordance(t *testing.T) {
 		returnedError    error
 	}
 
-	nodeHasNoConconcordance := testStruct{testName: "nodeHasNoConconcordance", updatedSourceIds: []string{"5"}, returnedError: nil}
-	nodeHasExistingConcordanceWhichWouldCauseDataIssues := testStruct{testName: "nodeHasExistingConcordanceWhichNeedsToBeReWritten", updatedSourceIds: []string{"1"}, returnedError: errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: 1")}
-	nodeHasExistingConcordanceWhichNeedsToBeReWritten := testStruct{testName: "nodeHasExistingConcordanceWhichNeedsToBeReWritten", updatedSourceIds: []string{"2"}, returnedError: nil}
-	nodeHasInvalidConcordance := testStruct{testName: "nodeHasInvalidConcordance", updatedSourceIds: []string{"3"}, returnedError: errors.New("This source id: 3 the only concordance to a non-matching node with prefUuid: 4")}
-	nodeIsPrefUuidForExistingConcordance := testStruct{testName: "nodeIsPrefUuidForExistingConcordance", updatedSourceIds: []string{"1"}, returnedError: errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: 1")}
-	nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted := testStruct{testName: "nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted", updatedSourceIds: []string{"6"}, returnResult: true, returnedError: nil}
+	nodeHasNoConconcordance := testStruct{
+		testName:         "nodeHasNoConconcordance",
+		updatedSourceIds: []string{"5"},
+		returnedError:    nil,
+	}
+	nodeHasExistingConcordanceWhichWouldCauseDataIssues := testStruct{
+		testName:         "nodeHasExistingConcordanceWhichNeedsToBeReWritten",
+		updatedSourceIds: []string{"1"},
+		returnedError:    errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: 1"),
+	}
+	nodeHasExistingConcordanceWhichNeedsToBeReWritten := testStruct{
+		testName:         "nodeHasExistingConcordanceWhichNeedsToBeReWritten",
+		updatedSourceIds: []string{"2"},
+		returnedError:    nil,
+	}
+	nodeHasInvalidConcordance := testStruct{
+		testName:         "nodeHasInvalidConcordance",
+		updatedSourceIds: []string{"3"},
+		returnedError:    errors.New("This source id: 3 the only concordance to a non-matching node with prefUuid: 4"),
+	}
+	nodeIsPrefUuidForExistingConcordance := testStruct{
+		testName:         "nodeIsPrefUuidForExistingConcordance",
+		updatedSourceIds: []string{"1"},
+		returnedError:    errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: 1"),
+	}
+	nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted := testStruct{
+		testName:         "nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted",
+		updatedSourceIds: []string{"6"},
+		returnResult:     true,
+		returnedError:    nil}
 
-	scenarios := []testStruct{nodeHasNoConconcordance, nodeHasExistingConcordanceWhichWouldCauseDataIssues, nodeHasExistingConcordanceWhichNeedsToBeReWritten, nodeHasInvalidConcordance, nodeIsPrefUuidForExistingConcordance, nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted}
+	scenarios := []testStruct{
+		nodeHasNoConconcordance,
+		nodeHasExistingConcordanceWhichWouldCauseDataIssues,
+		nodeHasExistingConcordanceWhichNeedsToBeReWritten,
+		nodeHasInvalidConcordance,
+		nodeIsPrefUuidForExistingConcordance,
+		nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted,
+	}
 
 	for _, scenario := range scenarios {
 		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "", "")
@@ -958,23 +1505,109 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 		returnedError string
 	}
 
-	aggregateConceptNoPrefLabel := AggregatedConcept{PrefUUID: basicConceptUUID}
-	aggregateConceptNoType := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label"}
-	aggregateConceptNoSourceReps := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand"}
-	sourceRepNoPrefLabel := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand", SourceRepresentations: []Concept{{UUID: basicConceptUUID}}}
-	sourceRepNoType := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand", SourceRepresentations: []Concept{{UUID: basicConceptUUID, PrefLabel: "The Best Label"}}}
-	sourceRepNoAuthorityValue := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand", SourceRepresentations: []Concept{{UUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand"}}}
-	returnNoError := AggregatedConcept{PrefUUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand", SourceRepresentations: []Concept{{UUID: basicConceptUUID, PrefLabel: "The Best Label", Type: "Brand", AuthorityValue: "123456-UPP"}}}
+	aggregateConceptNoPrefLabel := AggregatedConcept{
+		PrefUUID: basicConceptUUID,
+	}
+	aggregateConceptNoType := AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "The Best Label",
+	}
+	aggregateConceptNoSourceReps := AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "The Best Label",
+		Type:      "Brand",
+	}
+	sourceRepNoPrefLabel := AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "The Best Label",
+		Type:      "Brand",
+		SourceRepresentations: []Concept{
+			{
+				UUID: basicConceptUUID,
+			},
+		},
+	}
+	sourceRepNoType := AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "The Best Label",
+		Type:      "Brand",
+		SourceRepresentations: []Concept{
+			{
+				UUID:      basicConceptUUID,
+				PrefLabel: "The Best Label",
+			},
+		},
+	}
+	sourceRepNoAuthorityValue := AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "The Best Label",
+		Type:      "Brand",
+		SourceRepresentations: []Concept{
+			{
+				UUID:      basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+			},
+		},
+	}
+	returnNoError := AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "The Best Label",
+		Type:      "Brand",
+		SourceRepresentations: []Concept{
+			{
+				UUID:           basicConceptUUID,
+				PrefLabel:      "The Best Label",
+				Type:           "Brand",
+				AuthorityValue: "123456-UPP",
+			},
+		},
+	}
+	testAggregateConceptNoPrefLabel := testStruct{
+		testName:      "testAggregateConceptNoPrefLabel",
+		aggConcept:    aggregateConceptNoPrefLabel,
+		returnedError: "Invalid request, no prefLabel has been supplied",
+	}
+	testAggregateConceptNoType := testStruct{
+		testName:      "testAggregateConceptNoType",
+		aggConcept:    aggregateConceptNoType,
+		returnedError: "Invalid request, no type has been supplied",
+	}
+	testAggregateConceptNoSourceReps := testStruct{
+		testName:      "testAggregateConceptNoSourceReps",
+		aggConcept:    aggregateConceptNoSourceReps,
+		returnedError: "Invalid request, no sourceRepresentation has been supplied",
+	}
+	testSourceRepNoPrefLabel := testStruct{
+		testName:      "testSourceRepNoPrefLabel",
+		aggConcept:    sourceRepNoPrefLabel,
+		returnedError: "Invalid request, no sourceRepresentation.prefLabel has been supplied",
+	}
+	testSourceRepNoType := testStruct{
+		testName:      "testSourceRepNoType",
+		aggConcept:    sourceRepNoType,
+		returnedError: "Invalid request, no sourceRepresentation.type has been supplied",
+	}
+	testSourceRepNoAuthorityValue := testStruct{
+		testName:      "testSourceRepNoAuthorityValue",
+		aggConcept:    sourceRepNoAuthorityValue,
+		returnedError: "Invalid request, no sourceRepresentation.authorityValue has been supplied",
+	}
+	returnNoErrorTest := testStruct{
+		testName:      "returnNoErrorTest",
+		aggConcept:    returnNoError,
+		returnedError: "",
+	}
 
-	testAggregateConceptNoPrefLabel := testStruct{testName: "testAggregateConceptNoPrefLabel", aggConcept: aggregateConceptNoPrefLabel, returnedError: "Invalid request, no prefLabel has been supplied"}
-	testAggregateConceptNoType := testStruct{testName: "testAggregateConceptNoType", aggConcept: aggregateConceptNoType, returnedError: "Invalid request, no type has been supplied"}
-	testAggregateConceptNoSourceReps := testStruct{testName: "testAggregateConceptNoSourceReps", aggConcept: aggregateConceptNoSourceReps, returnedError: "Invalid request, no sourceRepresentation has been supplied"}
-	testSourceRepNoPrefLabel := testStruct{testName: "testSourceRepNoPrefLabel", aggConcept: sourceRepNoPrefLabel, returnedError: "Invalid request, no sourceRepresentation.prefLabel has been supplied"}
-	testSourceRepNoType := testStruct{testName: "testSourceRepNoType", aggConcept: sourceRepNoType, returnedError: "Invalid request, no sourceRepresentation.type has been supplied"}
-	testSourceRepNoAuthorityValue := testStruct{testName: "testSourceRepNoAuthorityValue", aggConcept: sourceRepNoAuthorityValue, returnedError: "Invalid request, no sourceRepresentation.authorityValue has been supplied"}
-	returnNoErrorTest := testStruct{testName: "returnNoErrorTest", aggConcept: returnNoError, returnedError: ""}
-
-	scenarios := []testStruct{testAggregateConceptNoPrefLabel, testAggregateConceptNoType, testAggregateConceptNoSourceReps, testSourceRepNoPrefLabel, testSourceRepNoType, testSourceRepNoAuthorityValue, returnNoErrorTest}
+	scenarios := []testStruct{
+		testAggregateConceptNoPrefLabel,
+		testAggregateConceptNoType,
+		testAggregateConceptNoSourceReps,
+		testSourceRepNoPrefLabel,
+		testSourceRepNoType,
+		testSourceRepNoAuthorityValue,
+		returnNoErrorTest,
+	}
 
 	for _, scenario := range scenarios {
 		err := validateObject(scenario.aggConcept, "transaction_id")
@@ -986,109 +1619,16 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	}
 }
 
-func readConceptAndCompare(t *testing.T, expected AggregatedConcept, testName string) {
-	actual, found, err := conceptsDriver.Read(expected.PrefUUID, "")
-	actualConcept := actual.(AggregatedConcept)
-	sort.Slice(expected.SourceRepresentations, func(i, j int) bool {
-		return expected.SourceRepresentations[i].UUID < expected.SourceRepresentations[j].UUID
-	})
+func readConceptAndCompare(t *testing.T, actual AggregatedConcept, testName string) {
+	expectedIf, found, err := conceptsDriver.Read(actual.PrefUUID, "")
+	expected := expectedIf.(AggregatedConcept)
 
-	sort.Slice(actualConcept.SourceRepresentations, func(i, j int) bool {
-		return actualConcept.SourceRepresentations[i].UUID < actualConcept.SourceRepresentations[j].UUID
-	})
-	if expected.MembershipRoles != nil || len(expected.MembershipRoles) > 0 {
-		sort.Slice(expected.MembershipRoles, func(i, j int) bool {
-			return expected.MembershipRoles[i] < expected.MembershipRoles[j]
-		})
-	}
-	if actualConcept.MembershipRoles != nil || len(actualConcept.MembershipRoles) > 0 {
-		sort.Slice(actualConcept.MembershipRoles, func(i, j int) bool {
-			return actualConcept.MembershipRoles[i] < actualConcept.MembershipRoles[j]
-		})
-	}
+	expected = cleanHash(cleanConcept(expected))
+	actual = cleanHash(cleanConcept(actual))
 
+	assert.Equal(t, expected, actual)
 	assert.NoError(t, err, "Unexpected Error occurred")
 	assert.True(t, found, "Concept has not been found")
-
-	assert.Equal(t, expected.PrefLabel, actualConcept.PrefLabel, "Actual aggregated concept pref label differs from expected")
-	assert.Equal(t, expected.Type, actualConcept.Type, "Actual aggregated  concept type differs from expected")
-	assert.Equal(t, expected.PrefUUID, actualConcept.PrefUUID, "Actual aggregated  concept uuid differs from expected")
-	assert.Equal(t, expected.DescriptionXML, actualConcept.DescriptionXML, "Actual aggregated concept descriptionXML differs from expected")
-	assert.Equal(t, expected.ImageURL, actualConcept.ImageURL, "Actual aggregated image url differs from expected")
-	assert.Equal(t, expected.Strapline, actualConcept.Strapline, "Actual aggregated strapline differs from expected")
-	assert.Equal(t, expected.EmailAddress, actualConcept.EmailAddress, "Actual email address differs from expected")
-	assert.Equal(t, expected.FacebookPage, actualConcept.FacebookPage, "Actual Facebook page differs from expected")
-	assert.Equal(t, expected.TwitterHandle, actualConcept.TwitterHandle, "Actual Twitter handle differs from expected")
-	assert.Equal(t, expected.ScopeNote, actualConcept.ScopeNote, "Actual scope note differs from expected")
-	assert.Equal(t, expected.ShortLabel, actualConcept.ShortLabel, "Actual short label differs from expected")
-	assert.Equal(t, expected.OrganisationUUID, actualConcept.OrganisationUUID, "Actual organisation uuid for membership differs from expected")
-	assert.Equal(t, expected.PersonUUID, actualConcept.PersonUUID, "Actual person uuid for membership  differs from expected")
-	assert.Equal(t, expected.OrganisationUUID, actualConcept.OrganisationUUID, "Actual organisation uuid for membership differs from expectedConceptId: %s", expected.OrganisationUUID)
-	assert.Equal(t, expected.ShortLabel, actualConcept.ShortLabel, "Actual person uuid for membership  differs from expected: PersonUUID: %s", expected.PersonUUID)
-	assert.Equal(t, expected.MembershipRoles, actualConcept.MembershipRoles, "Actual MembershipRoles differs from expected: MembershipRoles: %s", actualConcept.MembershipRoles)
-
-	if len(expected.SourceRepresentations) > 0 && len(actualConcept.SourceRepresentations) > 0 {
-		var concepts []Concept
-		for i, concept := range actualConcept.SourceRepresentations {
-			assert.NotEqual(t, 0, concept.LastModifiedEpoch, "Actual concept lastModifiedEpoch differs from expected")
-
-			// Remove the last modified date time now that we have checked it so we can compare the rest of the model
-			concept.LastModifiedEpoch = 0
-			concepts = append(concepts, concept)
-
-			sort.Slice(concept.ParentUUIDs, func(i, j int) bool {
-				return concept.ParentUUIDs[i] < concept.ParentUUIDs[j]
-			})
-
-			if expected.SourceRepresentations[i].ParentUUIDs != nil || len(expected.SourceRepresentations[i].ParentUUIDs) > 0 {
-				sort.Slice(expected.SourceRepresentations[i].ParentUUIDs, func(i, j int) bool {
-					return expected.SourceRepresentations[i].ParentUUIDs[i] < expected.SourceRepresentations[i].ParentUUIDs[j]
-				})
-			}
-
-			sort.Slice(concept.RelatedUUIDs, func(i, j int) bool {
-				return concept.RelatedUUIDs[i] < concept.RelatedUUIDs[j]
-			})
-
-			if expected.SourceRepresentations[i].RelatedUUIDs != nil || len(expected.SourceRepresentations[i].RelatedUUIDs) > 0 {
-				sort.Slice(expected.SourceRepresentations[i].RelatedUUIDs, func(i, j int) bool {
-					return expected.SourceRepresentations[i].RelatedUUIDs[i] < expected.SourceRepresentations[i].RelatedUUIDs[j]
-				})
-			}
-
-			if expected.SourceRepresentations[i].MembershipRoles != nil || len(expected.SourceRepresentations[i].MembershipRoles) > 0 {
-				sort.Slice(expected.SourceRepresentations[i].MembershipRoles, func(i, j int) bool {
-					return expected.SourceRepresentations[i].MembershipRoles[i] < expected.SourceRepresentations[i].MembershipRoles[j]
-				})
-			}
-			if actualConcept.SourceRepresentations[i].MembershipRoles != nil || len(actualConcept.SourceRepresentations[i].MembershipRoles) > 0 {
-				sort.Slice(actualConcept.SourceRepresentations[i].MembershipRoles, func(i, j int) bool {
-					return actualConcept.SourceRepresentations[i].MembershipRoles[i] < actualConcept.SourceRepresentations[i].MembershipRoles[j]
-				})
-			}
-			assert.Equal(t, expected.SourceRepresentations[i].RelatedUUIDs, concept.RelatedUUIDs, fmt.Sprintf("Actual concept related uuids differs from expected: ConceptId: %s", concept.UUID))
-			assert.Equal(t, expected.SourceRepresentations[i].PrefLabel, concept.PrefLabel, fmt.Sprintf("Actual concept pref label differs from expected: ConceptId: %s", concept.UUID))
-			assert.Equal(t, expected.SourceRepresentations[i].Type, concept.Type, fmt.Sprintf("Actual concept type differs from expected: ConceptId: %s", concept.UUID))
-			assert.Equal(t, expected.SourceRepresentations[i].UUID, concept.UUID, fmt.Sprintf("Actual concept uuid differs from expected: ConceptId: %s", concept.UUID))
-			assert.Equal(t, expected.SourceRepresentations[i].DescriptionXML, concept.DescriptionXML, fmt.Sprintf("Actual concept descriptionXML differs from expected: ConceptId: %s", concept.UUID))
-			assert.Equal(t, expected.SourceRepresentations[i].ImageURL, concept.ImageURL, fmt.Sprintf("Actual concept image url differs from expected: ConceptId: %s", concept.UUID))
-			assert.Equal(t, expected.SourceRepresentations[i].Strapline, concept.Strapline, fmt.Sprintf("Actual concept strapline differs from expected: ConceptId: %s", concept.UUID))
-			assert.True(t, reflect.DeepEqual(expected.SourceRepresentations[i], concept), fmt.Sprintf("Actual concept differs from expected: ConceptId: %s", concept.UUID))
-			assert.Equal(t, expected.SourceRepresentations[i].ParentUUIDs, concept.ParentUUIDs, fmt.Sprintf("Actual concept parent uuids differs from expected: ConceptId: %s", concept.UUID))
-			assert.Equal(t, expected.SourceRepresentations[i].EmailAddress, concept.EmailAddress, fmt.Sprintf("Actual email address differs from expected: ConceptId: %s", concept.EmailAddress))
-			assert.Equal(t, expected.SourceRepresentations[i].FacebookPage, concept.FacebookPage, fmt.Sprintf("Actual Facebook page differs from expected: ConceptId: %s", concept.FacebookPage))
-			assert.Equal(t, expected.SourceRepresentations[i].TwitterHandle, concept.TwitterHandle, fmt.Sprintf("Actual Twitter handle differs from expected: ConceptId: %s", concept.TwitterHandle))
-			assert.Equal(t, expected.SourceRepresentations[i].ScopeNote, concept.ScopeNote, fmt.Sprintf("Actual scope note differs from expected: ConceptId: %s", concept.ScopeNote))
-			assert.Equal(t, expected.SourceRepresentations[i].ShortLabel, concept.ShortLabel, fmt.Sprintf("Actual short label differs from expected: ConceptId: %s", concept.ShortLabel))
-			assert.Equal(t, expected.SourceRepresentations[i].OrganisationUUID, concept.OrganisationUUID, "Actual organisation uuid for membership differs from expected OganisationUUID: %s", concept.OrganisationUUID)
-			assert.Equal(t, expected.SourceRepresentations[i].PersonUUID, concept.PersonUUID, "Actual person uuid for membership  differs from expected: PersonUUID: %s", concept.PersonUUID)
-			assert.Equal(t, expected.SourceRepresentations[i].MembershipRoles, concept.MembershipRoles, "Actual MembershipRoles differs from expected: MembershipRoles: %s", concept.MembershipRoles)
-		}
-		actualConcept.SourceRepresentations = concepts
-	}
-	//Have to set expected hash here otherwise deep equal will always fail
-	expected.AggregatedHash = actualConcept.AggregatedHash
-	assert.True(t, reflect.DeepEqual(expected, actualConcept), "Actual aggregated concept differs from expected: Expected: %v, Actual: %v", expected, actualConcept)
 }
 
 func neoUrl() string {
@@ -1110,9 +1650,75 @@ func getConceptService(t *testing.T) ConceptService {
 }
 
 func cleanDB(t *testing.T) {
-	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID, simpleSmartlogicTopicUUID)
-	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID, simpleSmartlogicTopicUUID)
-	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID, simpleSmartlogicTopicUUID)
+	cleanSourceNodes(t,
+		parentUuid,
+		anotherBasicConceptUUID,
+		basicConceptUUID,
+		sourceId_1,
+		sourceId_2,
+		sourceId_3,
+		unknownThingUUID,
+		yetAnotherBasicConceptUUID,
+		membershipRole.RoleUUID,
+		personUUID,
+		organisationUUID,
+		membershipUUID,
+		anotherMembershipRole.RoleUUID,
+		anotherOrganisationUUID,
+		anotherPersonUUID,
+		simpleSmartlogicTopicUUID,
+		boardRoleUUID,
+		financialInstrumentSameIssuerUUID,
+		financialInstrumentUUID,
+		financialOrgUUID,
+		anotherFinancialOrgUUID,
+	)
+	deleteSourceNodes(t,
+		parentUuid,
+		anotherBasicConceptUUID,
+		basicConceptUUID,
+		sourceId_1,
+		sourceId_2,
+		sourceId_3,
+		unknownThingUUID,
+		yetAnotherBasicConceptUUID,
+		membershipRole.RoleUUID,
+		personUUID,
+		organisationUUID,
+		membershipUUID,
+		anotherMembershipRole.RoleUUID,
+		anotherOrganisationUUID,
+		anotherPersonUUID,
+		simpleSmartlogicTopicUUID,
+		boardRoleUUID,
+		financialInstrumentSameIssuerUUID,
+		financialInstrumentUUID,
+		financialOrgUUID,
+		anotherFinancialOrgUUID,
+	)
+	deleteConcordedNodes(t,
+		parentUuid,
+		basicConceptUUID,
+		anotherBasicConceptUUID,
+		sourceId_1,
+		sourceId_2,
+		sourceId_3,
+		unknownThingUUID,
+		yetAnotherBasicConceptUUID,
+		membershipRole.RoleUUID,
+		personUUID,
+		organisationUUID,
+		membershipUUID,
+		anotherMembershipRole.RoleUUID,
+		anotherOrganisationUUID,
+		anotherPersonUUID,
+		simpleSmartlogicTopicUUID,
+		boardRoleUUID,
+		financialInstrumentSameIssuerUUID,
+		financialInstrumentUUID,
+		financialOrgUUID,
+		anotherFinancialOrgUUID,
+	)
 }
 
 func deleteSourceNodes(t *testing.T, uuids ...string) {

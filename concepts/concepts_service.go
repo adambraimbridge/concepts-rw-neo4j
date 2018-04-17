@@ -10,8 +10,13 @@ import (
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/bradfitz/slice"
 	"github.com/jmcvetta/neoism"
 	"github.com/mitchellh/hashstructure"
+)
+
+const (
+	iso8601DateOnly = "2006-01-02"
 )
 
 //Service - CypherDriver - CypherDriver
@@ -64,51 +69,63 @@ func (s *ConceptService) Initialise() error {
 }
 
 type neoAggregatedConcept struct {
-	PrefUUID              string       `json:"prefUUID,omitempty"`
-	PrefLabel             string       `json:"prefLabel"`
-	Types                 []string     `json:"types"`
-	Aliases               []string     `json:"aliases,omitempty"`
-	Strapline             string       `json:"strapline,omitempty"`
-	DescriptionXML        string       `json:"descriptionXML,omitempty"`
-	ImageURL              string       `json:"imageUrl,omitempty"`
-	SourceRepresentations []neoConcept `json:"sourceRepresentations"`
-	Authority             string       `json:"authority,omitempty"`
-	AuthorityValue        string       `json:"authorityValue,omitempty"`
-	LastModifiedEpoch     int          `json:"lastModifiedEpoch,omitempty"`
-	EmailAddress          string       `json:"emailAddress,omitempty"`
-	FacebookPage          string       `json:"facebookPage,omitempty"`
-	TwitterHandle         string       `json:"twitterHandle,omitempty"`
-	ScopeNote             string       `json:"scopeNote,omitempty"`
-	ShortLabel            string       `json:"shortLabel,omitempty"`
-	OrganisationUUID      string       `json:"organisationUUID,omitempty"`
-	PersonUUID            string       `json:"personUUID,omitempty"`
-	MembershipRoles       []string     `json:"membershipRoles,omitempty"`
-	AggregateHash         string       `json:"aggregateHash,omitempty"`
+	AggregateHash         string           `json:"aggregateHash,omitempty"`
+	Aliases               []string         `json:"aliases,omitempty"`
+	Authority             string           `json:"authority,omitempty"`
+	AuthorityValue        string           `json:"authorityValue,omitempty"`
+	DescriptionXML        string           `json:"descriptionXML,omitempty"`
+	EmailAddress          string           `json:"emailAddress,omitempty"`
+	FacebookPage          string           `json:"facebookPage,omitempty"`
+	FigiCode              string           `json:"figiCode,omitempty"`
+	ImageURL              string           `json:"imageUrl,omitempty"`
+	InceptionDate         string           `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch    int64            `json:"inceptionDateEpoch,omitempty"`
+	IssuedBy              string           `json:"issuedBy,omitempty"`
+	LastModifiedEpoch     int              `json:"lastModifiedEpoch,omitempty"`
+	MembershipRoles       []MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID      string           `json:"organisationUUID,omitempty"`
+	PersonUUID            string           `json:"personUUID,omitempty"`
+	PrefLabel             string           `json:"prefLabel"`
+	PrefUUID              string           `json:"prefUUID,omitempty"`
+	ScopeNote             string           `json:"scopeNote,omitempty"`
+	ShortLabel            string           `json:"shortLabel,omitempty"`
+	SourceRepresentations []neoConcept     `json:"sourceRepresentations"`
+	Strapline             string           `json:"strapline,omitempty"`
+	TerminationDate       string           `json:"terminationDate,omitempty"`
+	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
+	TwitterHandle         string           `json:"twitterHandle,omitempty"`
+	Types                 []string         `json:"types"`
 }
 
 type neoConcept struct {
-	UUID              string   `json:"uuid,omitempty"`
-	PrefUUID          string   `json:"prefUUID,omitempty"`
-	Types             []string `json:"types,omitempty"`
-	PrefLabel         string   `json:"prefLabel,omitempty"`
-	Authority         string   `json:"authority,omitempty"`
-	AuthorityValue    string   `json:"authorityValue,omitempty"`
-	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`
-	Aliases           []string `json:"aliases,omitempty"`
-	ParentUUIDs       []string `json:"parentUUIDs,omitempty"`
-	Strapline         string   `json:"strapline,omitempty"`
-	ImageURL          string   `json:"imageUrl,omitempty"`
-	DescriptionXML    string   `json:"descriptionXML,omitempty"`
-	EmailAddress      string   `json:"emailAddress,omitempty"`
-	FacebookPage      string   `json:"facebookPage,omitempty"`
-	TwitterHandle     string   `json:"twitterHandle,omitempty"`
-	ScopeNote         string   `json:"scopeNote,omitempty"`
-	ShortLabel        string   `json:"shortLabel,omitempty"`
-	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
-	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
-	OrganisationUUID  string   `json:"organisationUUID,omitempty"`
-	PersonUUID        string   `json:"personUUID,omitempty"`
-	MembershipRoles   []string `json:"membershipRoles,omitempty"`
+	Aliases              []string         `json:"aliases,omitempty"`
+	Authority            string           `json:"authority,omitempty"`
+	AuthorityValue       string           `json:"authorityValue,omitempty"`
+	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
+	DescriptionXML       string           `json:"descriptionXML,omitempty"`
+	EmailAddress         string           `json:"emailAddress,omitempty"`
+	FacebookPage         string           `json:"facebookPage,omitempty"`
+	FigiCode             string           `json:"figiCode,omitempty"`
+	ImageURL             string           `json:"imageUrl,omitempty"`
+	InceptionDate        string           `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
+	IssuedBy             string           `json:"issuedBy,omitempty"`
+	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
+	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
+	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
+	PersonUUID           string           `json:"personUUID,omitempty"`
+	PrefLabel            string           `json:"prefLabel,omitempty"`
+	PrefUUID             string           `json:"prefUUID,omitempty"`
+	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
+	ScopeNote            string           `json:"scopeNote,omitempty"`
+	ShortLabel           string           `json:"shortLabel,omitempty"`
+	Strapline            string           `json:"strapline,omitempty"`
+	TerminationDate      string           `json:"terminationDate,omitempty"`
+	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
+	TwitterHandle        string           `json:"twitterHandle,omitempty"`
+	Types                []string         `json:"types,omitempty"`
+	UUID                 string           `json:"uuid,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -123,29 +140,103 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 
 	query := &neoism.CypherQuery{
 		Statement: `
-				MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(node:Thing)
-				OPTIONAL MATCH (node)-[:HAS_ORGANISATION]->(org:Thing)
-				WITH canonical, node, org.uuid as organisationUUID
-				OPTIONAL MATCH (node)-[:HAS_MEMBER]->(person:Thing)
-				WITH canonical, node, organisationUUID, person.uuid as personUUID
-				OPTIONAL MATCH (node)-[:IS_RELATED_TO]->(related:Thing)
-				WITH canonical, node, collect(related.uuid) as relUUIDS, organisationUUID, personUUID
-				OPTIONAL MATCH (node)-[:HAS_BROADER]->(broader:Thing)
-				WITH canonical, node, relUUIDS, organisationUUID, personUUID, collect(broader.uuid) as broaderUUIDs
-				OPTIONAL MATCH (node)-[:HAS_ROLE]->(role:Thing)
-				WITH canonical, node, relUUIDS, organisationUUID, personUUID, broaderUUIDs, collect(role.uuid) as membershipRoles
-				OPTIONAL MATCH (node)-[:HAS_PARENT]->(parent:Thing)
-				WITH canonical.prefUUID as prefUUID, canonical.prefLabel as prefLabel, labels(canonical) as types, canonical.aliases as aliases,
-				canonical.descriptionXML as descriptionXML, canonical.strapline as strapline, canonical.imageUrl as imageUrl,
-				canonical.emailAddress as emailAddress, canonical.facebookPage as facebookPage, canonical.twitterHandle as twitterHandle,
-				canonical.scopeNote as scopeNote, canonical.shortLabel as shortLabel, canonical.aggregateHash as aggregateHash, organisationUUID, personUUID, membershipRoles,
-				{uuid:node.uuid, prefLabel:node.prefLabel, authority:node.authority, authorityValue: node.authorityValue,
-				types: labels(node), lastModifiedEpoch: node.lastModifiedEpoch, emailAddress: node.emailAddress,
-				facebookPage: node.facebookPage,twitterHandle: node.twitterHandle, scopeNote: node.scopeNote, shortLabel: node.shortLabel,
-				aliases: node.aliases,descriptionXML: node.descriptionXML, imageUrl: node.imageUrl, strapline: node.strapline, parentUUIDs:collect(parent.uuid),
-				relatedUUIDs:relUUIDS, broaderUUIDs:broaderUUIDs, organisationUUID: organisationUUID, personUUID: personUUID, membershipRoles: membershipRoles} as sources
-				RETURN prefUUID, prefLabel, types, aliases, descriptionXML, strapline, imageUrl, emailAddress,
-				facebookPage, twitterHandle, scopeNote, shortLabel, organisationUUID, personUUID, membershipRoles, aggregateHash, collect(sources) as sourceRepresentations `,
+			MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+			OPTIONAL MATCH (source)-[:HAS_BROADER]->(broader:Thing)
+			OPTIONAL MATCH (source)-[:HAS_MEMBER]->(person:Thing)
+			OPTIONAL MATCH (source)-[:HAS_ORGANISATION]->(org:Thing)
+			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
+			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
+			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
+			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
+			WITH
+				broader,
+				canonical,
+				issuer,
+				org,
+				parent,
+				person,
+				related,
+				role,
+				roleRel,
+				source
+				ORDER BY
+					source.uuid,
+					role.uuid
+			WITH
+				broader,
+				canonical,
+				issuer,
+				org,
+				parent,
+				person,
+				related,
+				{
+					aliases: source.aliases,
+					authority: source.authority,
+					authorityValue: source.authorityValue,
+					broaderUUIDs: collect(broader.uuid),
+					descriptionXML: source.descriptionXML,
+					emailAddress: source.emailAddress,
+					facebookPage: source.facebookPage,
+					figiCode: source.figiCode,
+					imageUrl: source.imageUrl,
+					inceptionDate: source.inceptionDate,
+					inceptionDateEpoch: source.inceptionDateEpoch,
+					issuedBy: issuer.uuid,
+					lastModifiedEpoch: source.lastModifiedEpoch,
+					membershipRoles: collect({
+						membershipRoleUUID: role.uuid,
+						inceptionDate: roleRel.inceptionDate,
+						terminationDate: roleRel.terminationDate,
+						inceptionDateEpoch: roleRel.inceptionDateEpoch,
+						terminationDateEpoch: roleRel.terminationDateEpoch
+					}),
+					organisationUUID: org.uuid,
+					parentUUIDs: collect(parent.uuid),
+					personUUID: person.uuid,
+					prefLabel: source.prefLabel,
+					relatedUUIDs: collect(related.uuid),
+					scopeNote: source.scopeNote,
+					shortLabel: source.shortLabel,
+					strapline: source.strapline,
+					terminationDate: source.terminationDate,
+					terminationDateEpoch: source.terminationDateEpoch,
+					twitterHandle: source.twitterHandle,
+					types: labels(source),
+					uuid: source.uuid
+				} as sources,
+				collect({
+					inceptionDate: roleRel.inceptionDate,
+					inceptionDateEpoch: roleRel.inceptionDateEpoch,
+					membershipRoleUUID: role.uuid,
+					terminationDate: roleRel.terminationDate,
+					terminationDateEpoch: roleRel.terminationDateEpoch
+				}) as membershipRoles
+			RETURN
+				canonical.aggregateHash as aggregateHash,
+				canonical.aliases as aliases,
+				canonical.descriptionXML as descriptionXML,
+				canonical.emailAddress as emailAddress,
+				canonical.facebookPage as facebookPage,
+				canonical.figiCode as figiCode,
+				canonical.imageUrl as imageUrl,
+				canonical.inceptionDate as inceptionDate,
+				canonical.inceptionDateEpoch as inceptionDateEpoch,
+				canonical.prefLabel as prefLabel,
+				canonical.prefUUID as prefUUID,
+				canonical.scopeNote as scopeNote,
+				canonical.shortLabel as shortLabel,
+				canonical.strapline as strapline,
+				canonical.terminationDate as terminationDate,
+				canonical.terminationDateEpoch as terminationDateEpoch,
+				canonical.twitterHandle as twitterHandle,
+				collect(sources) as sourceRepresentations,
+				issuer.uuid as issuedBy,
+				labels(canonical) as types,
+				membershipRoles,
+				org.uuid as organisationUUID,
+				person.uuid as personUUID
+			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -168,126 +259,70 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		return AggregatedConcept{}, false, err
 	}
 
-	var sourceConcepts []Concept
 	aggregatedConcept := AggregatedConcept{
-		PrefUUID:         results[0].PrefUUID,
-		PrefLabel:        results[0].PrefLabel,
-		Type:             typeName,
-		ImageURL:         results[0].ImageURL,
-		DescriptionXML:   results[0].DescriptionXML,
-		Strapline:        results[0].Strapline,
+		AggregatedHash:   results[0].AggregateHash,
 		Aliases:          results[0].Aliases,
+		DescriptionXML:   results[0].DescriptionXML,
 		EmailAddress:     results[0].EmailAddress,
 		FacebookPage:     results[0].FacebookPage,
-		TwitterHandle:    results[0].TwitterHandle,
+		FigiCode:         results[0].FigiCode,
+		ImageURL:         results[0].ImageURL,
+		InceptionDate:    results[0].InceptionDate,
+		IssuedBy:         results[0].IssuedBy,
+		MembershipRoles:  cleanMembershipRoles(results[0].MembershipRoles),
+		OrganisationUUID: results[0].OrganisationUUID,
+		PersonUUID:       results[0].PersonUUID,
+		PrefLabel:        results[0].PrefLabel,
+		PrefUUID:         results[0].PrefUUID,
 		ScopeNote:        results[0].ScopeNote,
 		ShortLabel:       results[0].ShortLabel,
-		PersonUUID:       results[0].PersonUUID,
-		OrganisationUUID: results[0].OrganisationUUID,
-		AggregatedHash:   results[0].AggregateHash,
+		Strapline:        results[0].Strapline,
+		TerminationDate:  results[0].TerminationDate,
+		TwitterHandle:    results[0].TwitterHandle,
+		Type:             typeName,
 	}
 
-	if len(results[0].MembershipRoles) > 0 {
-		var uuids = []string{}
-		//TODO do this differently but I get a "" back from the cypher!
-		for _, uuid := range results[0].MembershipRoles {
-			if uuid != "" {
-				uuids = append(uuids, uuid)
-			}
-		}
-		if len(uuids) > 0 {
-			aggregatedConcept.MembershipRoles = uuids
-		}
-	}
-
+	sourceConcepts := []Concept{}
 	for _, srcConcept := range results[0].SourceRepresentations {
-		var concept Concept
 		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
 		if err != nil {
 			logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Returned source concept had no recognized type")
 			return AggregatedConcept{}, false, err
 		}
-		if len(srcConcept.Aliases) > 0 {
-			concept.Aliases = srcConcept.Aliases
+
+		concept := Concept{
+			Aliases:           filterSlice(srcConcept.Aliases),
+			Authority:         srcConcept.Authority,
+			AuthorityValue:    srcConcept.AuthorityValue,
+			BroaderUUIDs:      filterSlice(srcConcept.BroaderUUIDs),
+			DescriptionXML:    srcConcept.DescriptionXML,
+			EmailAddress:      srcConcept.EmailAddress,
+			FacebookPage:      srcConcept.FacebookPage,
+			FigiCode:          srcConcept.FigiCode,
+			ImageURL:          srcConcept.ImageURL,
+			InceptionDate:     srcConcept.InceptionDate,
+			IssuedBy:          srcConcept.IssuedBy,
+			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
+			MembershipRoles:   cleanMembershipRoles(srcConcept.MembershipRoles),
+			OrganisationUUID:  srcConcept.OrganisationUUID,
+			ParentUUIDs:       filterSlice(srcConcept.ParentUUIDs),
+			PersonUUID:        srcConcept.PersonUUID,
+			PrefLabel:         srcConcept.PrefLabel,
+			RelatedUUIDs:      filterSlice(srcConcept.RelatedUUIDs),
+			ScopeNote:         srcConcept.ScopeNote,
+			ShortLabel:        srcConcept.ShortLabel,
+			Strapline:         srcConcept.Strapline,
+			TerminationDate:   srcConcept.TerminationDate,
+			TwitterHandle:     srcConcept.TwitterHandle,
+			Type:              conceptType,
+			UUID:              srcConcept.UUID,
 		}
-
-		uuids := []string{}
-
-		if len(srcConcept.ParentUUIDs) > 0 {
-			//TODO do this differently but I get a "" back from the cypher!
-			for _, uuid := range srcConcept.ParentUUIDs {
-				if uuid != "" {
-					uuids = append(uuids, uuid)
-				}
-			}
-			if len(uuids) > 0 {
-				concept.ParentUUIDs = uuids
-			}
-		}
-
-		if len(srcConcept.RelatedUUIDs) > 0 {
-			uuids = []string{}
-			//TODO do this differently but I get a "" back from the cypher!
-			for _, uuid := range srcConcept.RelatedUUIDs {
-				if uuid != "" {
-					uuids = append(uuids, uuid)
-				}
-			}
-			if len(uuids) > 0 {
-				concept.RelatedUUIDs = uuids
-			}
-		}
-
-		if len(srcConcept.BroaderUUIDs) > 0 {
-			uuids = []string{}
-			//TODO do this differently but I get a "" back from the cypher!
-			for _, uuid := range srcConcept.BroaderUUIDs {
-				if uuid != "" {
-					uuids = append(uuids, uuid)
-				}
-			}
-			if len(uuids) > 0 {
-				concept.BroaderUUIDs = uuids
-			}
-		}
-
-		if len(srcConcept.MembershipRoles) > 0 {
-			uuids = []string{}
-			//TODO do this differently but I get a "" back from the cypher!
-			for _, uuid := range srcConcept.MembershipRoles {
-				if uuid != "" {
-					uuids = append(uuids, uuid)
-				}
-			}
-			if len(uuids) > 0 {
-				concept.MembershipRoles = uuids
-			}
-		}
-
-		concept.UUID = srcConcept.UUID
-		concept.PrefLabel = srcConcept.PrefLabel
-		concept.Authority = srcConcept.Authority
-		concept.AuthorityValue = srcConcept.AuthorityValue
-		concept.Type = conceptType
-		concept.LastModifiedEpoch = srcConcept.LastModifiedEpoch
-		concept.ImageURL = srcConcept.ImageURL
-		concept.Strapline = srcConcept.Strapline
-		concept.DescriptionXML = srcConcept.DescriptionXML
-		concept.FacebookPage = srcConcept.FacebookPage
-		concept.EmailAddress = srcConcept.EmailAddress
-		concept.TwitterHandle = srcConcept.TwitterHandle
-		concept.ShortLabel = srcConcept.ShortLabel
-		concept.ScopeNote = srcConcept.ScopeNote
-		concept.PersonUUID = srcConcept.PersonUUID
-		concept.OrganisationUUID = srcConcept.OrganisationUUID
 		sourceConcepts = append(sourceConcepts, concept)
 	}
 
 	aggregatedConcept.SourceRepresentations = sourceConcepts
-
 	logger.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
-
-	return aggregatedConcept, true, nil
+	return cleanConcept(aggregatedConcept), true, nil
 }
 
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
@@ -312,6 +347,8 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Read request for existing concordance resulted in error")
 		return uuidsToUpdate, err
 	}
+
+	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(AggregatedConcept)
 
 	var queryBatch []*neoism.CypherQuery
 	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
@@ -382,6 +419,12 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		if err != nil {
 			return uuidsToUpdate, err
 		}
+
+		clearDownQuery := s.clearDownExistingNodes(aggregatedConceptToWrite)
+		for _, query := range clearDownQuery {
+			queryBatch = append(queryBatch, query)
+		}
+
 		//Concept is new, send notification of all source ids
 		for _, source := range aggregatedConceptToWrite.SourceRepresentations {
 			updatedUUIDList = append(updatedUUIDList, source.UUID)
@@ -402,10 +445,70 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
 	}
 
+	// check that the issuer is not already related to a different org
+	if aggregatedConceptToWrite.IssuedBy != "" {
+		fiRes := []map[string]string{}
+		issuerQuery := &neoism.CypherQuery{
+			Statement: `
+					MATCH (issuer:Thing {uuid: {issuerUUID}})<-[:ISSUED_BY]-(fi)
+					RETURN fi.uuid AS fiUUID
+				`,
+			Parameters: map[string]interface{}{
+				"issuerUUID": aggregatedConceptToWrite.IssuedBy,
+			},
+			Result: &fiRes,
+		}
+		if err := s.conn.CypherBatch([]*neoism.CypherQuery{issuerQuery}); err != nil {
+			logger.WithError(err).
+				WithTransactionID(transID).
+				WithUUID(aggregatedConceptToWrite.PrefUUID).
+				Error("Could not get existing issuer.")
+			return uuidsToUpdate, err
+		}
+
+		if len(fiRes) > 0 {
+			for _, fi := range fiRes {
+				fiUUID, ok := fi["fiUUID"]
+				if !ok {
+					continue
+				}
+
+				if fiUUID == aggregatedConceptToWrite.PrefUUID {
+					continue
+				}
+
+				err := fmt.Errorf(
+					"Issuer for %s was changed from %s to %s",
+					aggregatedConceptToWrite.IssuedBy,
+					fiUUID,
+					aggregatedConceptToWrite.PrefUUID,
+				)
+				logger.WithTransactionID(transID).
+					WithUUID(aggregatedConceptToWrite.PrefUUID).
+					WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Error(err)
+
+				deleteIssuerRelations := &neoism.CypherQuery{
+					Statement: `
+					MATCH (issuer:Thing {uuid: {issuerUUID}})
+					MATCH (fi:Thing {uuid: {fiUUID}})
+					MATCH (issuer)<-[issuerRel:ISSUED_BY]-(fi)
+					DELETE issuerRel
+				`,
+					Parameters: map[string]interface{}{
+						"issuerUUID": aggregatedConceptToWrite.IssuedBy,
+						"fiUUID":     fiUUID,
+					},
+				}
+				queryBatch = append(queryBatch, deleteIssuerRelations)
+			}
+		}
+	}
+
 	if err = s.conn.CypherBatch(queryBatch); err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error executing neo4j write queries. Concept NOT written.")
 		return uuidsToUpdate, err
 	}
+
 	logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("Concept written to db")
 	return uuidsToUpdate, nil
 }
@@ -562,9 +665,10 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[ho:HAS_ORGANISATION]->(org)
 			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->(memb)
 			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->(mr)
+			OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr, issuerRel`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -592,18 +696,24 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept AggregatedConcept) []*neoism.CypherQuery {
 	// Create a sourceConcept from the canonical information - WITH NO UUID
 	concept := Concept{
-		PrefLabel:      aggregatedConcept.PrefLabel,
-		Aliases:        aggregatedConcept.Aliases,
-		Strapline:      aggregatedConcept.Strapline,
-		DescriptionXML: aggregatedConcept.DescriptionXML,
-		ImageURL:       aggregatedConcept.ImageURL,
-		Type:           aggregatedConcept.Type,
-		EmailAddress:   aggregatedConcept.EmailAddress,
-		FacebookPage:   aggregatedConcept.FacebookPage,
-		TwitterHandle:  aggregatedConcept.TwitterHandle,
-		ScopeNote:      aggregatedConcept.ScopeNote,
-		ShortLabel:     aggregatedConcept.ShortLabel,
-		Hash:           aggregatedConcept.AggregatedHash,
+		Aliases:              aggregatedConcept.Aliases,
+		DescriptionXML:       aggregatedConcept.DescriptionXML,
+		EmailAddress:         aggregatedConcept.EmailAddress,
+		FacebookPage:         aggregatedConcept.FacebookPage,
+		FigiCode:             aggregatedConcept.FigiCode,
+		Hash:                 aggregatedConcept.AggregatedHash,
+		ImageURL:             aggregatedConcept.ImageURL,
+		InceptionDate:        aggregatedConcept.InceptionDate,
+		InceptionDateEpoch:   aggregatedConcept.InceptionDateEpoch,
+		IssuedBy:             aggregatedConcept.IssuedBy,
+		PrefLabel:            aggregatedConcept.PrefLabel,
+		ScopeNote:            aggregatedConcept.ScopeNote,
+		ShortLabel:           aggregatedConcept.ShortLabel,
+		Strapline:            aggregatedConcept.Strapline,
+		TerminationDate:      aggregatedConcept.TerminationDate,
+		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
+		TwitterHandle:        aggregatedConcept.TwitterHandle,
+		Type:                 aggregatedConcept.Type,
 	}
 
 	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
@@ -667,12 +777,13 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	for _, parentUUID := range concept.ParentUUIDs {
 		writeParent := &neoism.CypherQuery{
 			Statement: `MERGE (o:Thing {uuid: {uuid}})
-						MERGE (parentupp:Identifier:UPPIdentifier{value:{paUuid}})
-						MERGE (parentupp)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {paUuid}
-						MERGE (o)-[:HAS_PARENT]->(p)	`,
+						MERGE (parentupp:Identifier:UPPIdentifier {value: {parentUUID}})
+						MERGE (parent:Thing {uuid: {parentUUID}})
+						MERGE (parentupp)-[:IDENTIFIES]->(parent)
+						MERGE (o)-[:HAS_PARENT]->(parent)	`,
 			Parameters: neoism.Props{
-				"paUuid": parentUUID,
-				"uuid":   concept.UUID,
+				"parentUUID": parentUUID,
+				"uuid":       concept.UUID,
 			},
 		}
 		queryBatch = append(queryBatch, writeParent)
@@ -681,11 +792,12 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if concept.OrganisationUUID != "" {
 		writeOrganisation := &neoism.CypherQuery{
 			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-		  	   				MERGE (orgupp:Identifier:UPPIdentifier{value:{orgUuid}})
-                            MERGE (orgupp)-[:IDENTIFIES]->(org:Thing) ON CREATE SET org.uuid = {orgUuid}
-		            		MERGE (membership)-[:HAS_ORGANISATION]->(org)`,
+						MERGE (orgupp:Identifier:UPPIdentifier {value: {orgUUID}})
+						MERGE (org:Thing {uuid: {orgUUID}})
+						MERGE (orgupp)-[:IDENTIFIES]->(org)
+						MERGE (membership)-[:HAS_ORGANISATION]->(org)`,
 			Parameters: neoism.Props{
-				"orgUuid": concept.OrganisationUUID,
+				"orgUUID": concept.OrganisationUUID,
 				"uuid":    concept.UUID,
 			},
 		}
@@ -695,28 +807,70 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if concept.PersonUUID != "" {
 		writePerson := &neoism.CypherQuery{
 			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-		  	   				MERGE (personupp:Identifier:UPPIdentifier{value:{personUuid}})
-                            MERGE (personupp)-[:IDENTIFIES]->(person:Thing) ON CREATE SET person.uuid = {personUuid}
-		            		MERGE (membership)-[:HAS_MEMBER]->(person)`,
+						MERGE (personupp:Identifier:UPPIdentifier {value: {personUUID}})
+						MERGE (person:Thing {uuid: {personUUID}})
+						MERGE (personupp)-[:IDENTIFIES]->(person)
+						MERGE (membership)-[:HAS_MEMBER]->(person)`,
 			Parameters: neoism.Props{
-				"personUuid": concept.PersonUUID,
+				"personUUID": concept.PersonUUID,
 				"uuid":       concept.UUID,
 			},
 		}
 		queryBatch = append(queryBatch, writePerson)
 	}
 
-	if len(concept.MembershipRoles) > 0 {
-		for _, membershipRoleUUID := range concept.MembershipRoles {
+	if uuid != "" && concept.FigiCode != "" && concept.IssuedBy != "" {
+		writeFinIns := &neoism.CypherQuery{
+			Statement: `MERGE (fi:Thing {uuid: {fiUUID}})
+						MERGE (org:Thing {uuid: {orgUUID}})
+						MERGE (fi)-[:ISSUED_BY]->(org)
+						MERGE (fiupp:Identifier:FIGIIdentifier {value: {fiCode}})
+						MERGE (fiupp)-[:IDENTIFIES]->(fi)
+						`,
+			Parameters: neoism.Props{
+				"fiUUID":  concept.UUID,
+				"fiCode":  concept.FigiCode,
+				"orgUUID": concept.IssuedBy,
+			},
+		}
+		queryBatch = append(queryBatch, writeFinIns)
+	}
+
+	if uuid != "" && len(concept.MembershipRoles) > 0 {
+		for _, membershipRole := range concept.MembershipRoles {
+			params := neoism.Props{
+				"inceptionDate":        nil,
+				"inceptionDateEpoch":   nil,
+				"terminationDate":      nil,
+				"terminationDateEpoch": nil,
+				"roleUUID":             membershipRole.RoleUUID,
+				"nodeUUID":             concept.UUID,
+			}
+			if membershipRole.InceptionDate != "" {
+				params["inceptionDate"] = membershipRole.InceptionDate
+			}
+			if membershipRole.InceptionDateEpoch > 0 {
+				params["inceptionDateEpoch"] = membershipRole.InceptionDateEpoch
+			}
+			if membershipRole.TerminationDate != "" {
+				params["terminationDate"] = membershipRole.TerminationDate
+			}
+			if membershipRole.TerminationDateEpoch > 0 {
+				params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
+			}
 			writeParent := &neoism.CypherQuery{
-				Statement: `MERGE (membership:Thing {uuid: {uuid}})
-		  	   				MERGE (roleupp:Identifier:UPPIdentifier{value:{mmbUuid}})
-                            MERGE (roleupp)-[:IDENTIFIES]->(role:Thing) ON CREATE SET role.uuid = {mmbUuid}
-		            		MERGE (membership)-[:HAS_ROLE]->(role)	`,
-				Parameters: neoism.Props{
-					"mmbUuid": membershipRoleUUID,
-					"uuid":    concept.UUID,
-				},
+				Statement: `MERGE (node:Thing{uuid: {nodeUUID}})
+							MERGE (role:Thing{uuid: {roleUUID}})
+								ON CREATE SET
+									role.uuid = {roleUUID}
+							MERGE (node)-[rel:HAS_ROLE]->(role)
+								ON CREATE SET
+									rel.inceptionDate = {inceptionDate},
+									rel.inceptionDateEpoch = {inceptionDateEpoch},
+									rel.terminationDate = {terminationDate},
+									rel.terminationDateEpoch = {terminationDateEpoch}
+							`,
+				Parameters: params,
 			}
 			queryBatch = append(queryBatch, writeParent)
 		}
@@ -725,7 +879,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	queryBatch = append(queryBatch, createConceptQuery)
 
 	// If no UUID then it is the canonical node and will not have identifier nodes
-	if uuid != "" {
+	if uuid != "" && concept.Type != "Membership" {
 		queryBatch = append(queryBatch, addIdentifierNodes(uuid, concept.Authority, concept.AuthorityValue)...)
 	}
 
@@ -837,6 +991,22 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if concept.Strapline != "" {
 		nodeProps["strapline"] = concept.Strapline
 	}
+	if concept.FigiCode != "" {
+		nodeProps["figiCode"] = concept.FigiCode
+	}
+
+	if concept.InceptionDate != "" {
+		nodeProps["inceptionDate"] = concept.InceptionDate
+	}
+	if concept.TerminationDate != "" {
+		nodeProps["terminationDate"] = concept.TerminationDate
+	}
+	if concept.InceptionDateEpoch > 0 {
+		nodeProps["inceptionDateEpoch"] = concept.InceptionDateEpoch
+	}
+	if concept.TerminationDateEpoch > 0 {
+		nodeProps["terminationDateEpoch"] = concept.TerminationDateEpoch
+	}
 
 	if isSource {
 		nodeProps["uuid"] = id
@@ -906,4 +1076,96 @@ func (re requestError) Error() string {
 //InvalidRequestDetails - Specific error for providing bad request (400) back
 func (re requestError) InvalidRequestDetails() string {
 	return re.details
+}
+
+func processMembershipRoles(v interface{}) interface{} {
+	switch c := v.(type) {
+	case AggregatedConcept:
+		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
+		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
+		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
+		for _, s := range c.SourceRepresentations {
+			processMembershipRoles(s)
+		}
+	case Concept:
+		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
+		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
+		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
+	case MembershipRole:
+		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
+		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
+	}
+	return v
+}
+
+func cleanMembershipRoles(m []MembershipRole) []MembershipRole {
+	deleted := 0
+	for i := range m {
+		j := i - deleted
+		if m[j].RoleUUID == "" {
+			m = m[:j+copy(m[j:], m[j+1:])]
+			deleted++
+			continue
+		}
+		m[j].InceptionDateEpoch = getEpoch(m[j].InceptionDate)
+		m[j].TerminationDateEpoch = getEpoch(m[j].TerminationDate)
+	}
+
+	if len(m) == 0 {
+		return nil
+	}
+
+	return m
+}
+
+func getEpoch(t string) int64 {
+	if t == "" {
+		return 0
+	}
+
+	tt, _ := time.Parse(iso8601DateOnly, t)
+	return tt.Unix()
+}
+
+func filterSlice(a []string) []string {
+	r := []string{}
+	for _, str := range a {
+		if str != "" {
+			r = append(r, str)
+		}
+	}
+
+	if len(r) == 0 {
+		return nil
+	}
+
+	return a
+}
+
+func cleanConcept(c AggregatedConcept) AggregatedConcept {
+	for j := range c.SourceRepresentations {
+		c.SourceRepresentations[j].LastModifiedEpoch = 0
+		c.SourceRepresentations[j].InceptionDateEpoch = 0
+		c.SourceRepresentations[j].TerminationDateEpoch = 0
+		for i := range c.SourceRepresentations[j].MembershipRoles {
+			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
+			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
+		}
+		slice.Sort(c.SourceRepresentations[j].MembershipRoles[:], func(k, l int) bool {
+			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
+		})
+	}
+	for i := range c.MembershipRoles {
+		c.MembershipRoles[i].InceptionDateEpoch = 0
+		c.MembershipRoles[i].TerminationDateEpoch = 0
+	}
+	slice.Sort(c.SourceRepresentations[:], func(k, l int) bool {
+		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
+	})
+	return c
+}
+
+func cleanHash(c AggregatedConcept) AggregatedConcept {
+	c.AggregatedHash = ""
+	return c
 }

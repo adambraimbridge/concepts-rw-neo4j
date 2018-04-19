@@ -77,14 +77,12 @@ type neoAggregatedConcept struct {
 	EmailAddress          string       `json:"emailAddress,omitempty"`
 	FacebookPage          string       `json:"facebookPage,omitempty"`
 	ImageURL              string       `json:"imageUrl,omitempty"`
-	InceptionDateEpoch    int64        `json:"inceptionDateEpoch,omitempty"`
 	LastModifiedEpoch     int          `json:"lastModifiedEpoch,omitempty"`
 	PrefLabel             string       `json:"prefLabel"`
 	PrefUUID              string       `json:"prefUUID,omitempty"`
 	ScopeNote             string       `json:"scopeNote,omitempty"`
 	ShortLabel            string       `json:"shortLabel,omitempty"`
 	SourceRepresentations []neoConcept `json:"sourceRepresentations"`
-	TerminationDateEpoch  int64        `json:"terminationDateEpoch,omitempty"`
 	TwitterHandle         string       `json:"twitterHandle,omitempty"`
 	Types                 []string     `json:"types"`
 	// Brand
@@ -95,11 +93,14 @@ type neoAggregatedConcept struct {
 	FigiCode string `json:"figiCode,omitempty"`
 	IssuedBy string `json:"issuedBy,omitempty"`
 	// Membership
-	InceptionDate    string           `json:"inceptionDate,omitempty"`
-	MembershipRoles  []MembershipRole `json:"membershipRoles,omitempty"`
-	OrganisationUUID string           `json:"organisationUUID,omitempty"`
-	PersonUUID       string           `json:"personUUID,omitempty"`
-	TerminationDate  string           `json:"terminationDate,omitempty"`
+	something            string
+	InceptionDate        string           `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
+	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
+	PersonUUID           string           `json:"personUUID,omitempty"`
+	TerminationDate      string           `json:"terminationDate,omitempty"`
+	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
 	// Organisation
 	CountryCode            string   `json:"countryCode,omitempty"`
 	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`

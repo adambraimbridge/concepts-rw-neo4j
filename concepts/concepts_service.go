@@ -307,7 +307,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
 	aggregatedConceptToWrite = cleanSourceProperties(aggregatedConceptToWrite)
 
-	requestHash, err := hashstructure.Hash(thing, nil)
+	requestHash, err := hashstructure.Hash(aggregatedConceptToWrite, nil)
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error hashing json from request")
 		return uuidsToUpdate, err

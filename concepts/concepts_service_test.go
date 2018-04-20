@@ -1622,7 +1622,8 @@ func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName str
 	expected := expectedIf.(AggregatedConcept)
 
 	expected = cleanHash(cleanConcept(expected))
-	actual := cleanHash(cleanConcept(payload))
+	clean := cleanSourceProperties(payload)
+	actual := cleanHash(cleanConcept(clean))
 
 	assert.Equal(t, expected, actual, fmt.Sprintf("Test %s failed: Concepts were not equal", testName))
 	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Unexpected Error occurred", testName))

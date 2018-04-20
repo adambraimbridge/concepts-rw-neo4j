@@ -305,6 +305,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	uuidsToUpdate := UpdatedConcepts{}
 	var updatedUUIDList []string
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
+	aggregatedConceptToWrite = cleanSourceProperties(aggregatedConceptToWrite)
 
 	requestHash, err := hashstructure.Hash(thing, nil)
 	if err != nil {

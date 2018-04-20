@@ -171,17 +171,9 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				person,
 				related,
 				{
-					aliases: source.aliases,
 					authority: source.authority,
 					authorityValue: source.authorityValue,
 					broaderUUIDs: collect(broader.uuid),
-					descriptionXML: source.descriptionXML,
-					emailAddress: source.emailAddress,
-					facebookPage: source.facebookPage,
-					figiCode: source.figiCode,
-					imageUrl: source.imageUrl,
-					inceptionDate: source.inceptionDate,
-					inceptionDateEpoch: source.inceptionDateEpoch,
 					issuedBy: issuer.uuid,
 					lastModifiedEpoch: source.lastModifiedEpoch,
 					membershipRoles: collect({
@@ -196,12 +188,6 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					personUUID: person.uuid,
 					prefLabel: source.prefLabel,
 					relatedUUIDs: collect(related.uuid),
-					scopeNote: source.scopeNote,
-					shortLabel: source.shortLabel,
-					strapline: source.strapline,
-					terminationDate: source.terminationDate,
-					terminationDateEpoch: source.terminationDateEpoch,
-					twitterHandle: source.twitterHandle,
 					types: labels(source),
 					uuid: source.uuid
 				} as sources,
@@ -291,16 +277,9 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		}
 
 		concept := Concept{
-			Aliases:           filterSlice(srcConcept.Aliases),
 			Authority:         srcConcept.Authority,
 			AuthorityValue:    srcConcept.AuthorityValue,
 			BroaderUUIDs:      filterSlice(srcConcept.BroaderUUIDs),
-			DescriptionXML:    srcConcept.DescriptionXML,
-			EmailAddress:      srcConcept.EmailAddress,
-			FacebookPage:      srcConcept.FacebookPage,
-			FigiCode:          srcConcept.FigiCode,
-			ImageURL:          srcConcept.ImageURL,
-			InceptionDate:     srcConcept.InceptionDate,
 			IssuedBy:          srcConcept.IssuedBy,
 			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
 			MembershipRoles:   cleanMembershipRoles(srcConcept.MembershipRoles),
@@ -309,11 +288,6 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			PersonUUID:        srcConcept.PersonUUID,
 			PrefLabel:         srcConcept.PrefLabel,
 			RelatedUUIDs:      filterSlice(srcConcept.RelatedUUIDs),
-			ScopeNote:         srcConcept.ScopeNote,
-			ShortLabel:        srcConcept.ShortLabel,
-			Strapline:         srcConcept.Strapline,
-			TerminationDate:   srcConcept.TerminationDate,
-			TwitterHandle:     srcConcept.TwitterHandle,
 			Type:              conceptType,
 			UUID:              srcConcept.UUID,
 		}
@@ -819,7 +793,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		queryBatch = append(queryBatch, writePerson)
 	}
 
-	if uuid != "" && concept.FigiCode != "" && concept.IssuedBy != "" {
+	if uuid != "" && concept.IssuedBy != "" {
 		writeFinIns := &neoism.CypherQuery{
 			Statement: `MERGE (fi:Thing {uuid: {fiUUID}})
 						MERGE (org:Thing {uuid: {orgUUID}})
@@ -964,6 +938,19 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	nodeProps["prefLabel"] = concept.PrefLabel
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
 
+
+	if isSource {
+		nodeProps["uuid"] = id
+		nodeProps["authority"] = concept.Authority
+		nodeProps["authorityValue"] = concept.AuthorityValue
+
+		return nodeProps
+	}
+
+	nodeProps["prefUUID"] = id
+	nodeProps["aggregateHash"] = concept.Hash
+
+
 	if len(concept.Aliases) > 0 {
 		nodeProps["aliases"] = concept.Aliases
 	}
@@ -1006,16 +993,6 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	}
 	if concept.TerminationDateEpoch > 0 {
 		nodeProps["terminationDateEpoch"] = concept.TerminationDateEpoch
-	}
-
-	if isSource {
-		nodeProps["uuid"] = id
-		nodeProps["authority"] = concept.Authority
-		nodeProps["authorityValue"] = concept.AuthorityValue
-
-	} else {
-		nodeProps["prefUUID"] = id
-		nodeProps["aggregateHash"] = concept.Hash
 	}
 
 	return nodeProps
@@ -1145,8 +1122,6 @@ func filterSlice(a []string) []string {
 func cleanConcept(c AggregatedConcept) AggregatedConcept {
 	for j := range c.SourceRepresentations {
 		c.SourceRepresentations[j].LastModifiedEpoch = 0
-		c.SourceRepresentations[j].InceptionDateEpoch = 0
-		c.SourceRepresentations[j].TerminationDateEpoch = 0
 		for i := range c.SourceRepresentations[j].MembershipRoles {
 			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
 			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
@@ -1167,5 +1142,28 @@ func cleanConcept(c AggregatedConcept) AggregatedConcept {
 
 func cleanHash(c AggregatedConcept) AggregatedConcept {
 	c.AggregatedHash = ""
+	return c
+}
+
+func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
+	var cleanSources []Concept
+	for _, source := range c.SourceRepresentations {
+		cleanConcept := Concept{
+			UUID: source.UUID,
+			PrefLabel: source.PrefLabel,
+			Type: source.Type,
+			Authority: source.Authority,
+			AuthorityValue: source.AuthorityValue,
+			ParentUUIDs: source.ParentUUIDs,
+			OrganisationUUID: source.OrganisationUUID,
+			PersonUUID: source.PersonUUID,
+			RelatedUUIDs: source.RelatedUUIDs,
+			BroaderUUIDs: source.BroaderUUIDs,
+			MembershipRoles: source.MembershipRoles,
+			IssuedBy: source.IssuedBy,
+		}
+		cleanSources = append(cleanSources, cleanConcept)
+	}
+	c.SourceRepresentations = cleanSources
 	return c
 }

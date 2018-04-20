@@ -1799,9 +1799,8 @@ func verifyAggregateHashIsCorrect(t *testing.T, concept AggregatedConcept, testN
 	}
 	err := db.CypherBatch([]*neoism.CypherQuery{query})
 	assert.NoError(t, err, fmt.Sprintf("Error while retrieving concept hash"))
-	fmt.Printf("Results are %v\n", results)
 
-	conceptHash, _ := hashstructure.Hash(concept, nil)
+	conceptHash, _ := hashstructure.Hash(cleanSourceProperties(concept), nil)
 	hashAsString := strconv.FormatUint(conceptHash, 10)
 	assert.Equal(t, hashAsString, results[0].Hash, fmt.Sprintf("Test %s failed: Concept hash %s and stored record %s are not equal!", testName, hashAsString, results[0].Hash))
 }

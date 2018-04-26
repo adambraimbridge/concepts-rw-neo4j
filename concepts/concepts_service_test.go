@@ -841,7 +841,8 @@ func TestWriteService(t *testing.T) {
 				UpdatedIds: []string{
 					basicConceptUUID,
 				},
-			}},
+			},
+		},
 		{
 			testName:             "Creates All Values Present for a MembershipRole",
 			aggregatedConcept:    getMembershipRole(),
@@ -994,9 +995,7 @@ func TestWriteService(t *testing.T) {
 
 				// Check lone nodes and leaf nodes for identifiers nodes
 				// lone node
-				if len(test.aggregatedConcept.SourceRepresentations) == 1 {
-
-				} else {
+				if len(test.aggregatedConcept.SourceRepresentations) != 1 {
 					// Check leaf nodes for Identifiers
 					for _, leaf := range test.aggregatedConcept.SourceRepresentations {
 						actualValue := getIdentifierValue(t, "uuid", leaf.UUID, fmt.Sprintf("%vIdentifier", leaf.Authority))
@@ -1007,7 +1006,6 @@ func TestWriteService(t *testing.T) {
 					actualValue := getIdentifierValue(t, "prefUUID", test.aggregatedConcept.PrefUUID, "UPPIdentifier")
 					assert.Equal(t, "", actualValue, "Identifier nodes should not be related to Canonical Nodes")
 				}
-
 			} else {
 				if err != nil {
 					assert.Error(t, err, "Error was expected")
@@ -1619,16 +1617,17 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	}
 }
 
-func readConceptAndCompare(t *testing.T, actual AggregatedConcept, testName string) {
-	expectedIf, found, err := conceptsDriver.Read(actual.PrefUUID, "")
+func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName string) {
+	expectedIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
 	expected := expectedIf.(AggregatedConcept)
 
 	expected = cleanHash(cleanConcept(expected))
-	actual = cleanHash(cleanConcept(actual))
+	clean := cleanSourceProperties(payload)
+	actual := cleanHash(cleanConcept(clean))
 
-	assert.Equal(t, expected, actual)
-	assert.NoError(t, err, "Unexpected Error occurred")
-	assert.True(t, found, "Concept has not been found")
+	assert.Equal(t, expected, actual, fmt.Sprintf("Test %s failed: Concepts were not equal", testName))
+	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Unexpected Error occurred", testName))
+	assert.True(t, found, fmt.Sprintf("Test %s failed: Concept has not been found", testName))
 }
 
 func neoUrl() string {
@@ -1800,9 +1799,8 @@ func verifyAggregateHashIsCorrect(t *testing.T, concept AggregatedConcept, testN
 	}
 	err := db.CypherBatch([]*neoism.CypherQuery{query})
 	assert.NoError(t, err, fmt.Sprintf("Error while retrieving concept hash"))
-	fmt.Printf("Results are %v\n", results)
 
-	conceptHash, _ := hashstructure.Hash(concept, nil)
+	conceptHash, _ := hashstructure.Hash(cleanSourceProperties(concept), nil)
 	hashAsString := strconv.FormatUint(conceptHash, 10)
 	assert.Equal(t, hashAsString, results[0].Hash, fmt.Sprintf("Test %s failed: Concept hash %s and stored record %s are not equal!", testName, hashAsString, results[0].Hash))
 }

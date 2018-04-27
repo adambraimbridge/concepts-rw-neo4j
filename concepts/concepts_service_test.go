@@ -758,6 +758,63 @@ func getUpdatedFinancialInstrument() AggregatedConcept {
 	}
 }
 
+func getOrganisation() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:    "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+		Type:        "PublicCompany",
+		ProperName:  "Strix Group Plc",
+		PrefLabel:   "Strix Group Plc",
+		ShortName:   "Strix Group",
+		HiddenLabel: "STRIX GROUP PLC",
+		FormerNames: []string{
+			"Castletown Thermostats",
+			"Steam Plc",
+		},
+		Aliases: []string{
+			"Strix Group Plc",
+			"STRIX GROUP PLC",
+			"Strix Group",
+			"Castletown Thermostats",
+			"Steam Plc",
+		},
+		CountryCode:            "GB",
+		CountryOfIncorporation: "IM",
+		PostalCode:             "IM9 2RG",
+		YearFounded:            1951,
+		EmailAddress:           "info@strix.com",
+		LeiCode:                "213800KZEW5W6BZMNT62",
+		SourceRepresentations: []Concept{
+			{
+				UUID:           "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+				Type:           "PublicCompany",
+				Authority:      "FACTSET",
+				AuthorityValue: "B000BB-S",
+				ProperName:     "Strix Group Plc",
+				PrefLabel:      "Strix Group Plc",
+				ShortName:      "Strix Group",
+				HiddenLabel:    "STRIX GROUP PLC",
+				FormerNames: []string{
+					"Castletown Thermostats",
+					"Steam Plc",
+				},
+				Aliases: []string{
+					"Strix Group Plc",
+					"STRIX GROUP PLC",
+					"Strix Group",
+					"Castletown Thermostats",
+					"Steam Plc",
+				},
+				CountryCode:            "GB",
+				CountryOfIncorporation: "IM",
+				PostalCode:             "IM9 2RG",
+				YearFounded:            1951,
+				EmailAddress:           "info@strix.com",
+				LeiCode:                "213800KZEW5W6BZMNT62",
+			},
+		},
+	}
+}
+
 func getUpdatedMembership() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:         membershipUUID,
@@ -1015,6 +1072,16 @@ func TestWriteService(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWriteMemberships_Organisation(t *testing.T) {
+	defer cleanDB(t)
+
+	org := getOrganisation()
+	_, err := conceptsDriver.Write(org, "test_tid")
+	assert.NoError(t, err, "Failed to write concept")
+
+	readConceptAndCompare(t, org, "TestWriteMemberships_Organisation")
 }
 
 func TestWriteMemberships_CleansUpExisting(t *testing.T) {

@@ -69,63 +69,94 @@ func (s *ConceptService) Initialise() error {
 }
 
 type neoAggregatedConcept struct {
-	AggregateHash         string           `json:"aggregateHash,omitempty"`
-	Aliases               []string         `json:"aliases,omitempty"`
-	Authority             string           `json:"authority,omitempty"`
-	AuthorityValue        string           `json:"authorityValue,omitempty"`
-	DescriptionXML        string           `json:"descriptionXML,omitempty"`
-	EmailAddress          string           `json:"emailAddress,omitempty"`
-	FacebookPage          string           `json:"facebookPage,omitempty"`
-	FigiCode              string           `json:"figiCode,omitempty"`
-	ImageURL              string           `json:"imageUrl,omitempty"`
-	InceptionDate         string           `json:"inceptionDate,omitempty"`
-	InceptionDateEpoch    int64            `json:"inceptionDateEpoch,omitempty"`
-	IssuedBy              string           `json:"issuedBy,omitempty"`
-	LastModifiedEpoch     int              `json:"lastModifiedEpoch,omitempty"`
-	MembershipRoles       []MembershipRole `json:"membershipRoles,omitempty"`
-	OrganisationUUID      string           `json:"organisationUUID,omitempty"`
-	PersonUUID            string           `json:"personUUID,omitempty"`
-	PrefLabel             string           `json:"prefLabel"`
-	PrefUUID              string           `json:"prefUUID,omitempty"`
-	ScopeNote             string           `json:"scopeNote,omitempty"`
-	ShortLabel            string           `json:"shortLabel,omitempty"`
-	SourceRepresentations []neoConcept     `json:"sourceRepresentations"`
-	Strapline             string           `json:"strapline,omitempty"`
-	TerminationDate       string           `json:"terminationDate,omitempty"`
-	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
-	TwitterHandle         string           `json:"twitterHandle,omitempty"`
-	Types                 []string         `json:"types"`
+	AggregateHash         string       `json:"aggregateHash,omitempty"`
+	Aliases               []string     `json:"aliases,omitempty"`
+	Authority             string       `json:"authority,omitempty"`
+	AuthorityValue        string       `json:"authorityValue,omitempty"`
+	DescriptionXML        string       `json:"descriptionXML,omitempty"`
+	EmailAddress          string       `json:"emailAddress,omitempty"`
+	FacebookPage          string       `json:"facebookPage,omitempty"`
+	ImageURL              string       `json:"imageUrl,omitempty"`
+	LastModifiedEpoch     int          `json:"lastModifiedEpoch,omitempty"`
+	PrefLabel             string       `json:"prefLabel"`
+	PrefUUID              string       `json:"prefUUID,omitempty"`
+	ScopeNote             string       `json:"scopeNote,omitempty"`
+	ShortLabel            string       `json:"shortLabel,omitempty"`
+	SourceRepresentations []neoConcept `json:"sourceRepresentations"`
+	TwitterHandle         string       `json:"twitterHandle,omitempty"`
+	Types                 []string     `json:"types"`
+	// Brand
+	Strapline string `json:"strapline,omitempty"`
+	// Person
+	IsAuthor bool `json:"isAuthor,omitempty"`
+	// Financial Instrument
+	FigiCode string `json:"figiCode,omitempty"`
+	IssuedBy string `json:"issuedBy,omitempty"`
+	// Membership
+	something            string
+	InceptionDate        string           `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
+	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
+	PersonUUID           string           `json:"personUUID,omitempty"`
+	TerminationDate      string           `json:"terminationDate,omitempty"`
+	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
+	// Organisation
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
 }
 
 type neoConcept struct {
-	Aliases              []string         `json:"aliases,omitempty"`
-	Authority            string           `json:"authority,omitempty"`
-	AuthorityValue       string           `json:"authorityValue,omitempty"`
-	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
-	DescriptionXML       string           `json:"descriptionXML,omitempty"`
-	EmailAddress         string           `json:"emailAddress,omitempty"`
-	FacebookPage         string           `json:"facebookPage,omitempty"`
-	FigiCode             string           `json:"figiCode,omitempty"`
-	ImageURL             string           `json:"imageUrl,omitempty"`
+	Aliases           []string `json:"aliases,omitempty"`
+	Authority         string   `json:"authority,omitempty"`
+	AuthorityValue    string   `json:"authorityValue,omitempty"`
+	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
+	DescriptionXML    string   `json:"descriptionXML,omitempty"`
+	EmailAddress      string   `json:"emailAddress,omitempty"`
+	FacebookPage      string   `json:"facebookPage,omitempty"`
+	ImageURL          string   `json:"imageUrl,omitempty"`
+	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`
+	ParentUUIDs       []string `json:"parentUUIDs,omitempty"`
+	PrefLabel         string   `json:"prefLabel,omitempty"`
+	PrefUUID          string   `json:"prefUUID,omitempty"`
+	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
+	ScopeNote         string   `json:"scopeNote,omitempty"`
+	ShortLabel        string   `json:"shortLabel,omitempty"`
+	TwitterHandle     string   `json:"twitterHandle,omitempty"`
+	Types             []string `json:"types,omitempty"`
+	UUID              string   `json:"uuid,omitempty"`
+	// Brand
+	Strapline string `json:"strapline,omitempty"`
+	// Person
+	IsAuthor bool `json:"isAuthor,omitempty"`
+	// Financial Instrument
+	FigiCode string `json:"figiCode,omitempty"`
+	IssuedBy string `json:"issuedBy,omitempty"`
+	// Membership
 	InceptionDate        string           `json:"inceptionDate,omitempty"`
 	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
-	IssuedBy             string           `json:"issuedBy,omitempty"`
-	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
 	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
 	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
-	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
 	PersonUUID           string           `json:"personUUID,omitempty"`
-	PrefLabel            string           `json:"prefLabel,omitempty"`
-	PrefUUID             string           `json:"prefUUID,omitempty"`
-	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
-	ScopeNote            string           `json:"scopeNote,omitempty"`
-	ShortLabel           string           `json:"shortLabel,omitempty"`
-	Strapline            string           `json:"strapline,omitempty"`
 	TerminationDate      string           `json:"terminationDate,omitempty"`
 	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
-	TwitterHandle        string           `json:"twitterHandle,omitempty"`
-	Types                []string         `json:"types,omitempty"`
-	UUID                 string           `json:"uuid,omitempty"`
+	// Organisation
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -221,7 +252,16 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				labels(canonical) as types,
 				membershipRoles,
 				org.uuid as organisationUUID,
-				person.uuid as personUUID
+				person.uuid as personUUID,
+				canonical.properName as properName,
+				canonical.shortName as shortName,
+				canonical.hiddenLabel as hiddenLabel,
+				canonical.formerNames as formerNames,
+				canonical.countryCode as countryCode,
+				canonical.countryOfIncorporation as countryOfIncorporation,
+				canonical.postalCode as postalCode,
+				canonical.yearFounded as yearFounded,
+				canonical.leiCode as leiCode
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -246,26 +286,35 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 	}
 
 	aggregatedConcept := AggregatedConcept{
-		AggregatedHash:   results[0].AggregateHash,
-		Aliases:          results[0].Aliases,
-		DescriptionXML:   results[0].DescriptionXML,
-		EmailAddress:     results[0].EmailAddress,
-		FacebookPage:     results[0].FacebookPage,
-		FigiCode:         results[0].FigiCode,
-		ImageURL:         results[0].ImageURL,
-		InceptionDate:    results[0].InceptionDate,
-		IssuedBy:         results[0].IssuedBy,
-		MembershipRoles:  cleanMembershipRoles(results[0].MembershipRoles),
-		OrganisationUUID: results[0].OrganisationUUID,
-		PersonUUID:       results[0].PersonUUID,
-		PrefLabel:        results[0].PrefLabel,
-		PrefUUID:         results[0].PrefUUID,
-		ScopeNote:        results[0].ScopeNote,
-		ShortLabel:       results[0].ShortLabel,
-		Strapline:        results[0].Strapline,
-		TerminationDate:  results[0].TerminationDate,
-		TwitterHandle:    results[0].TwitterHandle,
-		Type:             typeName,
+		AggregatedHash:         results[0].AggregateHash,
+		Aliases:                results[0].Aliases,
+		DescriptionXML:         results[0].DescriptionXML,
+		EmailAddress:           results[0].EmailAddress,
+		FacebookPage:           results[0].FacebookPage,
+		FigiCode:               results[0].FigiCode,
+		ImageURL:               results[0].ImageURL,
+		InceptionDate:          results[0].InceptionDate,
+		IssuedBy:               results[0].IssuedBy,
+		MembershipRoles:        cleanMembershipRoles(results[0].MembershipRoles),
+		OrganisationUUID:       results[0].OrganisationUUID,
+		PersonUUID:             results[0].PersonUUID,
+		PrefLabel:              results[0].PrefLabel,
+		PrefUUID:               results[0].PrefUUID,
+		ScopeNote:              results[0].ScopeNote,
+		ShortLabel:             results[0].ShortLabel,
+		Strapline:              results[0].Strapline,
+		TerminationDate:        results[0].TerminationDate,
+		TwitterHandle:          results[0].TwitterHandle,
+		Type:                   typeName,
+		ProperName:             results[0].ProperName,
+		ShortName:              results[0].ShortName,
+		HiddenLabel:            results[0].HiddenLabel,
+		FormerNames:            results[0].FormerNames,
+		CountryCode:            results[0].CountryCode,
+		CountryOfIncorporation: results[0].CountryOfIncorporation,
+		PostalCode:             results[0].PostalCode,
+		YearFounded:            results[0].YearFounded,
+		LeiCode:                results[0].LeiCode,
 	}
 
 	sourceConcepts := []Concept{}
@@ -671,24 +720,33 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept AggregatedConcept) []*neoism.CypherQuery {
 	// Create a sourceConcept from the canonical information - WITH NO UUID
 	concept := Concept{
-		Aliases:              aggregatedConcept.Aliases,
-		DescriptionXML:       aggregatedConcept.DescriptionXML,
-		EmailAddress:         aggregatedConcept.EmailAddress,
-		FacebookPage:         aggregatedConcept.FacebookPage,
-		FigiCode:             aggregatedConcept.FigiCode,
-		Hash:                 aggregatedConcept.AggregatedHash,
-		ImageURL:             aggregatedConcept.ImageURL,
-		InceptionDate:        aggregatedConcept.InceptionDate,
-		InceptionDateEpoch:   aggregatedConcept.InceptionDateEpoch,
-		IssuedBy:             aggregatedConcept.IssuedBy,
-		PrefLabel:            aggregatedConcept.PrefLabel,
-		ScopeNote:            aggregatedConcept.ScopeNote,
-		ShortLabel:           aggregatedConcept.ShortLabel,
-		Strapline:            aggregatedConcept.Strapline,
-		TerminationDate:      aggregatedConcept.TerminationDate,
-		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
-		TwitterHandle:        aggregatedConcept.TwitterHandle,
-		Type:                 aggregatedConcept.Type,
+		Aliases:                aggregatedConcept.Aliases,
+		DescriptionXML:         aggregatedConcept.DescriptionXML,
+		EmailAddress:           aggregatedConcept.EmailAddress,
+		FacebookPage:           aggregatedConcept.FacebookPage,
+		FigiCode:               aggregatedConcept.FigiCode,
+		Hash:                   aggregatedConcept.AggregatedHash,
+		ImageURL:               aggregatedConcept.ImageURL,
+		InceptionDate:          aggregatedConcept.InceptionDate,
+		InceptionDateEpoch:     aggregatedConcept.InceptionDateEpoch,
+		IssuedBy:               aggregatedConcept.IssuedBy,
+		PrefLabel:              aggregatedConcept.PrefLabel,
+		ScopeNote:              aggregatedConcept.ScopeNote,
+		ShortLabel:             aggregatedConcept.ShortLabel,
+		Strapline:              aggregatedConcept.Strapline,
+		TerminationDate:        aggregatedConcept.TerminationDate,
+		TerminationDateEpoch:   aggregatedConcept.TerminationDateEpoch,
+		TwitterHandle:          aggregatedConcept.TwitterHandle,
+		Type:                   aggregatedConcept.Type,
+		ProperName:             aggregatedConcept.ProperName,
+		ShortName:              aggregatedConcept.ShortName,
+		HiddenLabel:            aggregatedConcept.HiddenLabel,
+		FormerNames:            aggregatedConcept.FormerNames,
+		CountryCode:            aggregatedConcept.CountryCode,
+		CountryOfIncorporation: aggregatedConcept.CountryOfIncorporation,
+		PostalCode:             aggregatedConcept.PostalCode,
+		YearFounded:            aggregatedConcept.YearFounded,
+		LeiCode:                aggregatedConcept.LeiCode,
 	}
 
 	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
@@ -982,7 +1040,33 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if concept.FigiCode != "" {
 		nodeProps["figiCode"] = concept.FigiCode
 	}
-
+	if concept.ProperName != "" {
+		nodeProps["properName"] = concept.ProperName
+	}
+	if concept.ShortName != "" {
+		nodeProps["shortName"] = concept.ShortName
+	}
+	if concept.HiddenLabel != "" {
+		nodeProps["hiddenLabel"] = concept.HiddenLabel
+	}
+	if len(concept.FormerNames) > 0 {
+		nodeProps["formerNames"] = concept.FormerNames
+	}
+	if concept.CountryCode != "" {
+		nodeProps["countryCode"] = concept.CountryCode
+	}
+	if concept.CountryOfIncorporation != "" {
+		nodeProps["countryOfIncorporation"] = concept.CountryOfIncorporation
+	}
+	if concept.PostalCode != "" {
+		nodeProps["postalCode"] = concept.PostalCode
+	}
+	if concept.YearFounded > 0 {
+		nodeProps["yearFounded"] = concept.YearFounded
+	}
+	if concept.LeiCode != "" {
+		nodeProps["leiCode"] = concept.LeiCode
+	}
 	if concept.InceptionDate != "" {
 		nodeProps["inceptionDate"] = concept.InceptionDate
 	}

@@ -9,61 +9,91 @@ type MembershipRole struct {
 }
 
 type AggregatedConcept struct {
-	PrefUUID              string           `json:"prefUUID,omitempty"`
-	PrefLabel             string           `json:"prefLabel,omitempty"`
-	Type                  string           `json:"type,omitempty"`
-	Aliases               []string         `json:"aliases,omitempty"`
-	Strapline             string           `json:"strapline,omitempty"`
-	DescriptionXML        string           `json:"descriptionXML,omitempty"`
-	ImageURL              string           `json:"_imageUrl,omitempty"`
-	EmailAddress          string           `json:"emailAddress,omitempty"`
-	FacebookPage          string           `json:"facebookPage,omitempty"`
-	TwitterHandle         string           `json:"twitterHandle,omitempty"`
-	ScopeNote             string           `json:"scopeNote,omitempty"`
-	ShortLabel            string           `json:"shortLabel,omitempty"`
-	OrganisationUUID      string           `json:"organisationUUID,omitempty"`
-	PersonUUID            string           `json:"personUUID,omitempty"`
-	AggregatedHash        string           `json:"aggregateHash,omitempty"`
-	SourceRepresentations []Concept        `json:"sourceRepresentations,omitempty"`
-	MembershipRoles       []MembershipRole `json:"membershipRoles,omitempty"`
-	InceptionDate         string           `json:"inceptionDate,omitempty"`
-	TerminationDate       string           `json:"terminationDate,omitempty"`
-	InceptionDateEpoch    int64            `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
-	FigiCode              string           `json:"figiCode,omitempty"`
-	IssuedBy              string           `json:"issuedBy,omitempty"`
+	AggregatedHash        string    `json:"aggregateHash,omitempty"`
+	Aliases               []string  `json:"aliases,omitempty"`
+	DescriptionXML        string    `json:"descriptionXML,omitempty"`
+	EmailAddress          string    `json:"emailAddress,omitempty"`
+	FacebookPage          string    `json:"facebookPage,omitempty"`
+	ImageURL              string    `json:"_imageUrl,omitempty"`
+	PrefLabel             string    `json:"prefLabel,omitempty"`
+	PrefUUID              string    `json:"prefUUID,omitempty"`
+	ScopeNote             string    `json:"scopeNote,omitempty"`
+	ShortLabel            string    `json:"shortLabel,omitempty"`
+	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
+	TwitterHandle         string    `json:"twitterHandle,omitempty"`
+	Type                  string    `json:"type,omitempty"`
+	// Brand
+	Strapline string `json:"strapline,omitempty"`
+	// Person
+	IsAuthor bool `json:"isAuthor,omitempty"`
+	// Financial Instrument
+	FigiCode string `json:"figiCode,omitempty"`
+	IssuedBy string `json:"issuedBy,omitempty"`
+	// Membership
+	InceptionDate        string           `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
+	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
+	PersonUUID           string           `json:"personUUID,omitempty"`
+	TerminationDate      string           `json:"terminationDate,omitempty"`
+	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
+	// Organisation
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
 }
 
 // Concept - could be any concept genre, subject etc
 type Concept struct {
-	UUID                 string           `json:"uuid,omitempty"`
-	PrefLabel            string           `json:"prefLabel,omitempty"`
-	Type                 string           `json:"type,omitempty"`
-	Authority            string           `json:"authority,omitempty"`
-	AuthorityValue       string           `json:"authorityValue,omitempty"`
-	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	Aliases              []string         `json:"aliases,omitempty"`
-	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
-	Strapline            string           `json:"strapline,omitempty"`
-	DescriptionXML       string           `json:"descriptionXML,omitempty"`
-	ImageURL             string           `json:"_imageUrl,omitempty"`
-	EmailAddress         string           `json:"emailAddress,omitempty"`
-	FacebookPage         string           `json:"facebookPage,omitempty"`
-	TwitterHandle        string           `json:"twitterHandle,omitempty"`
-	ScopeNote            string           `json:"scopeNote,omitempty"`
-	ShortLabel           string           `json:"shortLabel,omitempty"`
-	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
-	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
+	Aliases           []string `json:"aliases,omitempty"`
+	Authority         string   `json:"authority,omitempty"`
+	AuthorityValue    string   `json:"authorityValue,omitempty"`
+	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
+	DescriptionXML    string   `json:"descriptionXML,omitempty"`
+	EmailAddress      string   `json:"emailAddress,omitempty"`
+	FacebookPage      string   `json:"facebookPage,omitempty"`
+	Hash              string   `json:"hash,omitempty"`
+	ImageURL          string   `json:"_imageUrl,omitempty"`
+	LastModifiedEpoch int      `json:"lastModifiedEpoch,omitempty"`
+	ParentUUIDs       []string `json:"parentUUIDs,omitempty"`
+	PrefLabel         string   `json:"prefLabel,omitempty"`
+	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
+	ScopeNote         string   `json:"scopeNote,omitempty"`
+	ShortLabel        string   `json:"shortLabel,omitempty"`
+	TwitterHandle     string   `json:"twitterHandle,omitempty"`
+	Type              string   `json:"type,omitempty"`
+	UUID              string   `json:"uuid,omitempty"`
+	// Brand
+	Strapline string `json:"strapline,omitempty"`
+	// Person
+	IsAuthor bool `json:"isAuthor,omitempty"`
+	// Financial Instrument
+	FigiCode string `json:"figiCode,omitempty"`
+	IssuedBy string `json:"issuedBy,omitempty"`
+	// Membership
+	InceptionDate        string           `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
+	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
 	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
 	PersonUUID           string           `json:"personUUID,omitempty"`
-	Hash                 string           `json:"hash,omitempty"`
-	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
-	InceptionDate        string           `json:"inceptionDate,omitempty"`
 	TerminationDate      string           `json:"terminationDate,omitempty"`
-	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
 	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
-	FigiCode             string           `json:"figiCode,omitempty"`
-	IssuedBy             string           `json:"issuedBy,omitempty"`
+	// Organisation
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
 }
 
 type UpdatedConcepts struct {
@@ -84,6 +114,7 @@ var constraintMap = map[string]string{
 	"Genre":                "uuid",
 	"Brand":                "uuid",
 	"AlphavilleSeries":     "uuid",
+	"PublicCompany":        "uuid",
 	"Person":               "uuid",
 	"Organisation":         "uuid",
 	"MembershipRole":       "uuid",
@@ -97,10 +128,22 @@ var constraintMap = map[string]string{
 }
 
 var conceptLabels = [...]string{
-	"Concept", "Classification", "Section", "Subject", "SpecialReport", "Topic",
-	"Location", "Genre", "Brand", "Person", "Organisation", "MembershipRole", "Membership",
 	"BoardRole",
+	"Brand",
+	"Classification",
+	"Concept",
 	"FinancialInstrument",
+	"Genre",
+	"Location",
+	"Membership",
+	"MembershipRole",
+	"Organisation",
+	"Person",
+	"PublicCompany",
+	"Section",
+	"SpecialReport",
+	"Subject",
+	"Topic",
 }
 
 // Map of authority and nodelabel for identifiers - we should be removing

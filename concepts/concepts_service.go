@@ -174,6 +174,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					authority: source.authority,
 					authorityValue: source.authorityValue,
 					broaderUUIDs: collect(broader.uuid),
+					figiCode: source.figiCode,
 					issuedBy: issuer.uuid,
 					lastModifiedEpoch: source.lastModifiedEpoch,
 					membershipRoles: collect({
@@ -280,6 +281,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			Authority:         srcConcept.Authority,
 			AuthorityValue:    srcConcept.AuthorityValue,
 			BroaderUUIDs:      filterSlice(srcConcept.BroaderUUIDs),
+			FigiCode: 			srcConcept.FigiCode,
 			IssuedBy:          srcConcept.IssuedBy,
 			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
 			MembershipRoles:   cleanMembershipRoles(srcConcept.MembershipRoles),
@@ -938,7 +940,9 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 
 	nodeProps["prefLabel"] = concept.PrefLabel
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
-
+	if concept.FigiCode != "" {
+		nodeProps["figiCode"] = concept.FigiCode
+	}
 
 	if isSource {
 		nodeProps["uuid"] = id
@@ -978,9 +982,6 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	}
 	if concept.Strapline != "" {
 		nodeProps["strapline"] = concept.Strapline
-	}
-	if concept.FigiCode != "" {
-		nodeProps["figiCode"] = concept.FigiCode
 	}
 
 	if concept.InceptionDate != "" {
@@ -1162,6 +1163,7 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 			BroaderUUIDs: source.BroaderUUIDs,
 			MembershipRoles: source.MembershipRoles,
 			IssuedBy: source.IssuedBy,
+			FigiCode: source.FigiCode,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

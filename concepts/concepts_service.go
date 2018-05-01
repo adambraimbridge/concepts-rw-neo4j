@@ -281,7 +281,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			Authority:         srcConcept.Authority,
 			AuthorityValue:    srcConcept.AuthorityValue,
 			BroaderUUIDs:      filterSlice(srcConcept.BroaderUUIDs),
-			FigiCode: 			srcConcept.FigiCode,
+			FigiCode:          srcConcept.FigiCode,
 			IssuedBy:          srcConcept.IssuedBy,
 			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
 			MembershipRoles:   cleanMembershipRoles(srcConcept.MembershipRoles),
@@ -955,7 +955,6 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	nodeProps["prefUUID"] = id
 	nodeProps["aggregateHash"] = concept.Hash
 
-
 	if len(concept.Aliases) > 0 {
 		nodeProps["aliases"] = concept.Aliases
 	}
@@ -1151,19 +1150,19 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 	var cleanSources []Concept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := Concept{
-			UUID: source.UUID,
-			PrefLabel: source.PrefLabel,
-			Type: source.Type,
-			Authority: source.Authority,
-			AuthorityValue: source.AuthorityValue,
-			ParentUUIDs: source.ParentUUIDs,
+			UUID:             source.UUID,
+			PrefLabel:        source.PrefLabel,
+			Type:             source.Type,
+			Authority:        source.Authority,
+			AuthorityValue:   source.AuthorityValue,
+			ParentUUIDs:      source.ParentUUIDs,
 			OrganisationUUID: source.OrganisationUUID,
-			PersonUUID: source.PersonUUID,
-			RelatedUUIDs: source.RelatedUUIDs,
-			BroaderUUIDs: source.BroaderUUIDs,
-			MembershipRoles: source.MembershipRoles,
-			IssuedBy: source.IssuedBy,
-			FigiCode: source.FigiCode,
+			PersonUUID:       source.PersonUUID,
+			RelatedUUIDs:     source.RelatedUUIDs,
+			BroaderUUIDs:     source.BroaderUUIDs,
+			MembershipRoles:  source.MembershipRoles,
+			IssuedBy:         source.IssuedBy,
+			FigiCode:         source.FigiCode,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

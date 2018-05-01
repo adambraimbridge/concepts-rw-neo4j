@@ -9,19 +9,19 @@ type MembershipRole struct {
 }
 
 type AggregatedConcept struct {
-	AggregatedHash        string    `json:"aggregateHash,omitempty"`
+	PrefUUID              string    `json:"prefUUID,omitempty"`
+	Type                  string    `json:"type,omitempty"`
+	PrefLabel             string    `json:"prefLabel,omitempty"`
+	ShortLabel            string    `json:"shortLabel,omitempty"`
 	Aliases               []string  `json:"aliases,omitempty"`
 	DescriptionXML        string    `json:"descriptionXML,omitempty"`
+	ImageURL              string    `json:"_imageUrl,omitempty"`
 	EmailAddress          string    `json:"emailAddress,omitempty"`
 	FacebookPage          string    `json:"facebookPage,omitempty"`
-	ImageURL              string    `json:"_imageUrl,omitempty"`
-	PrefLabel             string    `json:"prefLabel,omitempty"`
-	PrefUUID              string    `json:"prefUUID,omitempty"`
-	ScopeNote             string    `json:"scopeNote,omitempty"`
-	ShortLabel            string    `json:"shortLabel,omitempty"`
-	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
 	TwitterHandle         string    `json:"twitterHandle,omitempty"`
-	Type                  string    `json:"type,omitempty"`
+	AggregatedHash        string    `json:"aggregateHash,omitempty"`
+	ScopeNote             string    `json:"scopeNote,omitempty"`
+
 	// Brand
 	Strapline string `json:"strapline,omitempty"`
 	// Person
@@ -47,6 +47,8 @@ type AggregatedConcept struct {
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
 	YearFounded            int      `json:"yearFounded,omitempty"`
+
+	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
 }
 
 // Concept - could be any concept genre, subject etc

@@ -205,6 +205,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					authority: source.authority,
 					authorityValue: source.authorityValue,
 					broaderUUIDs: collect(broader.uuid),
+					figiCode: source.figiCode,
 					issuedBy: issuer.uuid,
 					lastModifiedEpoch: source.lastModifiedEpoch,
 					membershipRoles: collect({
@@ -329,6 +330,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			Authority:         srcConcept.Authority,
 			AuthorityValue:    srcConcept.AuthorityValue,
 			BroaderUUIDs:      filterSlice(srcConcept.BroaderUUIDs),
+			FigiCode:          srcConcept.FigiCode,
 			IssuedBy:          srcConcept.IssuedBy,
 			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
 			MembershipRoles:   cleanMembershipRoles(srcConcept.MembershipRoles),
@@ -996,7 +998,9 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 
 	nodeProps["prefLabel"] = concept.PrefLabel
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
-
+	if concept.FigiCode != "" {
+		nodeProps["figiCode"] = concept.FigiCode
+	}
 
 	if isSource {
 		nodeProps["uuid"] = id
@@ -1008,7 +1012,6 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 
 	nodeProps["prefUUID"] = id
 	nodeProps["aggregateHash"] = concept.Hash
-
 
 	if len(concept.Aliases) > 0 {
 		nodeProps["aliases"] = concept.Aliases
@@ -1036,36 +1039,6 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	}
 	if concept.Strapline != "" {
 		nodeProps["strapline"] = concept.Strapline
-	}
-	if concept.FigiCode != "" {
-		nodeProps["figiCode"] = concept.FigiCode
-	}
-	if concept.ProperName != "" {
-		nodeProps["properName"] = concept.ProperName
-	}
-	if concept.ShortName != "" {
-		nodeProps["shortName"] = concept.ShortName
-	}
-	if concept.HiddenLabel != "" {
-		nodeProps["hiddenLabel"] = concept.HiddenLabel
-	}
-	if len(concept.FormerNames) > 0 {
-		nodeProps["formerNames"] = concept.FormerNames
-	}
-	if concept.CountryCode != "" {
-		nodeProps["countryCode"] = concept.CountryCode
-	}
-	if concept.CountryOfIncorporation != "" {
-		nodeProps["countryOfIncorporation"] = concept.CountryOfIncorporation
-	}
-	if concept.PostalCode != "" {
-		nodeProps["postalCode"] = concept.PostalCode
-	}
-	if concept.YearFounded > 0 {
-		nodeProps["yearFounded"] = concept.YearFounded
-	}
-	if concept.LeiCode != "" {
-		nodeProps["leiCode"] = concept.LeiCode
 	}
 	if concept.InceptionDate != "" {
 		nodeProps["inceptionDate"] = concept.InceptionDate
@@ -1234,18 +1207,19 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 	var cleanSources []Concept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := Concept{
-			UUID: source.UUID,
-			PrefLabel: source.PrefLabel,
-			Type: source.Type,
-			Authority: source.Authority,
-			AuthorityValue: source.AuthorityValue,
-			ParentUUIDs: source.ParentUUIDs,
+			UUID:             source.UUID,
+			PrefLabel:        source.PrefLabel,
+			Type:             source.Type,
+			Authority:        source.Authority,
+			AuthorityValue:   source.AuthorityValue,
+			ParentUUIDs:      source.ParentUUIDs,
 			OrganisationUUID: source.OrganisationUUID,
-			PersonUUID: source.PersonUUID,
-			RelatedUUIDs: source.RelatedUUIDs,
-			BroaderUUIDs: source.BroaderUUIDs,
-			MembershipRoles: source.MembershipRoles,
-			IssuedBy: source.IssuedBy,
+			PersonUUID:       source.PersonUUID,
+			RelatedUUIDs:     source.RelatedUUIDs,
+			BroaderUUIDs:     source.BroaderUUIDs,
+			MembershipRoles:  source.MembershipRoles,
+			IssuedBy:         source.IssuedBy,
+			FigiCode:         source.FigiCode,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

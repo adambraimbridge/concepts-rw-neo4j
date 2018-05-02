@@ -32,6 +32,16 @@ type AggregatedConcept struct {
 	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
 	FigiCode              string           `json:"figiCode,omitempty"`
 	IssuedBy              string           `json:"issuedBy,omitempty"`
+	// Organisations
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
 }
 
 // Concept - could be any concept genre, subject etc
@@ -64,6 +74,16 @@ type Concept struct {
 	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
 	FigiCode             string           `json:"figiCode,omitempty"`
 	IssuedBy             string           `json:"issuedBy,omitempty"`
+	// Organisations
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
 }
 
 type UpdatedConcepts struct {
@@ -84,6 +104,7 @@ var constraintMap = map[string]string{
 	"Genre":                "uuid",
 	"Brand":                "uuid",
 	"AlphavilleSeries":     "uuid",
+	"PublicCompany":        "uuid",
 	"Person":               "uuid",
 	"Organisation":         "uuid",
 	"MembershipRole":       "uuid",
@@ -101,6 +122,7 @@ var conceptLabels = [...]string{
 	"Location", "Genre", "Brand", "Person", "Organisation", "MembershipRole", "Membership",
 	"BoardRole",
 	"FinancialInstrument",
+	"PublicCompany",
 }
 
 // Map of authority and nodelabel for identifiers - we should be removing

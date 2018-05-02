@@ -95,6 +95,16 @@ type neoAggregatedConcept struct {
 	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
 	TwitterHandle         string           `json:"twitterHandle,omitempty"`
 	Types                 []string         `json:"types"`
+	// Organisations
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
 }
 
 type neoConcept struct {
@@ -126,6 +136,16 @@ type neoConcept struct {
 	TwitterHandle        string           `json:"twitterHandle,omitempty"`
 	Types                []string         `json:"types,omitempty"`
 	UUID                 string           `json:"uuid,omitempty"`
+	// Organisations
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -222,7 +242,16 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				labels(canonical) as types,
 				membershipRoles,
 				org.uuid as organisationUUID,
-				person.uuid as personUUID
+				person.uuid as personUUID,
+				canonical.properName as properName,
+				canonical.shortName as shortName,
+				canonical.hiddenLabel as hiddenLabel,
+				canonical.formerNames as formerNames,
+				canonical.countryCode as countryCode,
+				canonical.countryOfIncorporation as countryOfIncorporation,
+				canonical.postalCode as postalCode,
+				canonical.yearFounded as yearFounded,
+				canonical.leiCode as leiCode
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -267,6 +296,16 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		TerminationDate:  results[0].TerminationDate,
 		TwitterHandle:    results[0].TwitterHandle,
 		Type:             typeName,
+		// Organisations
+		ProperName:             results[0].ProperName,
+		ShortName:              results[0].ShortName,
+		HiddenLabel:            results[0].HiddenLabel,
+		FormerNames:            results[0].FormerNames,
+		CountryCode:            results[0].CountryCode,
+		CountryOfIncorporation: results[0].CountryOfIncorporation,
+		PostalCode:             results[0].PostalCode,
+		YearFounded:            results[0].YearFounded,
+		LeiCode:                results[0].LeiCode,
 	}
 
 	sourceConcepts := []Concept{}
@@ -691,6 +730,16 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
 		TwitterHandle:        aggregatedConcept.TwitterHandle,
 		Type:                 aggregatedConcept.Type,
+		// Organisations
+		ProperName:             aggregatedConcept.ProperName,
+		ShortName:              aggregatedConcept.ShortName,
+		HiddenLabel:            aggregatedConcept.HiddenLabel,
+		FormerNames:            aggregatedConcept.FormerNames,
+		CountryCode:            aggregatedConcept.CountryCode,
+		CountryOfIncorporation: aggregatedConcept.CountryOfIncorporation,
+		PostalCode:             aggregatedConcept.PostalCode,
+		YearFounded:            aggregatedConcept.YearFounded,
+		LeiCode:                aggregatedConcept.LeiCode,
 	}
 
 	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
@@ -982,7 +1031,36 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if concept.Strapline != "" {
 		nodeProps["strapline"] = concept.Strapline
 	}
-
+	if concept.FigiCode != "" {
+		nodeProps["figiCode"] = concept.FigiCode
+	}
+	if concept.ProperName != "" {
+		nodeProps["properName"] = concept.ProperName
+	}
+	if concept.ShortName != "" {
+		nodeProps["shortName"] = concept.ShortName
+	}
+	if concept.HiddenLabel != "" {
+		nodeProps["hiddenLabel"] = concept.HiddenLabel
+	}
+	if len(concept.FormerNames) > 0 {
+		nodeProps["formerNames"] = concept.FormerNames
+	}
+	if concept.CountryCode != "" {
+		nodeProps["countryCode"] = concept.CountryCode
+	}
+	if concept.CountryOfIncorporation != "" {
+		nodeProps["countryOfIncorporation"] = concept.CountryOfIncorporation
+	}
+	if concept.PostalCode != "" {
+		nodeProps["postalCode"] = concept.PostalCode
+	}
+	if concept.YearFounded > 0 {
+		nodeProps["yearFounded"] = concept.YearFounded
+	}
+	if concept.LeiCode != "" {
+		nodeProps["leiCode"] = concept.LeiCode
+	}
 	if concept.InceptionDate != "" {
 		nodeProps["inceptionDate"] = concept.InceptionDate
 	}

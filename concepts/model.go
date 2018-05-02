@@ -84,6 +84,7 @@ type Concept struct {
 	PostalCode             string   `json:"postalCode,omitempty"`
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`
+	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
 }
 
 type UpdatedConcepts struct {

@@ -105,6 +105,7 @@ type neoAggregatedConcept struct {
 	PostalCode             string   `json:"postalCode,omitempty"`
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`
+	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
 }
 
 type neoConcept struct {
@@ -146,6 +147,7 @@ type neoConcept struct {
 	PostalCode             string   `json:"postalCode,omitempty"`
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`
+	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -168,6 +170,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
 			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
+			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
 			WITH
 				broader,
 				canonical,
@@ -178,6 +181,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				related,
 				role,
 				roleRel,
+				parentOrg,
 				source
 				ORDER BY
 					source.uuid,
@@ -207,6 +211,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					organisationUUID: org.uuid,
 					parentUUIDs: collect(parent.uuid),
 					personUUID: person.uuid,
+					parentOrganisation: parentOrg.uuid,
 					prefLabel: source.prefLabel,
 					relatedUUIDs: collect(related.uuid),
 					types: labels(source),
@@ -317,20 +322,21 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		}
 
 		concept := Concept{
-			Authority:         srcConcept.Authority,
-			AuthorityValue:    srcConcept.AuthorityValue,
-			BroaderUUIDs:      filterSlice(srcConcept.BroaderUUIDs),
-			FigiCode:          srcConcept.FigiCode,
-			IssuedBy:          srcConcept.IssuedBy,
-			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
-			MembershipRoles:   cleanMembershipRoles(srcConcept.MembershipRoles),
-			OrganisationUUID:  srcConcept.OrganisationUUID,
-			ParentUUIDs:       filterSlice(srcConcept.ParentUUIDs),
-			PersonUUID:        srcConcept.PersonUUID,
-			PrefLabel:         srcConcept.PrefLabel,
-			RelatedUUIDs:      filterSlice(srcConcept.RelatedUUIDs),
-			Type:              conceptType,
-			UUID:              srcConcept.UUID,
+			Authority:          srcConcept.Authority,
+			AuthorityValue:     srcConcept.AuthorityValue,
+			BroaderUUIDs:       filterSlice(srcConcept.BroaderUUIDs),
+			FigiCode:           srcConcept.FigiCode,
+			ParentOrganisation: srcConcept.ParentOrganisation,
+			IssuedBy:           srcConcept.IssuedBy,
+			LastModifiedEpoch:  srcConcept.LastModifiedEpoch,
+			MembershipRoles:    cleanMembershipRoles(srcConcept.MembershipRoles),
+			OrganisationUUID:   srcConcept.OrganisationUUID,
+			ParentUUIDs:        filterSlice(srcConcept.ParentUUIDs),
+			PersonUUID:         srcConcept.PersonUUID,
+			PrefLabel:          srcConcept.PrefLabel,
+			RelatedUUIDs:       filterSlice(srcConcept.RelatedUUIDs),
+			Type:               conceptType,
+			UUID:               srcConcept.UUID,
 		}
 		sourceConcepts = append(sourceConcepts, concept)
 	}
@@ -862,6 +868,21 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		queryBatch = append(queryBatch, writeFinIns)
 	}
 
+	if uuid != "" && concept.ParentOrganisation != "" {
+		writeParentOrganisation := &neoism.CypherQuery{
+			Statement: `MERGE (org:Thing {uuid: {uuid}})
+							MERGE (orgUPP:Identifier:UPPIdentifier {value: {orgUUID}})
+							MERGE (parentOrg:Thing {uuid: {orgUUID}})
+							MERGE (orgUPP)-[:IDENTIFIES]->(parentOrg)
+							MERGE (org)-[:SUB_ORGANISATION_OF]->(parentOrg)`,
+			Parameters: neoism.Props{
+				"orgUUID": concept.ParentOrganisation,
+				"uuid":    concept.UUID,
+			},
+		}
+		queryBatch = append(queryBatch, writeParentOrganisation)
+	}
+
 	if uuid != "" && len(concept.MembershipRoles) > 0 {
 		for _, membershipRole := range concept.MembershipRoles {
 			params := neoism.Props{
@@ -1228,19 +1249,20 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 	var cleanSources []Concept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := Concept{
-			UUID:             source.UUID,
-			PrefLabel:        source.PrefLabel,
-			Type:             source.Type,
-			Authority:        source.Authority,
-			AuthorityValue:   source.AuthorityValue,
-			ParentUUIDs:      source.ParentUUIDs,
-			OrganisationUUID: source.OrganisationUUID,
-			PersonUUID:       source.PersonUUID,
-			RelatedUUIDs:     source.RelatedUUIDs,
-			BroaderUUIDs:     source.BroaderUUIDs,
-			MembershipRoles:  source.MembershipRoles,
-			IssuedBy:         source.IssuedBy,
-			FigiCode:         source.FigiCode,
+			UUID:               source.UUID,
+			PrefLabel:          source.PrefLabel,
+			Type:               source.Type,
+			Authority:          source.Authority,
+			AuthorityValue:     source.AuthorityValue,
+			ParentUUIDs:        source.ParentUUIDs,
+			OrganisationUUID:   source.OrganisationUUID,
+			PersonUUID:         source.PersonUUID,
+			RelatedUUIDs:       source.RelatedUUIDs,
+			BroaderUUIDs:       source.BroaderUUIDs,
+			MembershipRoles:    source.MembershipRoles,
+			IssuedBy:           source.IssuedBy,
+			FigiCode:           source.FigiCode,
+			ParentOrganisation: source.ParentOrganisation,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

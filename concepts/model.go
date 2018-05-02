@@ -119,8 +119,19 @@ var constraintMap = map[string]string{
 }
 
 var conceptLabels = [...]string{
-	"Concept", "Classification", "Section", "Subject", "SpecialReport", "Topic",
-	"Location", "Genre", "Brand", "Person", "Organisation", "MembershipRole", "Membership",
+	"Concept",
+	"Classification",
+	"Section",
+	"Subject",
+	"SpecialReport",
+	"Topic",
+	"Location",
+	"Genre",
+	"Brand",
+	"Person",
+	"Organisation",
+	"MembershipRole",
+	"Membership",
 	"BoardRole",
 	"FinancialInstrument",
 	"PublicCompany",

@@ -322,21 +322,22 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		}
 
 		concept := Concept{
-			Authority:          srcConcept.Authority,
-			AuthorityValue:     srcConcept.AuthorityValue,
-			BroaderUUIDs:       filterSlice(srcConcept.BroaderUUIDs),
-			FigiCode:           srcConcept.FigiCode,
+			Authority:         srcConcept.Authority,
+			AuthorityValue:    srcConcept.AuthorityValue,
+			BroaderUUIDs:      filterSlice(srcConcept.BroaderUUIDs),
+			FigiCode:          srcConcept.FigiCode,
+			IssuedBy:          srcConcept.IssuedBy,
+			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
+			MembershipRoles:   cleanMembershipRoles(srcConcept.MembershipRoles),
+			OrganisationUUID:  srcConcept.OrganisationUUID,
+			ParentUUIDs:       filterSlice(srcConcept.ParentUUIDs),
+			PersonUUID:        srcConcept.PersonUUID,
+			PrefLabel:         srcConcept.PrefLabel,
+			RelatedUUIDs:      filterSlice(srcConcept.RelatedUUIDs),
+			Type:              conceptType,
+			UUID:              srcConcept.UUID,
+			// Organisations
 			ParentOrganisation: srcConcept.ParentOrganisation,
-			IssuedBy:           srcConcept.IssuedBy,
-			LastModifiedEpoch:  srcConcept.LastModifiedEpoch,
-			MembershipRoles:    cleanMembershipRoles(srcConcept.MembershipRoles),
-			OrganisationUUID:   srcConcept.OrganisationUUID,
-			ParentUUIDs:        filterSlice(srcConcept.ParentUUIDs),
-			PersonUUID:         srcConcept.PersonUUID,
-			PrefLabel:          srcConcept.PrefLabel,
-			RelatedUUIDs:       filterSlice(srcConcept.RelatedUUIDs),
-			Type:               conceptType,
-			UUID:               srcConcept.UUID,
 		}
 		sourceConcepts = append(sourceConcepts, concept)
 	}
@@ -1249,19 +1250,20 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 	var cleanSources []Concept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := Concept{
-			UUID:               source.UUID,
-			PrefLabel:          source.PrefLabel,
-			Type:               source.Type,
-			Authority:          source.Authority,
-			AuthorityValue:     source.AuthorityValue,
-			ParentUUIDs:        source.ParentUUIDs,
-			OrganisationUUID:   source.OrganisationUUID,
-			PersonUUID:         source.PersonUUID,
-			RelatedUUIDs:       source.RelatedUUIDs,
-			BroaderUUIDs:       source.BroaderUUIDs,
-			MembershipRoles:    source.MembershipRoles,
-			IssuedBy:           source.IssuedBy,
-			FigiCode:           source.FigiCode,
+			UUID:             source.UUID,
+			PrefLabel:        source.PrefLabel,
+			Type:             source.Type,
+			Authority:        source.Authority,
+			AuthorityValue:   source.AuthorityValue,
+			ParentUUIDs:      source.ParentUUIDs,
+			OrganisationUUID: source.OrganisationUUID,
+			PersonUUID:       source.PersonUUID,
+			RelatedUUIDs:     source.RelatedUUIDs,
+			BroaderUUIDs:     source.BroaderUUIDs,
+			MembershipRoles:  source.MembershipRoles,
+			IssuedBy:         source.IssuedBy,
+			FigiCode:         source.FigiCode,
+			// Organisations
 			ParentOrganisation: source.ParentOrganisation,
 		}
 		cleanSources = append(cleanSources, cleanConcept)

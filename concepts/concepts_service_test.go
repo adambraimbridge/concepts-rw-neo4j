@@ -709,13 +709,14 @@ func getFinancialInstrument() AggregatedConcept {
 		FigiCode:  "12345",
 		IssuedBy:  financialOrgUUID,
 		SourceRepresentations: []Concept{{
-			UUID:           financialInstrumentUUID,
-			PrefLabel:      "FinancialInstrument Pref Label",
-			Type:           "FinancialInstrument",
-			Authority:      "FACTSET",
-			AuthorityValue: "746464",
-			FigiCode:       "12345",
-			IssuedBy:       financialOrgUUID,
+			UUID:               financialInstrumentUUID,
+			PrefLabel:          "FinancialInstrument Pref Label",
+			Type:               "FinancialInstrument",
+			Authority:          "FACTSET",
+			AuthorityValue:     "746464",
+			FigiCode:           "12345",
+			ParentOrganisation: "123",
+			IssuedBy:           financialOrgUUID,
 		}},
 	}
 }
@@ -728,13 +729,14 @@ func getFinancialInstrumentWithSameIssuer() AggregatedConcept {
 		FigiCode:  "12345678",
 		IssuedBy:  financialOrgUUID,
 		SourceRepresentations: []Concept{{
-			UUID:           financialInstrumentSameIssuerUUID,
-			PrefLabel:      "FinancialInstrument Pref Label 2",
-			Type:           "FinancialInstrument",
-			Authority:      "FACTSET",
-			AuthorityValue: "19283671",
-			FigiCode:       "12345678",
-			IssuedBy:       financialOrgUUID,
+			UUID:               financialInstrumentSameIssuerUUID,
+			PrefLabel:          "FinancialInstrument Pref Label 2",
+			Type:               "FinancialInstrument",
+			Authority:          "FACTSET",
+			AuthorityValue:     "19283671",
+			FigiCode:           "12345678",
+			ParentOrganisation: "123",
+			IssuedBy:           financialOrgUUID,
 		}},
 	}
 }
@@ -747,14 +749,131 @@ func getUpdatedFinancialInstrument() AggregatedConcept {
 		FigiCode:  "123457",
 		IssuedBy:  anotherFinancialOrgUUID,
 		SourceRepresentations: []Concept{{
-			UUID:           financialInstrumentUUID,
-			PrefLabel:      "FinancialInstrument Pref Label",
-			Type:           "FinancialInstrument",
-			Authority:      "FACTSET",
-			AuthorityValue: "746464",
-			FigiCode:       "123457",
-			IssuedBy:       anotherFinancialOrgUUID,
+			UUID:               financialInstrumentUUID,
+			PrefLabel:          "FinancialInstrument Pref Label",
+			Type:               "FinancialInstrument",
+			Authority:          "FACTSET",
+			AuthorityValue:     "746464",
+			FigiCode:           "123457",
+			ParentOrganisation: "123",
+			IssuedBy:           anotherFinancialOrgUUID,
 		}},
+	}
+}
+
+func getOrganisation() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:    "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+		Type:        "PublicCompany",
+		ProperName:  "Strix Group Plc",
+		PrefLabel:   "Strix Group Plc",
+		ShortName:   "Strix Group",
+		HiddenLabel: "STRIX GROUP PLC",
+		FormerNames: []string{
+			"Castletown Thermostats",
+			"Steam Plc",
+		},
+		Aliases: []string{
+			"Strix Group Plc",
+			"STRIX GROUP PLC",
+			"Strix Group",
+			"Castletown Thermostats",
+			"Steam Plc",
+		},
+		CountryCode:            "GB",
+		CountryOfIncorporation: "IM",
+		PostalCode:             "IM9 2RG",
+		YearFounded:            1951,
+		EmailAddress:           "info@strix.com",
+		LeiCode:                "213800KZEW5W6BZMNT62",
+		SourceRepresentations: []Concept{
+			{
+				UUID:           "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+				Type:           "PublicCompany",
+				Authority:      "FACTSET",
+				AuthorityValue: "B000BB-S",
+				ProperName:     "Strix Group Plc",
+				PrefLabel:      "Strix Group Plc",
+				ShortName:      "Strix Group",
+				HiddenLabel:    "STRIX GROUP PLC",
+				FormerNames: []string{
+					"Castletown Thermostats",
+					"Steam Plc",
+				},
+				Aliases: []string{
+					"Strix Group Plc",
+					"STRIX GROUP PLC",
+					"Strix Group",
+					"Castletown Thermostats",
+					"Steam Plc",
+				},
+				CountryCode:            "GB",
+				CountryOfIncorporation: "IM",
+				PostalCode:             "IM9 2RG",
+				YearFounded:            1951,
+				EmailAddress:           "info@strix.com",
+				LeiCode:                "213800KZEW5W6BZMNT62",
+				ParentOrganisation:     "ORG122",
+			},
+		},
+	}
+}
+
+func getUpdatedOrganisation() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:    "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+		Type:        "PublicCompany",
+		ProperName:  "Strix Group Plc",
+		PrefLabel:   "Strix Group Plc",
+		ShortName:   "Strix Group",
+		HiddenLabel: "STRIX GROUP PLC",
+		FormerNames: []string{
+			"Castletown Thermostats",
+			"Steam Plc",
+		},
+		Aliases: []string{
+			"Strix Group Plc",
+			"STRIX GROUP PLC",
+			"Strix Group",
+			"Castletown Thermostats",
+			"Steam Plc",
+		},
+		CountryCode:            "GB 2",
+		CountryOfIncorporation: "IM 2",
+		PostalCode:             "IM9 2RG 2",
+		YearFounded:            1951,
+		EmailAddress:           "info@strix.com",
+		LeiCode:                "213800KZEW5W6BZMNT62",
+		SourceRepresentations: []Concept{
+			{
+				UUID:           "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+				Type:           "PublicCompany",
+				Authority:      "FACTSET",
+				AuthorityValue: "B000BB-S",
+				ProperName:     "Strix Group Plc",
+				PrefLabel:      "Strix Group Plc",
+				ShortName:      "Strix Group",
+				HiddenLabel:    "STRIX GROUP PLC",
+				FormerNames: []string{
+					"Castletown Thermostats",
+					"Steam Plc",
+				},
+				Aliases: []string{
+					"Strix Group Plc",
+					"STRIX GROUP PLC",
+					"Strix Group",
+					"Castletown Thermostats",
+					"Steam Plc",
+				},
+				CountryCode:            "GB 2",
+				CountryOfIncorporation: "IM 2",
+				PostalCode:             "IM9 2RG 2",
+				YearFounded:            1951,
+				EmailAddress:           "info@strix.com",
+				LeiCode:                "213800KZEW5W6BZMNT62",
+				ParentOrganisation:     "ORG123",
+			},
+		},
 	}
 }
 
@@ -1015,6 +1134,20 @@ func TestWriteService(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWriteMemberships_Organisation(t *testing.T) {
+	defer cleanDB(t)
+
+	org := getOrganisation()
+	_, err := conceptsDriver.Write(org, "test_tid")
+	assert.NoError(t, err, "Failed to write concept")
+	readConceptAndCompare(t, org, "TestWriteMemberships_Organisation")
+
+	upOrg := getUpdatedOrganisation()
+	_, err = conceptsDriver.Write(upOrg, "test_tid")
+	assert.NoError(t, err, "Failed to write concept")
+	readConceptAndCompare(t, upOrg, "TestWriteMemberships_Organisation.Updated")
 }
 
 func TestWriteMemberships_CleansUpExisting(t *testing.T) {
@@ -1618,12 +1751,12 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 }
 
 func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName string) {
-	expectedIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
-	expected := expectedIf.(AggregatedConcept)
+	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
+	actual := actualIf.(AggregatedConcept)
 
-	expected = cleanHash(cleanConcept(expected))
+	actual = cleanHash(cleanConcept(actual))
 	clean := cleanSourceProperties(payload)
-	actual := cleanHash(cleanConcept(clean))
+	expected := cleanHash(cleanConcept(clean))
 
 	assert.Equal(t, expected, actual, fmt.Sprintf("Test %s failed: Concepts were not equal", testName))
 	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Unexpected Error occurred", testName))

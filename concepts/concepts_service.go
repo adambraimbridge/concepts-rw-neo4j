@@ -95,6 +95,17 @@ type neoAggregatedConcept struct {
 	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
 	TwitterHandle         string           `json:"twitterHandle,omitempty"`
 	Types                 []string         `json:"types"`
+	// Organisations
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
+	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
 }
 
 type neoConcept struct {
@@ -126,6 +137,17 @@ type neoConcept struct {
 	TwitterHandle        string           `json:"twitterHandle,omitempty"`
 	Types                []string         `json:"types,omitempty"`
 	UUID                 string           `json:"uuid,omitempty"`
+	// Organisations
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
+	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -148,6 +170,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
 			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
+			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
 			WITH
 				broader,
 				canonical,
@@ -158,6 +181,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				related,
 				role,
 				roleRel,
+				parentOrg,
 				source
 				ORDER BY
 					source.uuid,
@@ -187,6 +211,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					organisationUUID: org.uuid,
 					parentUUIDs: collect(parent.uuid),
 					personUUID: person.uuid,
+					parentOrganisation: parentOrg.uuid,
 					prefLabel: source.prefLabel,
 					relatedUUIDs: collect(related.uuid),
 					types: labels(source),
@@ -222,7 +247,16 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				labels(canonical) as types,
 				membershipRoles,
 				org.uuid as organisationUUID,
-				person.uuid as personUUID
+				person.uuid as personUUID,
+				canonical.properName as properName,
+				canonical.shortName as shortName,
+				canonical.hiddenLabel as hiddenLabel,
+				canonical.formerNames as formerNames,
+				canonical.countryCode as countryCode,
+				canonical.countryOfIncorporation as countryOfIncorporation,
+				canonical.postalCode as postalCode,
+				canonical.yearFounded as yearFounded,
+				canonical.leiCode as leiCode
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -267,6 +301,16 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		TerminationDate:  results[0].TerminationDate,
 		TwitterHandle:    results[0].TwitterHandle,
 		Type:             typeName,
+		// Organisations
+		ProperName:             results[0].ProperName,
+		ShortName:              results[0].ShortName,
+		HiddenLabel:            results[0].HiddenLabel,
+		FormerNames:            results[0].FormerNames,
+		CountryCode:            results[0].CountryCode,
+		CountryOfIncorporation: results[0].CountryOfIncorporation,
+		PostalCode:             results[0].PostalCode,
+		YearFounded:            results[0].YearFounded,
+		LeiCode:                results[0].LeiCode,
 	}
 
 	sourceConcepts := []Concept{}
@@ -292,6 +336,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			RelatedUUIDs:      filterSlice(srcConcept.RelatedUUIDs),
 			Type:              conceptType,
 			UUID:              srcConcept.UUID,
+			// Organisations
+			ParentOrganisation: srcConcept.ParentOrganisation,
 		}
 		sourceConcepts = append(sourceConcepts, concept)
 	}
@@ -643,9 +689,10 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->(memb)
 			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->(mr)
 			OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
+			OPTIONAL MATCH (t)-[parentOrgRel:SUB_ORGANISATION_OF]->(parentOrg)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr, issuerRel`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr, issuerRel, parentOrgRel`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -691,6 +738,16 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
 		TwitterHandle:        aggregatedConcept.TwitterHandle,
 		Type:                 aggregatedConcept.Type,
+		// Organisations
+		ProperName:             aggregatedConcept.ProperName,
+		ShortName:              aggregatedConcept.ShortName,
+		HiddenLabel:            aggregatedConcept.HiddenLabel,
+		FormerNames:            aggregatedConcept.FormerNames,
+		CountryCode:            aggregatedConcept.CountryCode,
+		CountryOfIncorporation: aggregatedConcept.CountryOfIncorporation,
+		PostalCode:             aggregatedConcept.PostalCode,
+		YearFounded:            aggregatedConcept.YearFounded,
+		LeiCode:                aggregatedConcept.LeiCode,
 	}
 
 	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
@@ -811,6 +868,21 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			},
 		}
 		queryBatch = append(queryBatch, writeFinIns)
+	}
+
+	if uuid != "" && concept.ParentOrganisation != "" {
+		writeParentOrganisation := &neoism.CypherQuery{
+			Statement: `MERGE (org:Thing {uuid: {uuid}})
+							MERGE (orgUPP:Identifier:UPPIdentifier {value: {orgUUID}})
+							MERGE (parentOrg:Thing {uuid: {orgUUID}})
+							MERGE (orgUPP)-[:IDENTIFIES]->(parentOrg)
+							MERGE (org)-[:SUB_ORGANISATION_OF]->(parentOrg)`,
+			Parameters: neoism.Props{
+				"orgUUID": concept.ParentOrganisation,
+				"uuid":    concept.UUID,
+			},
+		}
+		queryBatch = append(queryBatch, writeParentOrganisation)
 	}
 
 	if uuid != "" && len(concept.MembershipRoles) > 0 {
@@ -982,7 +1054,36 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if concept.Strapline != "" {
 		nodeProps["strapline"] = concept.Strapline
 	}
-
+	if concept.FigiCode != "" {
+		nodeProps["figiCode"] = concept.FigiCode
+	}
+	if concept.ProperName != "" {
+		nodeProps["properName"] = concept.ProperName
+	}
+	if concept.ShortName != "" {
+		nodeProps["shortName"] = concept.ShortName
+	}
+	if concept.HiddenLabel != "" {
+		nodeProps["hiddenLabel"] = concept.HiddenLabel
+	}
+	if len(concept.FormerNames) > 0 {
+		nodeProps["formerNames"] = concept.FormerNames
+	}
+	if concept.CountryCode != "" {
+		nodeProps["countryCode"] = concept.CountryCode
+	}
+	if concept.CountryOfIncorporation != "" {
+		nodeProps["countryOfIncorporation"] = concept.CountryOfIncorporation
+	}
+	if concept.PostalCode != "" {
+		nodeProps["postalCode"] = concept.PostalCode
+	}
+	if concept.YearFounded > 0 {
+		nodeProps["yearFounded"] = concept.YearFounded
+	}
+	if concept.LeiCode != "" {
+		nodeProps["leiCode"] = concept.LeiCode
+	}
 	if concept.InceptionDate != "" {
 		nodeProps["inceptionDate"] = concept.InceptionDate
 	}
@@ -1163,6 +1264,8 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 			MembershipRoles:  source.MembershipRoles,
 			IssuedBy:         source.IssuedBy,
 			FigiCode:         source.FigiCode,
+			// Organisations
+			ParentOrganisation: source.ParentOrganisation,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

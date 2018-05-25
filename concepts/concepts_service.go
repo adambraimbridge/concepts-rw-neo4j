@@ -95,6 +95,7 @@ type neoAggregatedConcept struct {
 	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
 	TwitterHandle         string           `json:"twitterHandle,omitempty"`
 	Types                 []string         `json:"types"`
+	IsDeprecated          bool             `json:"isDeprecated,omitempty"`
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
@@ -137,6 +138,7 @@ type neoConcept struct {
 	TwitterHandle        string           `json:"twitterHandle,omitempty"`
 	Types                []string         `json:"types,omitempty"`
 	UUID                 string           `json:"uuid,omitempty"`
+	IsDeprecated         bool             `json:"isDeprecated,omitempty"`
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
@@ -215,7 +217,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					prefLabel: source.prefLabel,
 					relatedUUIDs: collect(related.uuid),
 					types: labels(source),
-					uuid: source.uuid
+					uuid: source.uuid,
+					isDeprecated: source.isDeprecated
 				} as sources,
 				collect({
 					inceptionDate: roleRel.inceptionDate,
@@ -256,7 +259,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				canonical.countryOfIncorporation as countryOfIncorporation,
 				canonical.postalCode as postalCode,
 				canonical.yearFounded as yearFounded,
-				canonical.leiCode as leiCode
+				canonical.leiCode as leiCode,
+				canonical.isDeprecated as isDeprecated
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -301,6 +305,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		TerminationDate:  results[0].TerminationDate,
 		TwitterHandle:    results[0].TwitterHandle,
 		Type:             typeName,
+		IsDeprecated:     results[0].IsDeprecated,
 		// Organisations
 		ProperName:             results[0].ProperName,
 		ShortName:              results[0].ShortName,
@@ -336,6 +341,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			RelatedUUIDs:      filterSlice(srcConcept.RelatedUUIDs),
 			Type:              conceptType,
 			UUID:              srcConcept.UUID,
+			IsDeprecated:      srcConcept.IsDeprecated,
 			// Organisations
 			ParentOrganisation: srcConcept.ParentOrganisation,
 		}
@@ -738,6 +744,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
 		TwitterHandle:        aggregatedConcept.TwitterHandle,
 		Type:                 aggregatedConcept.Type,
+		IsDeprecated:         aggregatedConcept.IsDeprecated,
 		// Organisations
 		ProperName:             aggregatedConcept.ProperName,
 		ShortName:              aggregatedConcept.ShortName,

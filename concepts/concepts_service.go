@@ -1023,6 +1023,10 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 		nodeProps["figiCode"] = concept.FigiCode
 	}
 
+	if concept.IsDeprecated {
+		nodeProps["isDeprecated"] = true
+	}
+
 	if isSource {
 		nodeProps["uuid"] = id
 		nodeProps["authority"] = concept.Authority
@@ -1273,6 +1277,7 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 			FigiCode:         source.FigiCode,
 			// Organisations
 			ParentOrganisation: source.ParentOrganisation,
+			IsDeprecated: source.IsDeprecated,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

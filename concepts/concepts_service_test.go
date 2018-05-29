@@ -1397,6 +1397,24 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			},
 		},
 	}
+	singleConcordanceDeprecationChangesUpdates := testStruct{
+		testName:     "singleConcordanceDeprecationChangesUpdates",
+		setUpConcept: getSingleConcordance(),
+		testConcept: func() AggregatedConcept {
+			concept := getSingleConcordance()
+			concept.IsDeprecated = true
+			concept.SourceRepresentations[0].IsDeprecated = true
+			return concept
+		}(),
+		uuidsToCheck: []string{
+			basicConceptUUID,
+		},
+		updatedConcepts: UpdatedConcepts{
+			UpdatedIds: []string{
+				basicConceptUUID,
+			},
+		},
+	}
 
 	scenarios := []testStruct{
 		singleConcordanceNoChangesNoUpdates,
@@ -1409,6 +1427,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		triConcordanceToDualConcordanceUpdatesAll,
 		dataChangesOnCanonicalUpdateBoth,
 		oldCanonicalRemovedWhenSingleConcordancebecomesSource,
+		singleConcordanceDeprecationChangesUpdates,
 	}
 
 	for _, scenario := range scenarios {

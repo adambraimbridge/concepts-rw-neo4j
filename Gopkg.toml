@@ -62,8 +62,9 @@
   name = "github.com/cyberdelia/go-metrics-graphite"
 
 [[constraint]]
-  branch = "master"
+  branch = "refactor/bring-to-date"
   name = "github.com/jmcvetta/neoism"
+  source = "github.com/Financial-Times/neoism"
 
 [[constraint]]
   branch = "master"

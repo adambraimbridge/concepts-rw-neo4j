@@ -102,10 +102,11 @@
   version = "v1.0.3"
 
 [[projects]]
-  branch = "master"
+  branch = "refactor/bring-to-date"
   name = "github.com/jmcvetta/neoism"
   packages = ["."]
-  revision = "4674154f870d19b356581843f481dccd6792dcc0"
+  revision = "0de0617bae8eb5f72e94b3fbfc7f06c857f7eef5"
+  source = "github.com/Financial-Times/neoism"
 
 [[projects]]
   branch = "master"
@@ -123,10 +124,10 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/kr/pretty"
   packages = ["."]
-  revision = "cfb55aafdaf3ec08f0db22699ab822c50091b1c4"
+  revision = "73f6ac0b30a98e433b289500d779f50c1a6f0712"
+  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
@@ -212,6 +213,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0c5506ac9a60275cbc4cc6c3f785aaadde8f8ae65c0f875dfd45e1c96d4edb29"
+  inputs-digest = "acf72faa45caed42627d7d4ba9ad3fcdcda989212ed38df70f951adffab284a1"
   solver-name = "gps-cdcl"
   solver-version = 1

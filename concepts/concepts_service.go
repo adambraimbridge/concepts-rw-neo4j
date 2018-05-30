@@ -1275,7 +1275,7 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 			MembershipRoles:  source.MembershipRoles,
 			IssuedBy:         source.IssuedBy,
 			FigiCode:         source.FigiCode,
-			IsDeprecated: source.IsDeprecated,
+			IsDeprecated:     source.IsDeprecated,
 			// Organisations
 			ParentOrganisation: source.ParentOrganisation,
 		}

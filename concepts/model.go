@@ -42,6 +42,7 @@ type AggregatedConcept struct {
 	PostalCode             string   `json:"postalCode,omitempty"`
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`
+	IsDeprecated           bool     `json:"isDeprecated,omitempty"`
 }
 
 // Concept - could be any concept genre, subject etc
@@ -85,6 +86,7 @@ type Concept struct {
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`
 	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
+	IsDeprecated           bool     `json:"isDeprecated,omitempty"`
 }
 
 type UpdatedConcepts struct {

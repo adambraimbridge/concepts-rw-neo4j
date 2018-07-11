@@ -1680,6 +1680,9 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 		SourceRepresentations: []Concept{
 			{
 				UUID: basicConceptUUID,
+				Type:      "Brand",
+				AuthorityValue: "123456-UPP",
+				Authority: "UPP",
 			},
 		},
 	}
@@ -1737,7 +1740,6 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	testSourceRepNoPrefLabel := testStruct{
 		testName:      "testSourceRepNoPrefLabel",
 		aggConcept:    sourceRepNoPrefLabel,
-		returnedError: "Invalid request, no sourceRepresentation.prefLabel has been supplied",
 	}
 	testSourceRepNoType := testStruct{
 		testName:      "testSourceRepNoType",

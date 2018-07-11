@@ -568,9 +568,6 @@ func validateObject(aggConcept AggregatedConcept, transID string) error {
 		if _, ok := authorityToIdentifierLabelMap[concept.Authority]; !ok {
 			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority, therefore unable to add the relevant Identifier node: %s", concept.Authority)
 		}
-		if concept.PrefLabel == "" {
-			return requestError{formatError("sourceRepresentation.prefLabel", concept.UUID, transID)}
-		}
 		if concept.Type == "" {
 			return requestError{formatError("sourceRepresentation.type", concept.UUID, transID)}
 		}

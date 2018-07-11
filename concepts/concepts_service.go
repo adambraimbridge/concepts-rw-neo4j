@@ -1028,7 +1028,9 @@ func getSourceIds(sourceConcepts []Concept) []string {
 func setProps(concept Concept, id string, isSource bool) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 
-	nodeProps["prefLabel"] = concept.PrefLabel
+	if concept.PrefLabel != "" {
+		nodeProps["prefLabel"] = concept.PrefLabel
+	}
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
 	if concept.FigiCode != "" {
 		nodeProps["figiCode"] = concept.FigiCode

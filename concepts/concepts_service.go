@@ -100,7 +100,7 @@ type neoAggregatedConcept struct {
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
-	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	TradeNames             []string `json:"tradeNames,omitempty"`
 	FormerNames            []string `json:"formerNames,omitempty"`
 	CountryCode            string   `json:"countryCode,omitempty"`
 	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
@@ -146,7 +146,7 @@ type neoConcept struct {
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
-	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	TradeNames             []string `json:"tradeNames,omitempty"`
 	FormerNames            []string `json:"formerNames,omitempty"`
 	CountryCode            string   `json:"countryCode,omitempty"`
 	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
@@ -167,7 +167,7 @@ type equivalenceResult struct {
 
 //Read - read service
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
-	results := []neoAggregatedConcept{}
+	var results []neoAggregatedConcept
 
 	query := &neoism.CypherQuery{
 		Statement: `
@@ -260,7 +260,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				person.uuid as personUUID,
 				canonical.properName as properName,
 				canonical.shortName as shortName,
-				canonical.hiddenLabel as hiddenLabel,
+				canonical.tradeNames as tradeNames,
 				canonical.formerNames as formerNames,
 				canonical.countryCode as countryCode,
 				canonical.countryOfIncorporation as countryOfIncorporation,
@@ -318,7 +318,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		// Organisations
 		ProperName:             results[0].ProperName,
 		ShortName:              results[0].ShortName,
-		HiddenLabel:            results[0].HiddenLabel,
+		TradeNames:             results[0].TradeNames,
 		FormerNames:            results[0].FormerNames,
 		CountryCode:            results[0].CountryCode,
 		CountryOfIncorporation: results[0].CountryOfIncorporation,
@@ -330,7 +330,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		BirthYear:  results[0].BirthYear,
 	}
 
-	sourceConcepts := []Concept{}
+	var sourceConcepts []Concept
 	for _, srcConcept := range results[0].SourceRepresentations {
 		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
 		if err != nil {
@@ -488,7 +488,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 	// check that the issuer is not already related to a different org
 	if aggregatedConceptToWrite.IssuedBy != "" {
-		fiRes := []map[string]string{}
+		var fiRes []map[string]string
 		issuerQuery := &neoism.CypherQuery{
 			Statement: `
 					MATCH (issuer:Thing {uuid: {issuerUUID}})<-[:ISSUED_BY]-(fi)
@@ -595,7 +595,7 @@ func formatError(field string, uuid string, transID string) string {
 func filterIdsThatAreUniqueToFirstList(firstListIds []string, secondListIds []string) []string {
 	//Loop through both lists to find id which is present in first list but not in the second
 	var idIsUniqueToFirstList = true
-	needToBeHandled := []string{}
+	var needToBeHandled []string
 	for _, firstId := range firstListIds {
 		for _, secondId := range secondListIds {
 			if firstId == secondId {
@@ -613,8 +613,8 @@ func filterIdsThatAreUniqueToFirstList(firstListIds []string, secondListIds []st
 
 //Handle new source nodes that have been added to current concordance
 func (s *ConceptService) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transID string) ([]*neoism.CypherQuery, error) {
-	result := []equivalenceResult{}
-	deleteLonePrefUuidQueries := []*neoism.CypherQuery{}
+	var result []equivalenceResult
+	var deleteLonePrefUuidQueries []*neoism.CypherQuery
 
 	for _, updatedSourceId := range updatedSourceIds {
 		equivQuery := &neoism.CypherQuery{
@@ -693,7 +693,7 @@ func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
 	acUUID := ac.PrefUUID
 
-	queryBatch := []*neoism.CypherQuery{}
+	var queryBatch []*neoism.CypherQuery
 
 	for _, sr := range ac.SourceRepresentations {
 		deletePreviousSourceIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
@@ -760,7 +760,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		// Organisations
 		ProperName:             aggregatedConcept.ProperName,
 		ShortName:              aggregatedConcept.ShortName,
-		HiddenLabel:            aggregatedConcept.HiddenLabel,
+		TradeNames:             aggregatedConcept.TradeNames,
 		FormerNames:            aggregatedConcept.FormerNames,
 		CountryCode:            aggregatedConcept.CountryCode,
 		CountryOfIncorporation: aggregatedConcept.CountryOfIncorporation,
@@ -801,7 +801,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 
 //Create concept nodes
 func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.CypherQuery {
-	queryBatch := []*neoism.CypherQuery{}
+	var queryBatch []*neoism.CypherQuery
 	var createConceptQuery *neoism.CypherQuery
 
 	// Leaf or Lone Node

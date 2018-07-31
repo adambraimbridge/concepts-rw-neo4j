@@ -1089,11 +1089,11 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if concept.ShortName != "" {
 		nodeProps["shortName"] = concept.ShortName
 	}
-	if concept.HiddenLabel != "" {
-		nodeProps["hiddenLabel"] = concept.HiddenLabel
-	}
 	if len(concept.FormerNames) > 0 {
 		nodeProps["formerNames"] = concept.FormerNames
+	}
+	if len(concept.TradeNames) > 0 {
+		nodeProps["tradeNames"] = concept.TradeNames
 	}
 	if concept.CountryCode != "" {
 		nodeProps["countryCode"] = concept.CountryCode

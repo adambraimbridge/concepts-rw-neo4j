@@ -38,6 +38,8 @@ const (
 	anotherMembershipRoleUUID         = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
 	anotherOrganisationUUID           = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
 	anotherPersonUUID                 = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
+	testOrgUUID                       = "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
+	parentOrgUUID                     = "c001ee9c-94c5-11e8-8f42-da24cd01f044"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
@@ -719,7 +721,7 @@ func getFinancialInstrument() AggregatedConcept {
 			Authority:          "FACTSET",
 			AuthorityValue:     "746464",
 			FigiCode:           "12345",
-			ParentOrganisation: "123",
+			ParentOrganisation: parentOrgUUID,
 			IssuedBy:           financialOrgUUID,
 		}},
 	}
@@ -739,7 +741,7 @@ func getFinancialInstrumentWithSameIssuer() AggregatedConcept {
 			Authority:          "FACTSET",
 			AuthorityValue:     "19283671",
 			FigiCode:           "12345678",
-			ParentOrganisation: "123",
+			ParentOrganisation: parentOrgUUID,
 			IssuedBy:           financialOrgUUID,
 		}},
 	}
@@ -759,7 +761,7 @@ func getUpdatedFinancialInstrument() AggregatedConcept {
 			Authority:          "FACTSET",
 			AuthorityValue:     "746464",
 			FigiCode:           "123457",
-			ParentOrganisation: "123",
+			ParentOrganisation: parentOrgUUID,
 			IssuedBy:           anotherFinancialOrgUUID,
 		}},
 	}
@@ -767,12 +769,14 @@ func getUpdatedFinancialInstrument() AggregatedConcept {
 
 func getOrganisation() AggregatedConcept {
 	return AggregatedConcept{
-		PrefUUID:    "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
-		Type:        "PublicCompany",
-		ProperName:  "Strix Group Plc",
-		PrefLabel:   "Strix Group Plc",
-		ShortName:   "Strix Group",
-		HiddenLabel: "STRIX GROUP PLC",
+		PrefUUID:   testOrgUUID,
+		Type:       "PublicCompany",
+		ProperName: "Strix Group Plc",
+		PrefLabel:  "Strix Group Plc",
+		ShortName:  "Strix Group",
+		TradeNames: []string{
+			"STRIX GROUP PLC",
+		},
 		FormerNames: []string{
 			"Castletown Thermostats",
 			"Steam Plc",
@@ -792,14 +796,16 @@ func getOrganisation() AggregatedConcept {
 		LeiCode:                "213800KZEW5W6BZMNT62",
 		SourceRepresentations: []Concept{
 			{
-				UUID:           "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+				UUID:           testOrgUUID,
 				Type:           "PublicCompany",
 				Authority:      "FACTSET",
 				AuthorityValue: "B000BB-S",
 				ProperName:     "Strix Group Plc",
 				PrefLabel:      "Strix Group Plc",
 				ShortName:      "Strix Group",
-				HiddenLabel:    "STRIX GROUP PLC",
+				TradeNames: []string{
+					"STRIX GROUP PLC",
+				},
 				FormerNames: []string{
 					"Castletown Thermostats",
 					"Steam Plc",
@@ -817,7 +823,7 @@ func getOrganisation() AggregatedConcept {
 				YearFounded:            1951,
 				EmailAddress:           "info@strix.com",
 				LeiCode:                "213800KZEW5W6BZMNT62",
-				ParentOrganisation:     "ORG122",
+				ParentOrganisation:     parentOrgUUID,
 			},
 		},
 	}
@@ -825,12 +831,14 @@ func getOrganisation() AggregatedConcept {
 
 func getUpdatedOrganisation() AggregatedConcept {
 	return AggregatedConcept{
-		PrefUUID:    "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
-		Type:        "PublicCompany",
-		ProperName:  "Strix Group Plc",
-		PrefLabel:   "Strix Group Plc",
-		ShortName:   "Strix Group",
-		HiddenLabel: "STRIX GROUP PLC",
+		PrefUUID:   testOrgUUID,
+		Type:       "PublicCompany",
+		ProperName: "Strix Group Plc",
+		PrefLabel:  "Strix Group Plc",
+		ShortName:  "Strix Group",
+		TradeNames: []string{
+			"STRIX GROUP PLC",
+		},
 		FormerNames: []string{
 			"Castletown Thermostats",
 			"Steam Plc",
@@ -850,14 +858,16 @@ func getUpdatedOrganisation() AggregatedConcept {
 		LeiCode:                "213800KZEW5W6BZMNT62",
 		SourceRepresentations: []Concept{
 			{
-				UUID:           "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+				UUID:           testOrgUUID,
 				Type:           "PublicCompany",
 				Authority:      "FACTSET",
 				AuthorityValue: "B000BB-S",
 				ProperName:     "Strix Group Plc",
 				PrefLabel:      "Strix Group Plc",
 				ShortName:      "Strix Group",
-				HiddenLabel:    "STRIX GROUP PLC",
+				TradeNames: []string{
+					"STRIX GROUP PLC",
+				},
 				FormerNames: []string{
 					"Castletown Thermostats",
 					"Steam Plc",
@@ -875,7 +885,7 @@ func getUpdatedOrganisation() AggregatedConcept {
 				YearFounded:            1951,
 				EmailAddress:           "info@strix.com",
 				LeiCode:                "213800KZEW5W6BZMNT62",
-				ParentOrganisation:     "ORG123",
+				ParentOrganisation:     parentOrgUUID,
 			},
 		},
 	}
@@ -1527,6 +1537,7 @@ func TestInvalidTypesThrowError(t *testing.T) {
 }
 
 func TestFilteringOfUniqueIds(t *testing.T) {
+	var emptyList []string
 	type testStruct struct {
 		testName     string
 		firstList    []string
@@ -1538,19 +1549,19 @@ func TestFilteringOfUniqueIds(t *testing.T) {
 		testName:     "emptyWhenBothListsAreEmpty",
 		firstList:    []string{},
 		secondList:   []string{},
-		filteredList: []string{},
+		filteredList: emptyList,
 	}
 	emptyWhenListsAreTheIdentical := testStruct{
 		testName:     "emptyWhenListsAreTheIdentical",
 		firstList:    []string{"1", "2", "3"},
 		secondList:   []string{"1", "2", "3"},
-		filteredList: []string{},
+		filteredList: emptyList,
 	}
 	emptyWhenListsHaveSameIdsInDifferentOrder := testStruct{
 		testName:     "emptyWhenListsHaveSameIdsInDifferentOrder",
 		firstList:    []string{"1", "2", "3"},
 		secondList:   []string{"2", "3", "1"},
-		filteredList: []string{},
+		filteredList: emptyList,
 	}
 	hasCompleteFirstListWhenSecondListIsEmpty := testStruct{
 		testName:     "hasCompleteSecondListWhenFirstListIsEmpty",
@@ -1589,7 +1600,7 @@ func TestFilteringOfUniqueIds(t *testing.T) {
 func TestTransferConcordance(t *testing.T) {
 	statement := `MERGE (a:Thing{prefUUID:"1"}) MERGE (b:Thing{uuid:"1"}) MERGE (c:Thing{uuid:"2"}) MERGE (d:Thing{uuid:"3"}) MERGE (w:Thing{prefUUID:"4"}) MERGE (y:Thing{uuid:"5"}) MERGE (j:Thing{prefUUID:"6"}) MERGE (k:Thing{uuid:"6"}) MERGE (c)-[:EQUIVALENT_TO]->(a)<-[:EQUIVALENT_TO]-(b) MERGE (w)<-[:EQUIVALENT_TO]-(d) MERGE (j)<-[:EQUIVALENT_TO]-(k)`
 	db.CypherBatch([]*neoism.CypherQuery{{Statement: statement}})
-	emptyQuery := []*neoism.CypherQuery{}
+	var emptyQuery []*neoism.CypherQuery
 
 	type testStruct struct {
 		testName         string
@@ -1829,6 +1840,8 @@ func cleanDB(t *testing.T) {
 		financialInstrumentUUID,
 		financialOrgUUID,
 		anotherFinancialOrgUUID,
+		parentOrgUUID,
+		testOrgUUID,
 	)
 	deleteSourceNodes(t,
 		parentUuid,
@@ -1852,6 +1865,8 @@ func cleanDB(t *testing.T) {
 		financialInstrumentUUID,
 		financialOrgUUID,
 		anotherFinancialOrgUUID,
+		parentOrgUUID,
+		testOrgUUID,
 	)
 	deleteConcordedNodes(t,
 		parentUuid,
@@ -1875,6 +1890,8 @@ func cleanDB(t *testing.T) {
 		financialInstrumentUUID,
 		financialOrgUUID,
 		anotherFinancialOrgUUID,
+		parentOrgUUID,
+		testOrgUUID,
 	)
 }
 

@@ -35,7 +35,7 @@ type AggregatedConcept struct {
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
-	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	TradeNames             []string `json:"tradeNames,omitempty"`
 	FormerNames            []string `json:"formerNames,omitempty"`
 	CountryCode            string   `json:"countryCode,omitempty"`
 	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
@@ -81,7 +81,7 @@ type Concept struct {
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
-	HiddenLabel            string   `json:"hiddenLabel,omitempty"`
+	TradeNames             []string `json:"tradeNames,omitempty"`
 	FormerNames            []string `json:"formerNames,omitempty"`
 	CountryCode            string   `json:"countryCode,omitempty"`
 	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
@@ -142,6 +142,7 @@ var conceptLabels = [...]string{
 	"Membership",
 	"BoardRole",
 	"FinancialInstrument",
+	"Company",
 	"PublicCompany",
 }
 

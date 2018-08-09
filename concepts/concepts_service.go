@@ -569,9 +569,6 @@ func validateObject(aggConcept AggregatedConcept, transID string) error {
 		if _, ok := authorityToIdentifierLabelMap[concept.Authority]; !ok {
 			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority, therefore unable to add the relevant Identifier node: %s", concept.Authority)
 		}
-		if concept.PrefLabel == "" {
-			return requestError{formatError("sourceRepresentation.prefLabel", concept.UUID, transID)}
-		}
 		if concept.Type == "" {
 			return requestError{formatError("sourceRepresentation.type", concept.UUID, transID)}
 		}
@@ -1032,7 +1029,9 @@ func getSourceIds(sourceConcepts []Concept) []string {
 func setProps(concept Concept, id string, isSource bool) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 
-	nodeProps["prefLabel"] = concept.PrefLabel
+	if concept.PrefLabel != "" {
+		nodeProps["prefLabel"] = concept.PrefLabel
+	}
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
 	if concept.FigiCode != "" {
 		nodeProps["figiCode"] = concept.FigiCode

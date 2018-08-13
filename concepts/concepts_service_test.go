@@ -16,6 +16,8 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/mitchellh/hashstructure"
 	"github.com/stretchr/testify/assert"
+	"sort"
+	"strings"
 )
 
 //all uuids to be cleaned from DB
@@ -954,14 +956,14 @@ func TestWriteService(t *testing.T) {
 		aggregatedConcept    AggregatedConcept
 		otherRelatedConcepts []AggregatedConcept
 		errStr               string
-		updatedConcepts      UpdatedConcepts
+		updatedConcepts      ConceptChanges
 	}{
 		{
 			testName:             "Throws validation error for invalid concept",
 			aggregatedConcept:    AggregatedConcept{PrefUUID: basicConceptUUID},
 			otherRelatedConcepts: nil,
 			errStr:               "Invalid request, no prefLabel has been supplied",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
 		},
@@ -970,7 +972,16 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    getFullLoneAggregatedConcept(),
 			otherRelatedConcepts: nil,
 			errStr:               "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "Section",
+						ConceptUUID: basicConceptUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					basicConceptUUID,
 				},
@@ -981,7 +992,16 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    getMembershipRole(),
 			otherRelatedConcepts: nil,
 			errStr:               "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "MembershipRole",
+						ConceptUUID: membershipRoleUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					membershipRoleUUID,
 				},
@@ -992,7 +1012,16 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    getBoardRole(),
 			otherRelatedConcepts: nil,
 			errStr:               "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "BoardRole",
+						ConceptUUID: boardRoleUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					boardRoleUUID,
 				},
@@ -1003,7 +1032,16 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    getMembership(),
 			otherRelatedConcepts: nil,
 			errStr:               "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "Membership",
+						ConceptUUID: membershipUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					membershipUUID,
 				},
@@ -1014,7 +1052,16 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    getFinancialInstrument(),
 			otherRelatedConcepts: nil,
 			errStr:               "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "FinancialInstrument",
+						ConceptUUID: financialInstrumentUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					financialInstrumentUUID,
 				},
@@ -1027,7 +1074,16 @@ func TestWriteService(t *testing.T) {
 				getYetAnotherFullLoneAggregatedConcept(),
 			},
 			errStr: "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "Section",
+						ConceptUUID: basicConceptUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					basicConceptUUID,
 				},
@@ -1038,7 +1094,16 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    getConceptWithRelatedToUnknownThing(),
 			otherRelatedConcepts: nil,
 			errStr:               "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "Section",
+						ConceptUUID: basicConceptUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					basicConceptUUID,
 				},
@@ -1051,7 +1116,16 @@ func TestWriteService(t *testing.T) {
 				getYetAnotherFullLoneAggregatedConcept(),
 			},
 			errStr: "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "Section",
+						ConceptUUID: basicConceptUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					basicConceptUUID,
 				},
@@ -1062,7 +1136,16 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    getConceptWithHasBroaderToUnknownThing(),
 			otherRelatedConcepts: nil,
 			errStr:               "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "Section",
+						ConceptUUID: basicConceptUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					basicConceptUUID,
 				},
@@ -1073,7 +1156,32 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    getFullConcordedAggregatedConcept(),
 			otherRelatedConcepts: nil,
 			errStr:               "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "Section",
+						ConceptUUID: anotherBasicConceptUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+					{
+						ConceptType: "Section",
+						ConceptUUID: anotherBasicConceptUUID,
+						EventDetails: ConcordanceEvent{
+							Type:  "Concordance Added",
+							OldID: anotherBasicConceptUUID,
+							NewID: basicConceptUUID,
+						},
+					},
+					{
+						ConceptType: "Section",
+						ConceptUUID: basicConceptUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					anotherBasicConceptUUID,
 					basicConceptUUID,
@@ -1085,7 +1193,16 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"),
 			otherRelatedConcepts: nil,
 			errStr:               "",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "Section",
+						ConceptUUID: basicConceptUUID,
+						EventDetails: ConceptEvent{
+							Type: "Concept Updated",
+						},
+					},
+				},
 				UpdatedIds: []string{
 					basicConceptUUID,
 				},
@@ -1096,7 +1213,7 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    getConcordedConceptWithConflictedIdentifier(),
 			otherRelatedConcepts: nil,
 			errStr:               "already exists with label `TMEIdentifier` and property `value` = '1234'",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
 		},
@@ -1105,7 +1222,7 @@ func TestWriteService(t *testing.T) {
 			aggregatedConcept:    getUnknownAuthority(),
 			otherRelatedConcepts: nil,
 			errStr:               "Invalid Request",
-			updatedConcepts: UpdatedConcepts{
+			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
 		},
@@ -1269,7 +1386,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		testConcept     AggregatedConcept
 		uuidsToCheck    []string
 		returnedError   string
-		updatedConcepts UpdatedConcepts
+		updatedConcepts ConceptChanges
 	}
 	singleConcordanceNoChangesNoUpdates := testStruct{
 		testName:     "singleConcordanceNoChangesNoUpdates",
@@ -1278,7 +1395,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		uuidsToCheck: []string{
 			basicConceptUUID,
 		},
-		updatedConcepts: UpdatedConcepts{
+		updatedConcepts: ConceptChanges{
 			UpdatedIds: emptyList,
 		},
 	}
@@ -1290,7 +1407,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			basicConceptUUID,
 			sourceId_1,
 		},
-		updatedConcepts: UpdatedConcepts{
+		updatedConcepts: ConceptChanges{
 			UpdatedIds: emptyList,
 		},
 	}
@@ -1302,7 +1419,32 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			basicConceptUUID,
 			sourceId_1,
 		},
-		updatedConcepts: UpdatedConcepts{
+		updatedConcepts: ConceptChanges{
+			ChangedRecords: []Event{
+				{
+					ConceptType: "Brand",
+					ConceptUUID: sourceId_1,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+				{
+					ConceptType: "Brand",
+					ConceptUUID: sourceId_1,
+					EventDetails: ConcordanceEvent{
+						Type:  "Concordance Added",
+						OldID: sourceId_1,
+						NewID: basicConceptUUID,
+					},
+				},
+				{
+					ConceptType: "Brand",
+					ConceptUUID: basicConceptUUID,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+			},
 			UpdatedIds: []string{
 				basicConceptUUID,
 				sourceId_1,
@@ -1317,7 +1459,25 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			basicConceptUUID,
 			sourceId_1,
 		},
-		updatedConcepts: UpdatedConcepts{
+		updatedConcepts: ConceptChanges{
+			ChangedRecords: []Event{
+				{
+					ConceptType: "Brand",
+					ConceptUUID: sourceId_1,
+					EventDetails: ConcordanceEvent{
+						Type:  "Concordance Removed",
+						OldID: basicConceptUUID,
+						NewID: sourceId_1,
+					},
+				},
+				{
+					ConceptType: "Brand",
+					ConceptUUID: basicConceptUUID,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+			},
 			UpdatedIds: []string{
 				basicConceptUUID,
 				sourceId_1,
@@ -1340,7 +1500,41 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			sourceId_2,
 		},
 		returnedError: "",
-		updatedConcepts: UpdatedConcepts{
+		updatedConcepts: ConceptChanges{
+			ChangedRecords: []Event{
+				{
+					ConceptType: "Brand",
+					ConceptUUID: basicConceptUUID,
+					EventDetails: ConcordanceEvent{
+						Type:  "Concordance Added",
+						OldID: basicConceptUUID,
+						NewID: anotherBasicConceptUUID,
+					},
+				},
+				{
+					ConceptType: "Brand",
+					ConceptUUID: sourceId_2,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+				{
+					ConceptType: "Brand",
+					ConceptUUID: sourceId_2,
+					EventDetails: ConcordanceEvent{
+						Type:  "Concordance Added",
+						OldID: sourceId_2,
+						NewID: anotherBasicConceptUUID,
+					},
+				},
+				{
+					ConceptType: "Brand",
+					ConceptUUID: anotherBasicConceptUUID,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+			},
 			UpdatedIds: []string{
 				anotherBasicConceptUUID,
 				basicConceptUUID,
@@ -1348,8 +1542,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			},
 		},
 	}
-	transferSourceFromOtherConcordanceToAnother := testStruct{
-		testName:     "transferSourceFromOtherConcordanceToAnother",
+	transferSourceFromOneConcordanceToAnother := testStruct{
+		testName:     "transferSourceFromOneConcordanceToAnother",
 		setUpConcept: getDualConcordance(),
 		testConcept:  getTransferSourceConcordance(),
 		uuidsToCheck: []string{
@@ -1357,7 +1551,25 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			sourceId_1,
 			basicConceptUUID,
 		},
-		updatedConcepts: UpdatedConcepts{
+		updatedConcepts: ConceptChanges{
+			ChangedRecords: []Event{
+				{
+					ConceptType: "Brand",
+					ConceptUUID: sourceId_1,
+					EventDetails: ConcordanceEvent{
+						Type:  "Concordance Transferred",
+						OldID: basicConceptUUID,
+						NewID: anotherBasicConceptUUID,
+					},
+				},
+				{
+					ConceptType: "Brand",
+					ConceptUUID: anotherBasicConceptUUID,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+			},
 			UpdatedIds: []string{
 				anotherBasicConceptUUID,
 				sourceId_1,
@@ -1373,7 +1585,32 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			sourceId_1,
 			sourceId_2,
 		},
-		updatedConcepts: UpdatedConcepts{
+		updatedConcepts: ConceptChanges{
+			ChangedRecords: []Event{
+				{
+					ConceptType: "Brand",
+					ConceptUUID: sourceId_2,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+				{
+					ConceptType: "Brand",
+					ConceptUUID: sourceId_2,
+					EventDetails: ConcordanceEvent{
+						Type:  "Concordance Added",
+						OldID: sourceId_2,
+						NewID: basicConceptUUID,
+					},
+				},
+				{
+					ConceptType: "Brand",
+					ConceptUUID: basicConceptUUID,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+			},
 			UpdatedIds: []string{
 				basicConceptUUID,
 				sourceId_1,
@@ -1390,7 +1627,25 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			sourceId_1,
 			sourceId_2,
 		},
-		updatedConcepts: UpdatedConcepts{
+		updatedConcepts: ConceptChanges{
+			ChangedRecords: []Event{
+				{
+					ConceptType: "Brand",
+					ConceptUUID: sourceId_2,
+					EventDetails: ConcordanceEvent{
+						Type:  "Concordance Removed",
+						OldID: basicConceptUUID,
+						NewID: sourceId_2,
+					},
+				},
+				{
+					ConceptType: "Brand",
+					ConceptUUID: basicConceptUUID,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+			},
 			UpdatedIds: []string{
 				basicConceptUUID,
 				sourceId_1,
@@ -1406,7 +1661,16 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			basicConceptUUID,
 			sourceId_1,
 		},
-		updatedConcepts: UpdatedConcepts{
+		updatedConcepts: ConceptChanges{
+			ChangedRecords: []Event{
+				{
+					ConceptType: "Brand",
+					ConceptUUID: basicConceptUUID,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+			},
 			UpdatedIds: []string{
 				basicConceptUUID,
 				sourceId_1,
@@ -1425,7 +1689,16 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		uuidsToCheck: []string{
 			basicConceptUUID,
 		},
-		updatedConcepts: UpdatedConcepts{
+		updatedConcepts: ConceptChanges{
+			ChangedRecords: []Event{
+				{
+					ConceptType: "Brand",
+					ConceptUUID: basicConceptUUID,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				},
+			},
 			UpdatedIds: []string{
 				basicConceptUUID,
 			},
@@ -1438,11 +1711,11 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		singleConcordanceToDualConcordanceUpdatesBoth,
 		dualConcordanceToSingleConcordanceUpdatesBoth,
 		errorsOnAddingConcordanceOfCanonicalNode,
-		transferSourceFromOtherConcordanceToAnother,
+		oldCanonicalRemovedWhenSingleConcordancebecomesSource,
+		transferSourceFromOneConcordanceToAnother,
 		addThirdSourceToDualConcordanceUpdateAll,
 		triConcordanceToDualConcordanceUpdatesAll,
 		dataChangesOnCanonicalUpdateBoth,
-		oldCanonicalRemovedWhenSingleConcordancebecomesSource,
 		singleConcordanceDeprecationChangesUpdates,
 	}
 
@@ -1453,12 +1726,34 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 		verifyAggregateHashIsCorrect(t, scenario.setUpConcept, scenario.testName)
 		//Overwrite data with update
-		updatedConcepts, err := conceptsDriver.Write(scenario.testConcept, tid)
+		output, err := conceptsDriver.Write(scenario.testConcept, tid)
+		actualChanges := output.(ConceptChanges)
+		sort.Slice(actualChanges.ChangedRecords, func(i, j int) bool {
+			l, _ := json.Marshal(actualChanges.ChangedRecords[i])
+			r, _ := json.Marshal(actualChanges.ChangedRecords[j])
+			c := strings.Compare(string(l), string(r))
+			if c >= 0 {
+				return true
+			}
+			return false
+		})
+		sort.Slice(scenario.updatedConcepts.ChangedRecords, func(i, j int) bool {
+			l, _ := json.Marshal(scenario.updatedConcepts.ChangedRecords[i])
+			r, _ := json.Marshal(scenario.updatedConcepts.ChangedRecords[j])
+			c := strings.Compare(string(l), string(r))
+			if c >= 0 {
+				return true
+			}
+			return false
+		})
 		if err != nil {
 			assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unexpected error")
 		}
 
-		assert.Equal(t, scenario.updatedConcepts, updatedConcepts, "Test "+scenario.testName+" failed: Updated uuid list differs from expected")
+		sort.Strings(scenario.updatedConcepts.UpdatedIds)
+		sort.Strings(actualChanges.UpdatedIds)
+
+		assert.Equal(t, actualChanges, scenario.updatedConcepts, "Test "+scenario.testName+" failed: Updated uuid list differs from expected")
 
 		for _, id := range scenario.uuidsToCheck {
 			conceptIf, found, err := conceptsDriver.Read(id, tid)
@@ -1537,49 +1832,90 @@ func TestInvalidTypesThrowError(t *testing.T) {
 }
 
 func TestFilteringOfUniqueIds(t *testing.T) {
-	var emptyList []string
 	type testStruct struct {
 		testName     string
-		firstList    []string
-		secondList   []string
-		filteredList []string
+		firstList    map[string]string
+		secondList   map[string]string
+		filteredList map[string]string
 	}
 
 	emptyWhenBothListsAreEmpty := testStruct{
 		testName:     "emptyWhenBothListsAreEmpty",
-		firstList:    []string{},
-		secondList:   []string{},
-		filteredList: emptyList,
+		firstList:    make(map[string]string),
+		secondList:   make(map[string]string),
+		filteredList: make(map[string]string),
 	}
 	emptyWhenListsAreTheIdentical := testStruct{
-		testName:     "emptyWhenListsAreTheIdentical",
-		firstList:    []string{"1", "2", "3"},
-		secondList:   []string{"1", "2", "3"},
-		filteredList: emptyList,
+		testName: "emptyWhenListsAreTheIdentical",
+		firstList: map[string]string{
+			"1": "",
+			"2": "",
+			"3": "",
+		},
+		secondList: map[string]string{
+			"1": "",
+			"2": "",
+			"3": "",
+		},
+		filteredList: make(map[string]string),
 	}
 	emptyWhenListsHaveSameIdsInDifferentOrder := testStruct{
-		testName:     "emptyWhenListsHaveSameIdsInDifferentOrder",
-		firstList:    []string{"1", "2", "3"},
-		secondList:   []string{"2", "3", "1"},
-		filteredList: emptyList,
+		testName: "emptyWhenListsHaveSameIdsInDifferentOrder",
+		firstList: map[string]string{
+			"1": "",
+			"2": "",
+			"3": "",
+		},
+		secondList: map[string]string{
+			"2": "",
+			"3": "",
+			"1": "",
+		},
+		filteredList: make(map[string]string),
 	}
 	hasCompleteFirstListWhenSecondListIsEmpty := testStruct{
-		testName:     "hasCompleteSecondListWhenFirstListIsEmpty",
-		firstList:    []string{"1", "2", "3"},
-		secondList:   []string{},
-		filteredList: []string{"1", "2", "3"},
+		testName: "hasCompleteSecondListWhenFirstListIsEmpty",
+		firstList: map[string]string{
+			"1": "",
+			"2": "",
+			"3": "",
+		},
+		secondList: make(map[string]string),
+		filteredList: map[string]string{
+			"1": "",
+			"2": "",
+			"3": "",
+		},
 	}
 	properlyFiltersWhen1IdIsUnique := testStruct{
-		testName:     "properlyFiltersWhen1IdIsUnique",
-		firstList:    []string{"1", "2", "3"},
-		secondList:   []string{"1", "2"},
-		filteredList: []string{"3"},
+		testName: "properlyFiltersWhen1IdIsUnique",
+		firstList: map[string]string{
+			"1": "",
+			"2": "",
+			"3": "",
+		},
+		secondList: map[string]string{
+			"1": "",
+			"2": "",
+		},
+		filteredList: map[string]string{
+			"3": "",
+		},
 	}
 	properlyFiltersWhen2IdsAreUnique := testStruct{
-		testName:     "properlyFiltersWhen2IdsAreUnique",
-		firstList:    []string{"1", "2", "3"},
-		secondList:   []string{"2"},
-		filteredList: []string{"1", "3"},
+		testName: "properlyFiltersWhen2IdsAreUnique",
+		firstList: map[string]string{
+			"1": "",
+			"2": "",
+			"3": "",
+		},
+		secondList: map[string]string{
+			"2": "",
+		},
+		filteredList: map[string]string{
+			"1": "",
+			"3": "",
+		},
 	}
 
 	Scenarios := []testStruct{
@@ -1592,7 +1928,7 @@ func TestFilteringOfUniqueIds(t *testing.T) {
 	}
 
 	for _, scenario := range Scenarios {
-		returnedList := filterIdsThatAreUniqueToFirstList(scenario.firstList, scenario.secondList)
+		returnedList := filterIdsThatAreUniqueToFirstMap(scenario.firstList, scenario.secondList)
 		assert.Equal(t, scenario.filteredList, returnedList, "Scenario: "+scenario.testName+" returned unexpected results")
 	}
 }
@@ -1601,44 +1937,52 @@ func TestTransferConcordance(t *testing.T) {
 	statement := `MERGE (a:Thing{prefUUID:"1"}) MERGE (b:Thing{uuid:"1"}) MERGE (c:Thing{uuid:"2"}) MERGE (d:Thing{uuid:"3"}) MERGE (w:Thing{prefUUID:"4"}) MERGE (y:Thing{uuid:"5"}) MERGE (j:Thing{prefUUID:"6"}) MERGE (k:Thing{uuid:"6"}) MERGE (c)-[:EQUIVALENT_TO]->(a)<-[:EQUIVALENT_TO]-(b) MERGE (w)<-[:EQUIVALENT_TO]-(d) MERGE (j)<-[:EQUIVALENT_TO]-(k)`
 	db.CypherBatch([]*neoism.CypherQuery{{Statement: statement}})
 	var emptyQuery []*neoism.CypherQuery
+	var updatedConcept ConceptChanges
 
 	type testStruct struct {
 		testName         string
-		updatedSourceIds []string
+		updatedSourceIds map[string]string
 		returnResult     bool
 		returnedError    error
 	}
 
 	nodeHasNoConconcordance := testStruct{
-		testName:         "nodeHasNoConconcordance",
-		updatedSourceIds: []string{"5"},
-		returnedError:    nil,
+		testName: "nodeHasNoConconcordance",
+		updatedSourceIds: map[string]string{
+			"5": "Brand"},
+		returnedError: nil,
 	}
 	nodeHasExistingConcordanceWhichWouldCauseDataIssues := testStruct{
-		testName:         "nodeHasExistingConcordanceWhichNeedsToBeReWritten",
-		updatedSourceIds: []string{"1"},
-		returnedError:    errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: 1"),
+		testName: "nodeHasExistingConcordanceWhichNeedsToBeReWritten",
+		updatedSourceIds: map[string]string{
+			"1": "Brand"},
+		returnedError: errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: 1"),
 	}
 	nodeHasExistingConcordanceWhichNeedsToBeReWritten := testStruct{
-		testName:         "nodeHasExistingConcordanceWhichNeedsToBeReWritten",
-		updatedSourceIds: []string{"2"},
-		returnedError:    nil,
+		testName: "nodeHasExistingConcordanceWhichNeedsToBeReWritten",
+		updatedSourceIds: map[string]string{
+			"2": "Brand"},
+		returnedError: nil,
 	}
 	nodeHasInvalidConcordance := testStruct{
-		testName:         "nodeHasInvalidConcordance",
-		updatedSourceIds: []string{"3"},
-		returnedError:    errors.New("This source id: 3 the only concordance to a non-matching node with prefUuid: 4"),
+		testName: "nodeHasInvalidConcordance",
+		updatedSourceIds: map[string]string{
+			"3": "Brand"},
+		returnedError: errors.New("This source id: 3 the only concordance to a non-matching node with prefUuid: 4"),
 	}
 	nodeIsPrefUuidForExistingConcordance := testStruct{
-		testName:         "nodeIsPrefUuidForExistingConcordance",
-		updatedSourceIds: []string{"1"},
-		returnedError:    errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: 1"),
+		testName: "nodeIsPrefUuidForExistingConcordance",
+		updatedSourceIds: map[string]string{
+			"1": "Brand"},
+		returnedError: errors.New("Cannot currently process this record as it will break an existing concordance with prefUuid: 1"),
 	}
 	nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted := testStruct{
-		testName:         "nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted",
-		updatedSourceIds: []string{"6"},
-		returnResult:     true,
-		returnedError:    nil}
+		testName: "nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted",
+		updatedSourceIds: map[string]string{
+			"6": "Brand"},
+		returnResult:  true,
+		returnedError: nil,
+	}
 
 	scenarios := []testStruct{
 		nodeHasNoConconcordance,
@@ -1650,7 +1994,7 @@ func TestTransferConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "", "")
+		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "", "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
 			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")

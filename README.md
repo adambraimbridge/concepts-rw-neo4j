@@ -64,12 +64,19 @@ A successful PUT results in 200 and returns a json response of all updated uuids
 Example response from above request:
 
     `{
-         "UpdatedIds": [
+        "events": [
+              {
+                  "conceptType": "Section",
+                  "conceptUUID": "4c41f314-4548-4fb6-ac48-4618fcbfa84c",
+                  "eventDetails": {
+                      "type": "Concept Updated"
+                  }
+              }
+          ],
+         "updatedIds": [
              "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
          ]
      }`
-
-The type field is not currently validated against the path
 
 "TME", "UPP" and "Smartlogic" are the only valid authorities, any other Authority will result in a 400 bad request response.
 

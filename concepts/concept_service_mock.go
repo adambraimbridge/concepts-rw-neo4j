@@ -22,7 +22,7 @@ type mockConceptService struct {
 }
 
 func (dS *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
-	mockList := UpdatedConcepts{}
+	mockList := ConceptChanges{}
 	if dS.failWrite {
 		return mockList, errors.New("TEST failing to WRITE")
 	}

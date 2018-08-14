@@ -101,9 +101,10 @@ type ConceptChanges struct {
 }
 
 type Event struct {
-	ConceptType  string      `json:"conceptType"`
-	ConceptUUID  string      `json:"conceptUUID"`
-	EventDetails interface{} `json:"eventDetails"`
+	ConceptType   string      `json:"conceptType"`
+	ConceptUUID   string      `json:"conceptUUID"`
+	AggregateHash string      `json:"aggregateHash"`
+	EventDetails  interface{} `json:"eventDetails"`
 }
 
 type ConceptEvent struct {

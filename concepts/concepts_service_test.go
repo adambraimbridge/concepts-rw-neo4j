@@ -975,8 +975,9 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "Section",
-						ConceptUUID: basicConceptUUID,
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "15052854382714876708",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -995,8 +996,9 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "MembershipRole",
-						ConceptUUID: membershipRoleUUID,
+						ConceptType:   "MembershipRole",
+						ConceptUUID:   membershipRoleUUID,
+						AggregateHash: "14799710136399893314",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -1015,8 +1017,9 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "BoardRole",
-						ConceptUUID: boardRoleUUID,
+						ConceptType:   "BoardRole",
+						ConceptUUID:   boardRoleUUID,
+						AggregateHash: "18051878496242862930",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -1035,8 +1038,9 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "Membership",
-						ConceptUUID: membershipUUID,
+						ConceptType:   "Membership",
+						ConceptUUID:   membershipUUID,
+						AggregateHash: "12783975763841746168",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -1055,8 +1059,9 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "FinancialInstrument",
-						ConceptUUID: financialInstrumentUUID,
+						ConceptType:   "FinancialInstrument",
+						ConceptUUID:   financialInstrumentUUID,
+						AggregateHash: "16142907159091092586",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -1077,8 +1082,9 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "Section",
-						ConceptUUID: basicConceptUUID,
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "14658325823012679257",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -1097,8 +1103,9 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "Section",
-						ConceptUUID: basicConceptUUID,
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "10713900873716359254",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -1119,8 +1126,9 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "Section",
-						ConceptUUID: basicConceptUUID,
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "12565540071983602614",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -1139,8 +1147,9 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "Section",
-						ConceptUUID: basicConceptUUID,
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "10000601346840182173",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -1159,15 +1168,17 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "Section",
-						ConceptUUID: anotherBasicConceptUUID,
+						ConceptType:   "Section",
+						ConceptUUID:   anotherBasicConceptUUID,
+						AggregateHash: "6186037247881361097",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
 					},
 					{
-						ConceptType: "Section",
-						ConceptUUID: anotherBasicConceptUUID,
+						ConceptType:   "Section",
+						ConceptUUID:   anotherBasicConceptUUID,
+						AggregateHash: "6186037247881361097",
 						EventDetails: ConcordanceEvent{
 							Type:  "Concordance Added",
 							OldID: anotherBasicConceptUUID,
@@ -1175,8 +1186,9 @@ func TestWriteService(t *testing.T) {
 						},
 					},
 					{
-						ConceptType: "Section",
-						ConceptUUID: basicConceptUUID,
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "6186037247881361097",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -1196,8 +1208,9 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
-						ConceptType: "Section",
-						ConceptUUID: basicConceptUUID,
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "17096961207992780660",
 						EventDetails: ConceptEvent{
 							Type: "Concept Updated",
 						},
@@ -1422,15 +1435,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
-					ConceptType: "Brand",
-					ConceptUUID: sourceId_1,
+					ConceptType:   "Brand",
+					ConceptUUID:   sourceId_1,
+					AggregateHash: "16634941773878845876",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
 				},
 				{
-					ConceptType: "Brand",
-					ConceptUUID: sourceId_1,
+					ConceptType:   "Brand",
+					ConceptUUID:   sourceId_1,
+					AggregateHash: "16634941773878845876",
 					EventDetails: ConcordanceEvent{
 						Type:  "Concordance Added",
 						OldID: sourceId_1,
@@ -1438,8 +1453,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					},
 				},
 				{
-					ConceptType: "Brand",
-					ConceptUUID: basicConceptUUID,
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "16634941773878845876",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
@@ -1462,8 +1478,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
-					ConceptType: "Brand",
-					ConceptUUID: sourceId_1,
+					ConceptType:   "Brand",
+					ConceptUUID:   sourceId_1,
+					AggregateHash: "11584011436828378407",
 					EventDetails: ConcordanceEvent{
 						Type:  "Concordance Removed",
 						OldID: basicConceptUUID,
@@ -1471,8 +1488,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					},
 				},
 				{
-					ConceptType: "Brand",
-					ConceptUUID: basicConceptUUID,
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "11584011436828378407",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
@@ -1503,8 +1521,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
-					ConceptType: "Brand",
-					ConceptUUID: basicConceptUUID,
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "4515517628791142579",
 					EventDetails: ConcordanceEvent{
 						Type:  "Concordance Added",
 						OldID: basicConceptUUID,
@@ -1512,15 +1531,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					},
 				},
 				{
-					ConceptType: "Brand",
-					ConceptUUID: sourceId_2,
+					ConceptType:   "Brand",
+					ConceptUUID:   sourceId_2,
+					AggregateHash: "4515517628791142579",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
 				},
 				{
-					ConceptType: "Brand",
-					ConceptUUID: sourceId_2,
+					ConceptType:   "Brand",
+					ConceptUUID:   sourceId_2,
+					AggregateHash: "4515517628791142579",
 					EventDetails: ConcordanceEvent{
 						Type:  "Concordance Added",
 						OldID: sourceId_2,
@@ -1528,8 +1549,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					},
 				},
 				{
-					ConceptType: "Brand",
-					ConceptUUID: anotherBasicConceptUUID,
+					ConceptType:   "Brand",
+					ConceptUUID:   anotherBasicConceptUUID,
+					AggregateHash: "4515517628791142579",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
@@ -1554,8 +1576,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
-					ConceptType: "Brand",
-					ConceptUUID: sourceId_1,
+					ConceptType:   "Brand",
+					ConceptUUID:   sourceId_1,
+					AggregateHash: "16022310701657848743",
 					EventDetails: ConcordanceEvent{
 						Type:  "Concordance Transferred",
 						OldID: basicConceptUUID,
@@ -1563,8 +1586,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					},
 				},
 				{
-					ConceptType: "Brand",
-					ConceptUUID: anotherBasicConceptUUID,
+					ConceptType:   "Brand",
+					ConceptUUID:   anotherBasicConceptUUID,
+					AggregateHash: "16022310701657848743",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
@@ -1588,15 +1612,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
-					ConceptType: "Brand",
-					ConceptUUID: sourceId_2,
+					ConceptType:   "Brand",
+					ConceptUUID:   sourceId_2,
+					AggregateHash: "8020416483809386573",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
 				},
 				{
-					ConceptType: "Brand",
-					ConceptUUID: sourceId_2,
+					ConceptType:   "Brand",
+					ConceptUUID:   sourceId_2,
+					AggregateHash: "8020416483809386573",
 					EventDetails: ConcordanceEvent{
 						Type:  "Concordance Added",
 						OldID: sourceId_2,
@@ -1604,8 +1630,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					},
 				},
 				{
-					ConceptType: "Brand",
-					ConceptUUID: basicConceptUUID,
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "8020416483809386573",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
@@ -1630,8 +1657,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
-					ConceptType: "Brand",
-					ConceptUUID: sourceId_2,
+					ConceptType:   "Brand",
+					ConceptUUID:   sourceId_2,
+					AggregateHash: "16634941773878845876",
 					EventDetails: ConcordanceEvent{
 						Type:  "Concordance Removed",
 						OldID: basicConceptUUID,
@@ -1639,8 +1667,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					},
 				},
 				{
-					ConceptType: "Brand",
-					ConceptUUID: basicConceptUUID,
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "16634941773878845876",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
@@ -1664,8 +1693,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
-					ConceptType: "Brand",
-					ConceptUUID: basicConceptUUID,
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "5941840641057053841",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
@@ -1692,8 +1722,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
-					ConceptType: "Brand",
-					ConceptUUID: basicConceptUUID,
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "12020297480328189864",
 					EventDetails: ConceptEvent{
 						Type: "Concept Updated",
 					},
@@ -1994,7 +2025,7 @@ func TestTransferConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "", "")
+		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", "", "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
 			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")

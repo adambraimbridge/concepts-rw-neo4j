@@ -95,8 +95,26 @@ type Concept struct {
 	BirthYear  int    `json:"birthYear,omitempty"`
 }
 
-type UpdatedConcepts struct {
-	UpdatedIds []string `json:"updatedIDs"`
+type ConceptChanges struct {
+	ChangedRecords []Event  `json:"events"`
+	UpdatedIds     []string `json:"updatedIDs"`
+}
+
+type Event struct {
+	ConceptType   string      `json:"conceptType"`
+	ConceptUUID   string      `json:"conceptUUID"`
+	AggregateHash string      `json:"aggregateHash"`
+	EventDetails  interface{} `json:"eventDetails"`
+}
+
+type ConceptEvent struct {
+	Type string `json:"type"`
+}
+
+type ConcordanceEvent struct {
+	Type  string `json:"type"`
+	OldID string `json:"oldID"`
+	NewID string `json:"newID"`
 }
 
 // Map of all the possible node types so we can ensure they all have

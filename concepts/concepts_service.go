@@ -160,9 +160,10 @@ type neoConcept struct {
 }
 
 type equivalenceResult struct {
-	SourceUUID  string `json:"sourceUuid"`
-	PrefUUID    string `json:"prefUuid"`
-	Equivalence int    `json:"count"`
+	SourceUUID  string   `json:"sourceUuid"`
+	PrefUUID    string   `json:"prefUuid"`
+	Types       []string `json:"types"`
+	Equivalence int      `json:"count"`
 }
 
 //Read - read service
@@ -368,25 +369,28 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
-	uuidsToUpdate := UpdatedConcepts{}
+	updateRecord := ConceptChanges{}
 	var updatedUUIDList []string
 	aggregatedConceptToWrite := thing.(AggregatedConcept)
 	aggregatedConceptToWrite = cleanSourceProperties(aggregatedConceptToWrite)
+	requestSourceData := getSourceData(aggregatedConceptToWrite.SourceRepresentations)
 
 	requestHash, err := hashstructure.Hash(aggregatedConceptToWrite, nil)
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error hashing json from request")
-		return uuidsToUpdate, err
+		return updateRecord, err
 	}
 
+	hashAsString := strconv.FormatUint(requestHash, 10)
+
 	if err = validateObject(aggregatedConceptToWrite, transID); err != nil {
-		return uuidsToUpdate, err
+		return updateRecord, err
 	}
 
 	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, transID)
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Read request for existing concordance resulted in error")
-		return uuidsToUpdate, err
+		return updateRecord, err
 	}
 
 	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(AggregatedConcept)
@@ -401,19 +405,18 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		currentHash, err := strconv.ParseUint(existingAggregateConcept.AggregatedHash, 10, 64)
 		if err != nil {
 			logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("Error whilst parsing existing concept hash")
-			return uuidsToUpdate, nil
+			return updateRecord, nil
 		}
 		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debugf("Currently stored concept has hash of %d", currentHash)
 		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debugf("Aggregated concept has hash of %d", requestHash)
 		if currentHash == requestHash {
 			logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("This concept has not changed since most recent update")
-			return uuidsToUpdate, nil
+			return updateRecord, nil
 		} else {
 			logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("This concept is different to record stored in db, updating...")
 		}
 
-		requestSourceUuids := getSourceIds(aggregatedConceptToWrite.SourceRepresentations)
-		existingSourceUuids := getSourceIds(existingAggregateConcept.SourceRepresentations)
+		existingSourceData := getSourceData(existingAggregateConcept.SourceRepresentations)
 
 		//Concept has been updated since last write, so need to send notification of all affected ids
 		for _, source := range aggregatedConceptToWrite.SourceRepresentations {
@@ -422,17 +425,18 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 		//This filter will leave us with ids that were members of existing concordance but are NOT members of current concordance
 		//They will need a new prefUUID node written
-		listToUnconcord := filterIdsThatAreUniqueToFirstList(existingSourceUuids, requestSourceUuids)
+		conceptsToUnconcord := filterIdsThatAreUniqueToFirstMap(existingSourceData, requestSourceData)
 
 		//This filter will leave us with ids that are members of current concordance payload but were not previously concorded to this concordance
-		listToTransferConcordance := filterIdsThatAreUniqueToFirstList(requestSourceUuids, existingSourceUuids)
+		conceptsToTransferConcordance := filterIdsThatAreUniqueToFirstMap(requestSourceData, existingSourceData)
 
 		//Handle scenarios for transferring source id from an existing concordance to this concordance
-		if len(listToTransferConcordance) > 0 {
-			prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(listToTransferConcordance, aggregatedConceptToWrite.PrefUUID, transID)
+		if len(conceptsToTransferConcordance) > 0 {
+			prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(conceptsToTransferConcordance, &updateRecord, hashAsString, aggregatedConceptToWrite.PrefUUID, transID)
 			if err != nil {
-				return uuidsToUpdate, err
+				return updateRecord, err
 			}
+
 		}
 
 		clearDownQuery := s.clearDownExistingNodes(aggregatedConceptToWrite)
@@ -440,7 +444,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			queryBatch = append(queryBatch, query)
 		}
 
-		for _, idToUnconcord := range listToUnconcord {
+		for idToUnconcord := range conceptsToUnconcord {
 			for _, concept := range existingAggregateConcept.SourceRepresentations {
 				if idToUnconcord == concept.UUID {
 					//aggConcept := buildAggregateConcept(concept)
@@ -452,13 +456,30 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 					//We will need to send a notification of ids that have been removed from current concordance
 					updatedUUIDList = append(updatedUUIDList, idToUnconcord)
+
+					//Unconcordance event for new concept notifications
+					updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+						ConceptType:   conceptsToUnconcord[idToUnconcord],
+						ConceptUUID:   idToUnconcord,
+						AggregateHash: hashAsString,
+						EventDetails: ConcordanceEvent{
+							Type:  "Concordance Removed",
+							OldID: aggregatedConceptToWrite.PrefUUID,
+							NewID: idToUnconcord,
+						},
+					})
 				}
 			}
 		}
 	} else {
-		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(getSourceIds(aggregatedConceptToWrite.SourceRepresentations), aggregatedConceptToWrite.PrefUUID, transID)
+		var conceptsToCheckForExistingConcordance []string
+		for _, sr := range aggregatedConceptToWrite.SourceRepresentations {
+			conceptsToCheckForExistingConcordance = append(conceptsToCheckForExistingConcordance, sr.UUID)
+		}
+
+		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(requestSourceData, &updateRecord, hashAsString, aggregatedConceptToWrite.PrefUUID, transID)
 		if err != nil {
-			return uuidsToUpdate, err
+			return updateRecord, err
 		}
 
 		clearDownQuery := s.clearDownExistingNodes(aggregatedConceptToWrite)
@@ -472,14 +493,21 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		}
 	}
 
-	hashAsString := strconv.FormatUint(requestHash, 10)
 	aggregatedConceptToWrite.AggregatedHash = hashAsString
 	queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
 	for _, query := range prefUUIDsToBeDeletedQueryBatch {
 		queryBatch = append(queryBatch, query)
 	}
 
-	uuidsToUpdate.UpdatedIds = updatedUUIDList
+	updateRecord.UpdatedIds = updatedUUIDList
+	updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+		ConceptType:   aggregatedConceptToWrite.Type,
+		ConceptUUID:   aggregatedConceptToWrite.PrefUUID,
+		AggregateHash: hashAsString,
+		EventDetails: ConceptEvent{
+			Type: "Concept Updated",
+		},
+	})
 
 	logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
 	for _, query := range queryBatch {
@@ -504,7 +532,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 				WithTransactionID(transID).
 				WithUUID(aggregatedConceptToWrite.PrefUUID).
 				Error("Could not get existing issuer.")
-			return uuidsToUpdate, err
+			return updateRecord, err
 		}
 
 		if len(fiRes) > 0 {
@@ -518,7 +546,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 					continue
 				}
 
-				err := fmt.Errorf(
+				msg := fmt.Sprintf(
 					"Issuer for %s was changed from %s to %s",
 					aggregatedConceptToWrite.IssuedBy,
 					fiUUID,
@@ -526,7 +554,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 				)
 				logger.WithTransactionID(transID).
 					WithUUID(aggregatedConceptToWrite.PrefUUID).
-					WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Error(err)
+					WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
 
 				deleteIssuerRelations := &neoism.CypherQuery{
 					Statement: `
@@ -547,11 +575,11 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 	if err = s.conn.CypherBatch(queryBatch); err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error executing neo4j write queries. Concept NOT written.")
-		return uuidsToUpdate, err
+		return updateRecord, err
 	}
 
 	logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("Concept written to db")
-	return uuidsToUpdate, nil
+	return updateRecord, nil
 }
 
 func validateObject(aggConcept AggregatedConcept, transID string) error {
@@ -588,38 +616,30 @@ func formatError(field string, uuid string, transID string) string {
 	return err.Error()
 }
 
-//filter out ids that are unique to the first list
-func filterIdsThatAreUniqueToFirstList(firstListIds []string, secondListIds []string) []string {
+func filterIdsThatAreUniqueToFirstMap(firstMapConcepts map[string]string, secondMapConcepts map[string]string) map[string]string {
 	//Loop through both lists to find id which is present in first list but not in the second
-	var idIsUniqueToFirstList = true
-	var needToBeHandled []string
-	for _, firstId := range firstListIds {
-		for _, secondId := range secondListIds {
-			if firstId == secondId {
-				//Id is present in both lists
-				idIsUniqueToFirstList = false
-			}
+	filteredMap := make(map[string]string)
+
+	for conceptID := range firstMapConcepts {
+		if _, ok := secondMapConcepts[conceptID]; !ok {
+			filteredMap[conceptID] = firstMapConcepts[conceptID]
 		}
-		if idIsUniqueToFirstList == true {
-			needToBeHandled = append(needToBeHandled, firstId)
-		}
-		idIsUniqueToFirstList = true
 	}
-	return needToBeHandled
+	return filteredMap
 }
 
 //Handle new source nodes that have been added to current concordance
-func (s *ConceptService) handleTransferConcordance(updatedSourceIds []string, prefUUID string, transID string) ([]*neoism.CypherQuery, error) {
+func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, prefUUID string, transID string) ([]*neoism.CypherQuery, error) {
 	var result []equivalenceResult
 	var deleteLonePrefUuidQueries []*neoism.CypherQuery
 
-	for _, updatedSourceId := range updatedSourceIds {
+	for updatedSourceId := range conceptData {
 		equivQuery := &neoism.CypherQuery{
 			Statement: `
 					MATCH (t:Thing {uuid:{id}})
 					OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c)
 					OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing)
-					RETURN t.uuid as sourceUuid, c.prefUUID as prefUuid, COUNT(DISTINCT eq) as count`,
+					RETURN t.uuid as sourceUuid, labels(t) as types, c.prefUUID as prefUuid, COUNT(DISTINCT eq) as count`,
 			Parameters: map[string]interface{}{
 				"id": updatedSourceId,
 			},
@@ -633,10 +653,39 @@ func (s *ConceptService) handleTransferConcordance(updatedSourceIds []string, pr
 
 		if len(result) == 0 {
 			logger.WithTransactionID(transID).WithUUID(prefUUID).Info("No existing concordance record found")
+			if updatedSourceId != prefUUID {
+				//concept does not exist, need update event
+				updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+					ConceptType:   conceptData[updatedSourceId],
+					ConceptUUID:   updatedSourceId,
+					AggregateHash: aggregateHash,
+					EventDetails: ConceptEvent{
+						Type: "Concept Updated",
+					},
+				})
+
+				//create concordance event for non concorded concept
+				updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+					ConceptType:   conceptData[updatedSourceId],
+					ConceptUUID:   updatedSourceId,
+					AggregateHash: aggregateHash,
+					EventDetails: ConcordanceEvent{
+						Type:  "Concordance Added",
+						OldID: updatedSourceId,
+						NewID: prefUUID,
+					},
+				})
+			}
 			continue
 		} else if len(result) > 1 {
 			err = fmt.Errorf("Multiple source concepts found with matching uuid: %s", updatedSourceId)
 			logger.WithTransactionID(transID).WithUUID(prefUUID).Error(err.Error())
+			return deleteLonePrefUuidQueries, err
+		}
+
+		conceptType, err := mapper.MostSpecificType(result[0].Types)
+		if err != nil {
+			logger.WithError(err).WithTransactionID(transID).WithUUID(prefUUID).Errorf("could not return most specific type from source node: %v", result[0].Types)
 			return deleteLonePrefUuidQueries, err
 		}
 
@@ -649,6 +698,17 @@ func (s *ConceptService) handleTransferConcordance(updatedSourceIds []string, pr
 			if result[0].SourceUUID == result[0].PrefUUID {
 				logger.WithTransactionID(transID).WithUUID(prefUUID).Debugf("Pref uuid node for source %s will need to be deleted as its source will be removed", result[0].SourceUUID)
 				deleteLonePrefUuidQueries = append(deleteLonePrefUuidQueries, deleteLonePrefUuid(result[0].PrefUUID))
+				//concordance added
+				updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+					ConceptType:   conceptType,
+					ConceptUUID:   result[0].SourceUUID,
+					AggregateHash: aggregateHash,
+					EventDetails: ConcordanceEvent{
+						Type:  "Concordance Added",
+						OldID: result[0].SourceUUID,
+						NewID: prefUUID,
+					},
+				})
 				continue
 			} else {
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
@@ -665,8 +725,19 @@ func (s *ConceptService) handleTransferConcordance(updatedSourceIds []string, pr
 					return deleteLonePrefUuidQueries, err
 				}
 			} else {
-				// Source was concorded to different concordance. Data on existing concordance is now out of data
+				// Source was concorded to different concordance. Data on existing concordance is now out of date
 				logger.WithTransactionID(transID).WithUUID(prefUUID).WithField("alert_tag", "ConceptLoadingStaleData").Infof("Need to re-ingest concordance record for prefUuid: % as source: %s has been removed.", result[0].PrefUUID, result[0].SourceUUID)
+
+				updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+					ConceptType:   conceptType,
+					ConceptUUID:   result[0].SourceUUID,
+					AggregateHash: aggregateHash,
+					EventDetails: ConcordanceEvent{
+						Type:  "Concordance Transferred",
+						OldID: result[0].PrefUUID,
+						NewID: prefUUID,
+					},
+				})
 				continue
 			}
 		}
@@ -753,7 +824,8 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
 		TwitterHandle:        aggregatedConcept.TwitterHandle,
 		Type:                 aggregatedConcept.Type,
-		IsDeprecated:         aggregatedConcept.IsDeprecated,
+		//TODO deprecated event?
+		IsDeprecated: aggregatedConcept.IsDeprecated,
 		// Organisations
 		ProperName:             aggregatedConcept.ProperName,
 		ShortName:              aggregatedConcept.ShortName,
@@ -1017,12 +1089,12 @@ func getLabelsToRemove() string {
 }
 
 //extract uuids of the source concepts
-func getSourceIds(sourceConcepts []Concept) []string {
-	var idList []string
+func getSourceData(sourceConcepts []Concept) map[string]string {
+	conceptData := make(map[string]string)
 	for _, concept := range sourceConcepts {
-		idList = append(idList, concept.UUID)
+		conceptData[concept.UUID] = concept.Type
 	}
-	return idList
+	return conceptData
 }
 
 //set properties on concept node

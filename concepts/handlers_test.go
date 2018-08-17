@@ -31,7 +31,7 @@ func TestPutHandler(t *testing.T) {
 			},
 			statusCode:  http.StatusOK,
 			contentType: "",
-			body:        "{\"updatedIDs\":null}",
+			body:        "{\"events\":null,\"updatedIDs\":null}",
 		},
 		{
 			name: "RegularPathSuccess",
@@ -42,7 +42,7 @@ func TestPutHandler(t *testing.T) {
 			},
 			statusCode:  http.StatusOK,
 			contentType: "",
-			body:        "{\"updatedIDs\":null}",
+			body:        "{\"events\":null,\"updatedIDs\":null}",
 		},
 		{
 			name: "ParseError",

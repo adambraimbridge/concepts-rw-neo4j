@@ -179,7 +179,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			OPTIONAL MATCH (source)-[:HAS_ORGANISATION]->(org:Thing)
 			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
 			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
-			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(superseded:Thing)
+			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
 			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
 			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
@@ -191,7 +191,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				parent,
 				person,
 				related,
-				superseded,
+				supersededBy,
 				role,
 				roleRel,
 				parentOrg,
@@ -206,13 +206,13 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				org,
 				parent,
 				person,
-				superseded,
+				supersededBy,
 				related,
 				{
 					authority: source.authority,
 					authorityValue: source.authorityValue,
 					broaderUUIDs: collect(broader.uuid),
-					supersededByUUIDs: collect(superseded.uuid),
+					supersededByUUIDs: collect(supersededBy.uuid),
 					figiCode: source.figiCode,
 					issuedBy: issuer.uuid,
 					lastModifiedEpoch: source.lastModifiedEpoch,

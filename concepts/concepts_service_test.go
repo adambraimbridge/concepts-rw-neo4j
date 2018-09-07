@@ -44,7 +44,7 @@ const (
 	testOrgUUID                       = "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
 	parentOrgUUID                     = "c001ee9c-94c5-11e8-8f42-da24cd01f044"
 
-	supersededUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
+	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
@@ -634,7 +634,7 @@ func getConceptWithSupersededByUUIDs() AggregatedConcept {
 			Authority:         "Smartlogic",
 			AuthorityValue:    "1234",
 			Aliases:           []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			SupersededByUUIDs: []string{supersededUUID},
+			SupersededByUUIDs: []string{supersededByUUID},
 		}}}
 }
 
@@ -1760,7 +1760,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		setUpConcept: getSingleConcordance(),
 		testConcept: func() AggregatedConcept {
 			concept := getSingleConcordance()
-			concept.SourceRepresentations[0].SupersededByUUIDs = []string{supersededUUID}
+			concept.SourceRepresentations[0].SupersededByUUIDs = []string{supersededByUUID}
 			return concept
 		}(),
 		uuidsToCheck: []string{
@@ -1784,7 +1784,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		customAssertion: func(t *testing.T, concept AggregatedConcept) {
 			assert.Lenf(t, concept.SourceRepresentations, 1, "Test %s failed. Different number of sourceRepresentation items than expected", "singleConcordanceSupersededByRemoveRelationship")
 			assert.Lenf(t, concept.SourceRepresentations[0].SupersededByUUIDs, 1, "Test %s failed. Different number of supersededByUUIDs items than expected", "singleConcordanceSupersededByRemoveRelationship")
-			assert.Equalf(t, supersededUUID, concept.SourceRepresentations[0].SupersededByUUIDs[0], "Test %s failed. Different supersededByUUID than expected", "singleConcordanceSupersededByRemoveRelationship")
+			assert.Equalf(t, supersededByUUID, concept.SourceRepresentations[0].SupersededByUUIDs[0], "Test %s failed. Different supersededByUUID than expected", "singleConcordanceSupersededByRemoveRelationship")
 		},
 	}
 	singleConcordanceSupersededByRemoveRelationship := testStruct{
@@ -2302,7 +2302,7 @@ func cleanDB(t *testing.T) {
 		financialOrgUUID,
 		anotherFinancialOrgUUID,
 		parentOrgUUID,
-		supersededUUID,
+		supersededByUUID,
 		testOrgUUID,
 	)
 	deleteSourceNodes(t,
@@ -2328,7 +2328,7 @@ func cleanDB(t *testing.T) {
 		financialOrgUUID,
 		anotherFinancialOrgUUID,
 		parentOrgUUID,
-		supersededUUID,
+		supersededByUUID,
 		testOrgUUID,
 	)
 	deleteConcordedNodes(t,
@@ -2354,7 +2354,7 @@ func cleanDB(t *testing.T) {
 		financialOrgUUID,
 		anotherFinancialOrgUUID,
 		parentOrgUUID,
-		supersededUUID,
+		supersededByUUID,
 		testOrgUUID,
 	)
 }

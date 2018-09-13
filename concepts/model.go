@@ -35,8 +35,10 @@ type AggregatedConcept struct {
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
+	LegalName              string   `json:"legalName,omitempty"`
 	TradeNames             []string `json:"tradeNames,omitempty"`
 	FormerNames            []string `json:"formerNames,omitempty"`
+	LocalNames             []string `json:"localNames,omitempty"`
 	CountryCode            string   `json:"countryCode,omitempty"`
 	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
 	PostalCode             string   `json:"postalCode,omitempty"`
@@ -81,8 +83,10 @@ type Concept struct {
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
+	LegalName              string   `json:"legalName,omitempty"`
 	TradeNames             []string `json:"tradeNames,omitempty"`
 	FormerNames            []string `json:"formerNames,omitempty"`
+	LocalNames             []string `json:"localNames,omitempty"`
 	CountryCode            string   `json:"countryCode,omitempty"`
 	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
 	PostalCode             string   `json:"postalCode,omitempty"`
@@ -101,18 +105,19 @@ type ConceptChanges struct {
 }
 
 type Event struct {
-	ConceptType   string      `json:"conceptType"`
-	ConceptUUID   string      `json:"conceptUUID"`
+	ConceptType   string      `json:"type"`
+	ConceptUUID   string      `json:"uuid"`
 	AggregateHash string      `json:"aggregateHash"`
+	TransactionID string      `json:"transactionID"`
 	EventDetails  interface{} `json:"eventDetails"`
 }
 
 type ConceptEvent struct {
-	Type string `json:"type"`
+	Type string `json:"eventType"`
 }
 
 type ConcordanceEvent struct {
-	Type  string `json:"type"`
+	Type  string `json:"eventType"`
 	OldID string `json:"oldID"`
 	NewID string `json:"newID"`
 }
@@ -166,6 +171,7 @@ var conceptLabels = [...]string{
 
 // Map of authority and nodelabel for identifiers - we should be removing
 // Identifiers after all the concepts have been migrated to the new model
+//TODO wikidata and managed location dont exist
 var authorityToIdentifierLabelMap = map[string]string{
 	"TME":        "TMEIdentifier",
 	"UPP":        "UPPIdentifier",

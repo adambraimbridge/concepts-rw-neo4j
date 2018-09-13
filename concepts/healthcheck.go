@@ -1,6 +1,7 @@
 package concepts
 
 import (
+	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"net/http"
 	"time"
 
@@ -67,7 +68,7 @@ func (h *ConceptsHandler) makeNeo4jAvailabilityCheck() fthealth.Check {
 }
 
 func (h *ConceptsHandler) checkNeo4jAvailability() (string, error) {
-	err := h.ConceptsService.Check()
+	err := neoutils.Check(h.Connection)
 	if err != nil {
 		return "Could not connect to database!", err
 	}

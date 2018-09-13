@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/Financial-Times/concepts-rw-neo4j/organisations"
 	standardLog "log"
 	"net"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Financial-Times/concepts-rw-neo4j/brands"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
@@ -100,9 +102,8 @@ func main() {
 		conf := neoutils.DefaultConnectionConfig()
 		conf.BatchSize = *batchSize
 		db, err := neoutils.Connect(*neoURL, conf)
-
 		if err != nil {
-			logger.Errorf("Could not connect to neo4j, error=[%s]\n", err)
+			logger.Fatalf("Could not connect to neo4j, error=[%s]\n", err.Error())
 		}
 
 		appConf := ServerConf{
@@ -115,10 +116,12 @@ func main() {
 			RequestLoggingOn:   *requestLoggingOn,
 		}
 
-		conceptsService := concepts.NewConceptService(db)
-		conceptsService.Initialise()
+		if err := concepts.Initialise(db); err != nil {
+			logger.Fatalf("Could not initialize constraints on db, error=[%s]\n", err.Error())
+		}
 
-		handler := concepts.ConceptsHandler{ConceptsService: &conceptsService}
+		services := createServices(db)
+		handler := concepts.ConceptsHandler{ConceptsService: services, Connection: db}
 		runServerWithParams(handler, appConf)
 	}
 	logger.Infof("Application started with args %s", os.Args)
@@ -153,4 +156,20 @@ func outputMetricsIfRequired(graphiteTCPAddress string, graphitePrefix string, l
 		//messy use of the 'standard' log package here as this method takes the log struct, not an interface, so can't use logrus.Logger
 		go metrics.Log(metrics.DefaultRegistry, 60*time.Second, standardLog.New(os.Stdout, "metrics", standardLog.Lmicroseconds))
 	}
+}
+
+func createServices(db neoutils.NeoConnection) map[string]concepts.ConceptServicer {
+	serviceMap := make(map[string]concepts.ConceptServicer)
+	serviceMap["brands"] = brands.NewBrandService(db)
+	//serviceMap["genres"] = brands.NewBrandService(db)
+	//serviceMap["locations"] = brands.NewBrandService(db)
+	//serviceMap["memberships"] = brands.NewBrandService(db)
+	//serviceMap["membership-roles"] = brands.NewBrandService(db)
+	serviceMap["organisations"] = organisations.NewOrganisationService(db)
+	//serviceMap["people"] = brands.NewBrandService(db)
+	//serviceMap["sections"] = brands.NewBrandService(db)
+	//serviceMap["subjects"] = brands.NewBrandService(db)
+	//serviceMap["alphaville-series"] = brands.NewBrandService(db)
+	//serviceMap["special-reports"] = brands.NewBrandService(db)
+	return serviceMap
 }

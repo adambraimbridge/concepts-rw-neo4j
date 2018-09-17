@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"os"
+	"reflect"
 	"sort"
 	"strconv"
+	"testing"
 	"time"
 
 	"github.com/Financial-Times/go-logger"
@@ -85,6 +89,7 @@ type NeoAggregatedConcept struct {
 	PrefLabel             string                 `json:"prefLabel"`
 	PrefUUID              string                 `json:"prefUUID,omitempty"`
 	RelatedUUIDs          []string               `json:"relatedUUIDs,omitempty"`
+	SupersededUUIDs       []string               `json:"supersededByUUIDs,omitempty"`
 	ScopeNote             string                 `json:"scopeNote,omitempty"`
 	ShortLabel            string                 `json:"shortLabel,omitempty"`
 	SourceRepresentations []NeoAggregatedConcept `json:"sourceRepresentations"`
@@ -118,204 +123,6 @@ type equivalenceResult struct {
 	PrefUUID    string   `json:"prefUuid"`
 	Types       []string `json:"types"`
 	Equivalence int      `json:"count"`
-}
-
-//Read - read service
-func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
-	var results []NeoAggregatedConcept
-
-	query := &neoism.CypherQuery{
-		Statement: `
-			MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
-			OPTIONAL MATCH (source)-[:HAS_BROADER]->(broader:Thing)
-			OPTIONAL MATCH (source)-[:HAS_MEMBER]->(person:Thing)
-			OPTIONAL MATCH (source)-[:HAS_ORGANISATION]->(org:Thing)
-			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
-			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
-			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
-			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
-			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
-			WITH
-				broader,
-				canonical,
-				issuer,
-				org,
-				parent,
-				person,
-				related,
-				role,
-				roleRel,
-				parentOrg,
-				source
-				ORDER BY
-					source.uuid,
-					role.uuid
-			WITH
-				broader,
-				canonical,
-				issuer,
-				org,
-				parent,
-				person,
-				related,
-				{
-					authority: source.authority,
-					authorityValue: source.authorityValue,
-					broaderUUIDs: collect(broader.uuid),
-					figiCode: source.figiCode,
-					issuedBy: issuer.uuid,
-					lastModifiedEpoch: source.lastModifiedEpoch,
-					membershipRoles: collect({
-						membershipRoleUUID: role.uuid,
-						inceptionDate: roleRel.inceptionDate,
-						terminationDate: roleRel.terminationDate,
-						inceptionDateEpoch: roleRel.inceptionDateEpoch,
-						terminationDateEpoch: roleRel.terminationDateEpoch
-					}),
-					organisationUUID: org.uuid,
-					parentUUIDs: collect(parent.uuid),
-					personUUID: person.uuid,
-					parentOrganisation: parentOrg.uuid,
-					prefLabel: source.prefLabel,
-					relatedUUIDs: collect(related.uuid),
-					types: labels(source),
-					uuid: source.uuid,
-					isDeprecated: source.isDeprecated
-				} as sources,
-				collect({
-					inceptionDate: roleRel.inceptionDate,
-					inceptionDateEpoch: roleRel.inceptionDateEpoch,
-					membershipRoleUUID: role.uuid,
-					terminationDate: roleRel.terminationDate,
-					terminationDateEpoch: roleRel.terminationDateEpoch
-				}) as membershipRoles
-			RETURN
-				canonical.aliases as aliases,
-				canonical.descriptionXML as descriptionXML,
-				canonical.emailAddress as emailAddress,
-				canonical.facebookPage as facebookPage,
-				canonical.figiCode as figiCode,
-				canonical.imageUrl as imageUrl,
-				canonical.inceptionDate as inceptionDate,
-				canonical.inceptionDateEpoch as inceptionDateEpoch,
-				canonical.prefLabel as prefLabel,
-				canonical.prefUUID as prefUUID,
-				canonical.scopeNote as scopeNote,
-				canonical.shortLabel as shortLabel,
-				canonical.strapline as strapline,
-				canonical.terminationDate as terminationDate,
-				canonical.terminationDateEpoch as terminationDateEpoch,
-				canonical.twitterHandle as twitterHandle,
-				collect(sources) as sourceRepresentations,
-				issuer.uuid as issuedBy,
-				labels(canonical) as types,
-				membershipRoles,
-				org.uuid as organisationUUID,
-				person.uuid as personUUID,
-				canonical.properName as properName,
-				canonical.shortName as shortName,
-				canonical.tradeNames as tradeNames,
-				canonical.formerNames as formerNames,
-				canonical.countryCode as countryCode,
-				canonical.countryOfIncorporation as countryOfIncorporation,
-				canonical.postalCode as postalCode,
-				canonical.yearFounded as yearFounded,
-				canonical.leiCode as leiCode,
-				canonical.isDeprecated as isDeprecated,
-				canonical.salutation as salutation,
-				canonical.birthYear as birthYear
-			`,
-		Parameters: map[string]interface{}{
-			"uuid": uuid,
-		},
-		Result: &results,
-	}
-
-	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
-	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Error executing neo4j read query")
-		return AggregatedConcept{}, false, err
-	}
-
-	if len(results) == 0 {
-		logger.WithTransactionID(transID).WithUUID(uuid).Info("concept not found in db")
-		return AggregatedConcept{}, false, nil
-	}
-	typeName, err := mapper.MostSpecificType(results[0].Types)
-	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Returned concept had no recognized type")
-		return AggregatedConcept{}, false, err
-	}
-
-	aggregatedConcept := AggregatedConcept{
-		Aliases:          results[0].Aliases,
-		DescriptionXML:   results[0].DescriptionXML,
-		EmailAddress:     results[0].EmailAddress,
-		FacebookPage:     results[0].FacebookPage,
-		FigiCode:         results[0].FigiCode,
-		ImageURL:         results[0].ImageURL,
-		InceptionDate:    results[0].InceptionDate,
-		IssuedBy:         results[0].IssuedBy,
-		MembershipRoles:  cleanMembershipRoles(results[0].MembershipRoles),
-		OrganisationUUID: results[0].OrganisationUUID,
-		PersonUUID:       results[0].PersonUUID,
-		PrefLabel:        results[0].PrefLabel,
-		PrefUUID:         results[0].PrefUUID,
-		ScopeNote:        results[0].ScopeNote,
-		ShortLabel:       results[0].ShortLabel,
-		Strapline:        results[0].Strapline,
-		TerminationDate:  results[0].TerminationDate,
-		TwitterHandle:    results[0].TwitterHandle,
-		Type:             typeName,
-		IsDeprecated:     results[0].IsDeprecated,
-		// Organisations
-		ProperName:             results[0].ProperName,
-		ShortName:              results[0].ShortName,
-		TradeNames:             results[0].TradeNames,
-		FormerNames:            results[0].FormerNames,
-		CountryCode:            results[0].CountryCode,
-		CountryOfIncorporation: results[0].CountryOfIncorporation,
-		PostalCode:             results[0].PostalCode,
-		YearFounded:            results[0].YearFounded,
-		LeiCode:                results[0].LeiCode,
-		// Person
-		Salutation: results[0].Salutation,
-		BirthYear:  results[0].BirthYear,
-	}
-
-	var sourceConcepts []Concept
-	for _, srcConcept := range results[0].SourceRepresentations {
-		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
-		if err != nil {
-			logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Returned source concept had no recognized type")
-			return AggregatedConcept{}, false, err
-		}
-
-		concept := Concept{
-			Authority:         srcConcept.Authority,
-			AuthorityValue:    srcConcept.AuthorityValue,
-			BroaderUUIDs:      FilterSlice(srcConcept.BroaderUUIDs),
-			FigiCode:          srcConcept.FigiCode,
-			IssuedBy:          srcConcept.IssuedBy,
-			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
-			MembershipRoles:   cleanMembershipRoles(srcConcept.MembershipRoles),
-			OrganisationUUID:  srcConcept.OrganisationUUID,
-			ParentUUIDs:       FilterSlice(srcConcept.ParentUUIDs),
-			PersonUUID:        srcConcept.PersonUUID,
-			PrefLabel:         srcConcept.PrefLabel,
-			RelatedUUIDs:      FilterSlice(srcConcept.RelatedUUIDs),
-			Type:              conceptType,
-			UUID:              srcConcept.UUID,
-			IsDeprecated:      srcConcept.IsDeprecated,
-			// Organisations
-			ParentOrganisation: srcConcept.ParentOrganisation,
-		}
-		sourceConcepts = append(sourceConcepts, concept)
-	}
-
-	aggregatedConcept.SourceRepresentations = sourceConcepts
-	logger.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
-	return CleanConcept(aggregatedConcept), true, nil
 }
 
 func ValidateConcept(aggConcept AggregatedConcept, transID string) error {
@@ -809,6 +616,9 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if len(concept.TradeNames) > 0 {
 		nodeProps["tradeNames"] = concept.TradeNames
 	}
+	if len(concept.LocalNames) > 0 {
+		nodeProps["localNames"] = concept.LocalNames
+	}
 	if concept.CountryCode != "" {
 		nodeProps["countryCode"] = concept.CountryCode
 	}
@@ -1003,6 +813,7 @@ func CleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 			OrganisationUUID: source.OrganisationUUID,
 			PersonUUID:       source.PersonUUID,
 			RelatedUUIDs:     source.RelatedUUIDs,
+			SupersededUUIDs:  source.SupersededUUIDs,
 			BroaderUUIDs:     source.BroaderUUIDs,
 			MembershipRoles:  source.MembershipRoles,
 			IssuedBy:         source.IssuedBy,
@@ -1015,4 +826,76 @@ func CleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 	}
 	c.SourceRepresentations = cleanSources
 	return c
+}
+
+//Cleans the DB of each concept, all outgoing relationships, any identifiers or equivalent nodes
+//Should only be used for testing purposes
+//They are stored here as you cannot not export from test files otherwise they would be in concepts_service_test.go file
+func CleanTestDB(t *testing.T, db neoutils.NeoConnection, uuids ...string) {
+	for _, uuid := range uuids {
+		cleanSourceNodes(t, db, uuid)
+		deleteSourceNodes(t, db, uuid)
+		deleteConcordedNodes(t, db, uuid)
+	}
+}
+
+func cleanSourceNodes(t *testing.T, db neoutils.NeoConnection, uuid string) {
+	var queries []*neoism.CypherQuery
+	queries = append(queries, &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`
+			MATCH (a:Thing {uuid: "%s"})
+			OPTIONAL MATCH (a)-[rel:IDENTIFIES]-(i)
+			OPTIONAL MATCH (a)-[hp:HAS_PARENT]->(p)
+			OPTIONAL MATCH (a)-[eq:EQUIVALENT]->(e)
+			DELETE rel, hp, i, eq`, uuid)})
+	err := db.CypherBatch(queries)
+	assert.NoError(t, err, "error executing clean up source node cypher")
+}
+
+func deleteSourceNodes(t *testing.T, db neoutils.NeoConnection, uuid string) {
+	var queries []*neoism.CypherQuery
+	queries = append(queries, &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`
+			MATCH (a:Thing {uuid: "%s"})
+			OPTIONAL MATCH (a)-[rel:IDENTIFIES]-(i)
+			DETACH DELETE rel, i, a`, uuid)})
+	err := db.CypherBatch(queries)
+	assert.NoError(t, err, "error executing delete source node cypher")
+}
+
+func deleteConcordedNodes(t *testing.T, db neoutils.NeoConnection, uuid string) {
+	var queries []*neoism.CypherQuery
+	queries = append(queries, &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`
+			MATCH (a:Thing {prefUUID: "%s"})
+			DELETE a`, uuid)})
+	err := db.CypherBatch(queries)
+	assert.NoError(t, err, "Error executing delete concorded node cypher")
+}
+
+//Will read the file and decode the contents. Used for the test fixtures
+func ReadFileAndDecode(t *testing.T, pathToFile string) (interface{}, string, error) {
+	f, err := os.Open(pathToFile)
+	assert.NoError(t, err)
+	defer f.Close()
+	dec := json.NewDecoder(f)
+	return DecodeJSON(dec)
+}
+
+//Compares expected and actual events from test cases
+func ChangedRecordsAreEqual(expectedChanges []Event, actualChanges []Event) bool {
+	var eventExists bool
+	for _, actualEvent := range actualChanges {
+		eventExists = false
+		for _, expectedEvent := range expectedChanges {
+			if reflect.DeepEqual(expectedEvent, actualEvent) {
+				eventExists = true
+				break
+			}
+		}
+		if eventExists != true {
+			return false
+		}
+	}
+	return true
 }

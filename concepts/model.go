@@ -70,6 +70,7 @@ type Concept struct {
 	ShortLabel           string           `json:"shortLabel,omitempty"`
 	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
 	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
+	SupersededUUIDs      []string         `json:"supersededByUUIDs,omitempty"`
 	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
 	PersonUUID           string           `json:"personUUID,omitempty"`
 	Hash                 string           `json:"hash,omitempty"`

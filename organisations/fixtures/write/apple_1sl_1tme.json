@@ -1,33 +1,55 @@
 {
-  "prefUUID": "3678d538-b503-11e8-adcb-da24cd01f044",
-  "prefLabel": "Free Lunch",
-  "type": "Brand",
+  "prefUUID": "1d3711e2-b766-11e8-adcb-da24cd01f044",
+  "prefLabel": "Apple Inc",
+  "type": "PublicCompany",
   "aliases": [
-    "Martin Sandbu",
-    "Free Lunch"
+    "Apple, Inc.",
+    "Apple",
+    "Apple Inc.",
+    "Apple Computer, Inc.",
+    "Apple Computers",
+    "Apple Canada",
+    "Apple Computer",
+    "Apple Computer Inc",
+    "Apple Inc",
+    "Apple Incorporated"
   ],
-  "descriptionXML": "<p>Martin Sandbu is an author for the FT</p>",
+  "countryCode": "US",
+  "countryOfIncorporation": "US",
+  "formerNames": [
+    "Apple Computer, Inc."
+  ],
+  "leiCode": "HWUPKR9IT4XBT394",
+  "postalCode": "95014-2083",
+  "properName": "Apple, Inc.",
+  "shortName": "Apple",
+  "yearFounded": 1976,
   "sourceRepresentations": [
     {
-      "uuid": "4cc4424c-99f1-31b5-a810-5134847e6b02",
-      "type": "Person",
-      "prefLabel": "Martin Sandbu",
+      "uuid": "33df7971-bc95-3029-bfb9-1a92e377b971",
+      "type": "Organisation",
+      "prefLabel": "Apple Inc",
       "authority": "TME",
-      "authorityValue": "YmQ4Y2VlMj14OP4570Ne30Lkj2NbRTRh-QnJRz",
+      "authorityValue": "TnN0ZWluX09OuR3nBNX0FBUEw=-T04=",
       "aliases": [
-        "Martin Sandbu"
+        "Apple",
+        "Apple Canada",
+        "Apple Computer",
+        "Apple Computer Inc",
+        "Apple Computers",
+        "Apple Inc",
+        "Apple Incorporated"
       ]
     },
     {
-      "uuid": "3678d538-b503-11e8-adcb-da24cd01f044",
-      "type": "Brand",
-      "prefLabel": "Free Lunch",
+      "uuid": "1d3711e2-b766-11e8-adcb-da24cd01f044",
+      "type": "Organisation",
+      "prefLabel": "Apple Inc",
       "authority": "Smartlogic",
-      "authorityValue": "3678d538-b503-11e8-adcb-da24cd01f044",
+      "authorityValue": "1d3711e2-b766-11e8-adcb-da24cd01f044",
       "aliases": [
-        "Free Lunch"
-      ],
-      "descriptionXML": "<p>Martin Sandbu is an author for the FT</p>"
+        "Apple Inc"
+      ]
     }
   ]
 }

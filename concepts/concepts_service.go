@@ -134,6 +134,7 @@ type neoConcept struct {
 	PrefLabel            string           `json:"prefLabel,omitempty"`
 	PrefUUID             string           `json:"prefUUID,omitempty"`
 	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
+	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
 	ScopeNote            string           `json:"scopeNote,omitempty"`
 	ShortLabel           string           `json:"shortLabel,omitempty"`
 	Strapline            string           `json:"strapline,omitempty"`
@@ -178,6 +179,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			OPTIONAL MATCH (source)-[:HAS_ORGANISATION]->(org:Thing)
 			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
 			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
+			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
 			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
 			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
@@ -189,6 +191,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				parent,
 				person,
 				related,
+				supersededBy,
 				role,
 				roleRel,
 				parentOrg,
@@ -203,11 +206,13 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				org,
 				parent,
 				person,
+				supersededBy,
 				related,
 				{
 					authority: source.authority,
 					authorityValue: source.authorityValue,
 					broaderUUIDs: collect(broader.uuid),
+					supersededByUUIDs: collect(supersededBy.uuid),
 					figiCode: source.figiCode,
 					issuedBy: issuer.uuid,
 					lastModifiedEpoch: source.lastModifiedEpoch,
@@ -343,6 +348,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			Authority:         srcConcept.Authority,
 			AuthorityValue:    srcConcept.AuthorityValue,
 			BroaderUUIDs:      filterSlice(srcConcept.BroaderUUIDs),
+			SupersededByUUIDs: filterSlice(srcConcept.SupersededByUUIDs),
 			FigiCode:          srcConcept.FigiCode,
 			IssuedBy:          srcConcept.IssuedBy,
 			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
@@ -770,6 +776,7 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
 			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
 			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
+			OPTIONAL MATCH (t)-[supersededBy:SUPERSEDED_BY]->(supersedesNode)
 			OPTIONAL MATCH (t)-[broader:HAS_BROADER]->(brNode)
 			OPTIONAL MATCH (t)-[ho:HAS_ORGANISATION]->(org)
 			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->(memb)
@@ -778,7 +785,7 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[parentOrgRel:SUB_ORGANISATION_OF]->(parentOrg)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr, issuerRel, parentOrgRel`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr, issuerRel, parentOrgRel, supersededBy`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -863,6 +870,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 
 		if len(sourceConcept.BroaderUUIDs) > 0 {
 			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", queryBatch)
+		}
+
+		if len(sourceConcept.SupersededByUUIDs) > 0 {
+			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", queryBatch)
 		}
 	}
 	return queryBatch
@@ -1355,20 +1366,21 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 	var cleanSources []Concept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := Concept{
-			UUID:             source.UUID,
-			PrefLabel:        source.PrefLabel,
-			Type:             source.Type,
-			Authority:        source.Authority,
-			AuthorityValue:   source.AuthorityValue,
-			ParentUUIDs:      source.ParentUUIDs,
-			OrganisationUUID: source.OrganisationUUID,
-			PersonUUID:       source.PersonUUID,
-			RelatedUUIDs:     source.RelatedUUIDs,
-			BroaderUUIDs:     source.BroaderUUIDs,
-			MembershipRoles:  source.MembershipRoles,
-			IssuedBy:         source.IssuedBy,
-			FigiCode:         source.FigiCode,
-			IsDeprecated:     source.IsDeprecated,
+			UUID:              source.UUID,
+			PrefLabel:         source.PrefLabel,
+			Type:              source.Type,
+			Authority:         source.Authority,
+			AuthorityValue:    source.AuthorityValue,
+			ParentUUIDs:       source.ParentUUIDs,
+			OrganisationUUID:  source.OrganisationUUID,
+			PersonUUID:        source.PersonUUID,
+			RelatedUUIDs:      source.RelatedUUIDs,
+			BroaderUUIDs:      source.BroaderUUIDs,
+			SupersededByUUIDs: source.SupersededByUUIDs,
+			MembershipRoles:   source.MembershipRoles,
+			IssuedBy:          source.IssuedBy,
+			FigiCode:          source.FigiCode,
+			IsDeprecated:      source.IsDeprecated,
 			// Organisations
 			ParentOrganisation: source.ParentOrganisation,
 		}

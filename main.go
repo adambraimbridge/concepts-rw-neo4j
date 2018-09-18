@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Financial-Times/concepts-rw-neo4j/organisations"
+	"github.com/Financial-Times/concepts-rw-neo4j/people"
 	standardLog "log"
 	"net"
 	"net/http"
@@ -166,7 +167,7 @@ func createServices(db neoutils.NeoConnection) map[string]concepts.ConceptServic
 	//serviceMap["memberships"] = brands.NewBrandService(db)
 	//serviceMap["membership-roles"] = brands.NewBrandService(db)
 	serviceMap["organisations"] = organisations.NewOrganisationService(db)
-	//serviceMap["people"] = brands.NewBrandService(db)
+	serviceMap["people"] = people.NewPeopleService(db)
 	//serviceMap["sections"] = brands.NewBrandService(db)
 	//serviceMap["subjects"] = brands.NewBrandService(db)
 	//serviceMap["alphaville-series"] = brands.NewBrandService(db)

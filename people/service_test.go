@@ -1,4 +1,4 @@
-package organisations
+package people
 
 import (
 	"fmt"
@@ -16,18 +16,17 @@ import (
 var db neoutils.NeoConnection
 
 //Concept Service under test
-var conceptsDriver *OrganisationService
+var conceptsDriver *PeopleService
 
 const (
-	test_tid               = "tid_1234test"
-	appleTmeUUID           = "33df7971-bc95-3029-bfb9-1a92e377b971"
-	appleSmartlogicUUID    = "1d3711e2-b766-11e8-adcb-da24cd01f044"
-	appleFactsetUUID       = "43ed1b5c-6043-348f-ac35-045b42d3b947"
-	appleParentUUID        = "b1047bed-f6f6-31c4-9aa9-199f48aeb5a1"
-	invalidPayloadUUID     = "d0360165-3ea7-3506-af2a-9a3b1316a78c"
-	altAppleSmartlogicUUID = "58f3aeac-8a33-4b9f-a208-14ead197b361"
-	relatedUUID            = "41d2defe-ba55-11e8-ba49-da24cd01f044"
-	supercededUUID         = "b85c99fc-ae26-44c8-aa35-542fec638aaa"
+	test_tid                     = "tid_1234test"
+	barackObamaSmartlogicUUID    = "3ca8899c-ba69-11e8-ba49-da24cd01f044"
+	barackObamaTMEUUID           = "57d79ccb-8804-3651-9144-8fc5fb4eacd9"
+	barackObamaAuthorUUID        = "208edf7d-d4eb-329c-a293-560713d75250"
+	barackObamaFactsetUUID       = "2d3a0bfb-80ff-395d-8b26-afaeb353d08c"
+	barackObamaWikidataUUID      = "7eff22dd-7bf4-4e15-aea1-70b9592af499"
+	invalidPayloadUUID           = "d0360165-3ea7-3506-af2a-9a3b1316a78c"
+	barackObamaAltSmartlogicUUID = "96622afa-ba6f-11e8-989a-da24cd01f044"
 )
 
 func init() {
@@ -41,7 +40,7 @@ func init() {
 	if db == nil {
 		panic("Cannot connect to Neo4J")
 	}
-	conceptsDriver = NewOrganisationService(db)
+	conceptsDriver = NewPeopleService(db)
 
 	duration := 2 * time.Second
 	time.Sleep(duration)
@@ -56,7 +55,7 @@ func neoUrl() string {
 }
 
 func TestWriteService_EmptyDB(t *testing.T) {
-	defer concepts.CleanTestDB(t, db, invalidPayloadUUID, appleParentUUID, appleFactsetUUID, appleTmeUUID, appleSmartlogicUUID, altAppleSmartlogicUUID)
+	defer concepts.CleanTestDB(t, db, invalidPayloadUUID, barackObamaWikidataUUID, barackObamaTMEUUID, barackObamaFactsetUUID, barackObamaAuthorUUID, barackObamaSmartlogicUUID, barackObamaAltSmartlogicUUID)
 
 	tests := []struct {
 		testName        string
@@ -123,82 +122,101 @@ func TestWriteService_EmptyDB(t *testing.T) {
 			updatedConcepts: concepts.ConceptChanges{},
 		},
 		{
-			testName:        "FS Organisation with all fields is successful and can be read from DB",
-			filePathToWrite: "./fixtures/write/apple_1fs.json",
-			filePathToRead:  "./fixtures/read/apple_1fs.json",
-			conceptUUID:     appleFactsetUUID,
+			testName:        "Fully concorded person with all fields is successful and can be read from DB",
+			filePathToWrite: "./fixtures/write/barackObama_1sl_1tme_1auth_1fs_1wiki.json",
+			filePathToRead:  "./fixtures/read/barackObama_1sl_1tme_1auth_1fs_1wiki.json",
+			conceptUUID:     barackObamaSmartlogicUUID,
 			expectedError:   "",
 			updatedConcepts: concepts.ConceptChanges{
-				UpdatedIds: []string{appleFactsetUUID},
+				UpdatedIds: []string{barackObamaAuthorUUID, barackObamaTMEUUID, barackObamaWikidataUUID, barackObamaFactsetUUID, barackObamaSmartlogicUUID},
 				ChangedRecords: []concepts.Event{
 					{
-						ConceptUUID:   appleFactsetUUID,
-						ConceptType:   "PublicCompany",
-						AggregateHash: "1117817062624358552",
-						TransactionID: test_tid,
-						EventDetails: concepts.ConceptEvent{
-							Type: concepts.UpdatedEvent,
-						},
-					},
-				},
-			},
-		},
-		{
-			testName:        "TME and FS Concorded Organisation is successful and can be read from DB",
-			filePathToWrite: "./fixtures/write/apple_1sl_1tme_1fs.json",
-			filePathToRead:  "./fixtures/read/apple_1sl_1tme_1fs.json",
-			conceptUUID:     altAppleSmartlogicUUID,
-			expectedError:   "",
-			updatedConcepts: concepts.ConceptChanges{
-				UpdatedIds: []string{appleFactsetUUID, appleTmeUUID, altAppleSmartlogicUUID},
-				ChangedRecords: []concepts.Event{
-					{
-						ConceptUUID:   altAppleSmartlogicUUID,
-						ConceptType:   "PublicCompany",
-						AggregateHash: "14817905512951988663",
+						ConceptUUID:   barackObamaSmartlogicUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
 					},
 					{
-						ConceptUUID:   appleTmeUUID,
-						ConceptType:   "Organisation",
-						AggregateHash: "14817905512951988663",
+						ConceptUUID:   barackObamaFactsetUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
 					},
 					{
-						ConceptUUID:   appleTmeUUID,
-						ConceptType:   "Organisation",
-						AggregateHash: "14817905512951988663",
+						ConceptUUID:   barackObamaFactsetUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
-							NewID: altAppleSmartlogicUUID,
-							OldID: appleTmeUUID,
+							NewID: barackObamaSmartlogicUUID,
+							OldID: barackObamaFactsetUUID,
 						},
 					},
 					{
-						ConceptUUID:   appleFactsetUUID,
-						ConceptType:   "PublicCompany",
-						AggregateHash: "14817905512951988663",
+						ConceptUUID:   barackObamaWikidataUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
 					},
 					{
-						ConceptUUID:   appleFactsetUUID,
-						ConceptType:   "PublicCompany",
-						AggregateHash: "14817905512951988663",
+						ConceptUUID:   barackObamaWikidataUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
-							NewID: altAppleSmartlogicUUID,
-							OldID: appleFactsetUUID,
+							NewID: barackObamaSmartlogicUUID,
+							OldID: barackObamaWikidataUUID,
+						},
+					},
+					{
+						ConceptUUID:   barackObamaTMEUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
+						TransactionID: test_tid,
+						EventDetails: concepts.ConceptEvent{
+							Type: concepts.UpdatedEvent,
+						},
+					},
+					{
+						ConceptUUID:   barackObamaTMEUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
+						TransactionID: test_tid,
+						EventDetails: concepts.ConcordanceEvent{
+							Type:  concepts.AddedEvent,
+							NewID: barackObamaSmartlogicUUID,
+							OldID: barackObamaTMEUUID,
+						},
+					},
+					{
+						ConceptUUID:   barackObamaAuthorUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
+						TransactionID: test_tid,
+						EventDetails: concepts.ConceptEvent{
+							Type: concepts.UpdatedEvent,
+						},
+					},
+					{
+						ConceptUUID:   barackObamaAuthorUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
+						TransactionID: test_tid,
+						EventDetails: concepts.ConcordanceEvent{
+							Type:  concepts.AddedEvent,
+							NewID: barackObamaSmartlogicUUID,
+							OldID: barackObamaAuthorUUID,
 						},
 					},
 				},
@@ -208,7 +226,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			concepts.CleanTestDB(t, db, invalidPayloadUUID, appleParentUUID, appleFactsetUUID, appleTmeUUID, appleSmartlogicUUID, altAppleSmartlogicUUID)
+			concepts.CleanTestDB(t, db, invalidPayloadUUID, barackObamaWikidataUUID, barackObamaTMEUUID, barackObamaFactsetUUID, barackObamaAuthorUUID, barackObamaSmartlogicUUID, barackObamaAltSmartlogicUUID)
 			write, _, err := concepts.ReadFileAndDecode(t, test.filePathToWrite)
 			assert.NoError(t, err)
 
@@ -236,12 +254,14 @@ func TestWriteService_EmptyDB(t *testing.T) {
 			expectedConcept := read.(concepts.AggregatedConcept)
 
 			assert.True(t, reflect.DeepEqual(expectedConcept, actualConcept), fmt.Sprintf("test %s failed: concept read from DB does not match expected", test.testName))
+			fmt.Printf("expected concept is %v\n", expectedConcept)
+			fmt.Printf("  actual concept is %v\n", actualConcept)
 		})
 	}
 }
 
 func TestWriteService_HandlingConcordance(t *testing.T) {
-	defer concepts.CleanTestDB(t, db, relatedUUID, supercededUUID, appleParentUUID, appleFactsetUUID, appleTmeUUID, appleSmartlogicUUID, altAppleSmartlogicUUID)
+	defer concepts.CleanTestDB(t, db, barackObamaWikidataUUID, barackObamaTMEUUID, barackObamaFactsetUUID, barackObamaAuthorUUID, barackObamaSmartlogicUUID, barackObamaAltSmartlogicUUID)
 	tests := []struct {
 		testName             string
 		pathToSetUpConcept   string
@@ -253,18 +273,18 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}{
 		{
 			testName:             "Re-writing the same payload produces one concept updated event",
-			pathToSetUpConcept:   "./fixtures/write/apple_1sl_1tme.json",
-			pathToUpdatedConcept: "./fixtures/write/apple_1sl_1tme.json",
-			pathToReadConcept:    "./fixtures/read/apple_1sl_1tme.json",
-			conceptUUID:          appleSmartlogicUUID,
+			pathToSetUpConcept:   "./fixtures/write/barackObama_1sl_1tme.json",
+			pathToUpdatedConcept: "./fixtures/write/barackObama_1sl_1tme.json",
+			pathToReadConcept:    "./fixtures/read/barackObama_1sl_1tme.json",
+			conceptUUID:          barackObamaAltSmartlogicUUID,
 			expectedError:        "",
 			updatedConcepts: concepts.ConceptChanges{
-				UpdatedIds: []string{appleTmeUUID, appleSmartlogicUUID},
+				UpdatedIds: []string{barackObamaTMEUUID, barackObamaAltSmartlogicUUID},
 				ChangedRecords: []concepts.Event{
 					{
-						ConceptUUID:   appleSmartlogicUUID,
-						ConceptType:   "PublicCompany",
-						AggregateHash: "16326938742065553603",
+						ConceptUUID:   barackObamaAltSmartlogicUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7504724365733510478",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -275,32 +295,32 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		},
 		{
 			testName:             "Adding an existing tme to a smartlogic produces one update concept and one concordance added event",
-			pathToSetUpConcept:   "./fixtures/write/apple_1tme.json",
-			pathToUpdatedConcept: "./fixtures/write/apple_1sl_1tme.json",
-			pathToReadConcept:    "./fixtures/read/apple_1sl_1tme.json",
-			conceptUUID:          appleSmartlogicUUID,
+			pathToSetUpConcept:   "./fixtures/write/barackObama_1tme.json",
+			pathToUpdatedConcept: "./fixtures/write/barackObama_1sl_1tme.json",
+			pathToReadConcept:    "./fixtures/read/barackObama_1sl_1tme.json",
+			conceptUUID:          barackObamaAltSmartlogicUUID,
 			expectedError:        "",
 			updatedConcepts: concepts.ConceptChanges{
-				UpdatedIds: []string{appleTmeUUID, appleSmartlogicUUID},
+				UpdatedIds: []string{barackObamaTMEUUID, barackObamaAltSmartlogicUUID},
 				ChangedRecords: []concepts.Event{
 					{
-						ConceptUUID:   appleSmartlogicUUID,
-						ConceptType:   "PublicCompany",
-						AggregateHash: "16326938742065553603",
+						ConceptUUID:   barackObamaAltSmartlogicUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7504724365733510478",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
 					},
 					{
-						ConceptUUID:   appleTmeUUID,
-						ConceptType:   "Organisation",
-						AggregateHash: "16326938742065553603",
+						ConceptUUID:   barackObamaTMEUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7504724365733510478",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
-							NewID: appleSmartlogicUUID,
-							OldID: appleTmeUUID,
+							NewID: barackObamaAltSmartlogicUUID,
+							OldID: barackObamaTMEUUID,
 						},
 					},
 				},
@@ -308,32 +328,32 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		},
 		{
 			testName:             "Removing a source from a single concordance produces 1 updated and 1 concordance removed event",
-			pathToSetUpConcept:   "./fixtures/write/apple_1sl_1tme.json",
-			pathToUpdatedConcept: "./fixtures/write/apple_1sl.json",
-			pathToReadConcept:    "./fixtures/read/apple_1sl.json",
-			conceptUUID:          appleSmartlogicUUID,
+			pathToSetUpConcept:   "./fixtures/write/barackObama_1sl_1tme.json",
+			pathToUpdatedConcept: "./fixtures/write/barackObama_1sl.json",
+			pathToReadConcept:    "./fixtures/read/barackObama_1sl.json",
+			conceptUUID:          barackObamaAltSmartlogicUUID,
 			expectedError:        "",
 			updatedConcepts: concepts.ConceptChanges{
-				UpdatedIds: []string{appleSmartlogicUUID, appleTmeUUID},
+				UpdatedIds: []string{barackObamaAltSmartlogicUUID, barackObamaTMEUUID},
 				ChangedRecords: []concepts.Event{
 					{
-						ConceptUUID:   appleSmartlogicUUID,
-						ConceptType:   "PublicCompany",
-						AggregateHash: "6267402458710279170",
+						ConceptUUID:   barackObamaAltSmartlogicUUID,
+						ConceptType:   "Person",
+						AggregateHash: "14315953667614583887",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
 					},
 					{
-						ConceptUUID:   appleTmeUUID,
-						ConceptType:   "Organisation",
-						AggregateHash: "6267402458710279170",
+						ConceptUUID:   barackObamaTMEUUID,
+						ConceptType:   "Person",
+						AggregateHash: "14315953667614583887",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
-							NewID: appleTmeUUID,
-							OldID: appleSmartlogicUUID,
+							NewID: barackObamaTMEUUID,
+							OldID: barackObamaAltSmartlogicUUID,
 						},
 					},
 				},
@@ -341,63 +361,103 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		},
 		{
 			testName:             "Transferring a source from a single concordance produces 2 updated, 1 concordance removed and 2 concordance added event",
-			pathToSetUpConcept:   "./fixtures/write/apple_1sl_1tme.json",
-			pathToUpdatedConcept: "./fixtures/write/apple_1sl_1tme_1fs.json",
-			pathToReadConcept:    "./fixtures/read/apple_1sl_1tme_1fs.json",
-			conceptUUID:          altAppleSmartlogicUUID,
+			pathToSetUpConcept:   "./fixtures/write/barackObama_1sl_1tme.json",
+			pathToUpdatedConcept: "./fixtures/write/barackObama_1sl_1tme_1auth_1fs_1wiki.json",
+			pathToReadConcept:    "./fixtures/read/barackObama_1sl_1tme_1auth_1fs_1wiki.json",
+			conceptUUID:          barackObamaSmartlogicUUID,
 			expectedError:        "",
 			updatedConcepts: concepts.ConceptChanges{
-				UpdatedIds: []string{appleFactsetUUID, appleTmeUUID, altAppleSmartlogicUUID},
+				UpdatedIds: []string{barackObamaAuthorUUID, barackObamaTMEUUID, barackObamaWikidataUUID, barackObamaFactsetUUID, barackObamaSmartlogicUUID},
 				ChangedRecords: []concepts.Event{
 					{
-						ConceptUUID:   altAppleSmartlogicUUID,
-						ConceptType:   "PublicCompany",
-						AggregateHash: "14817905512951988663",
+						ConceptUUID:   barackObamaSmartlogicUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
 					},
 					{
-						ConceptUUID:   appleFactsetUUID,
-						ConceptType:   "PublicCompany",
-						AggregateHash: "14817905512951988663",
+						ConceptUUID:   barackObamaFactsetUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
+						TransactionID: test_tid,
+						EventDetails: concepts.ConceptEvent{
+							Type: concepts.UpdatedEvent,
+						},
+					},
+					{
+						ConceptUUID:   barackObamaFactsetUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
-							NewID: altAppleSmartlogicUUID,
-							OldID: appleFactsetUUID,
+							NewID: barackObamaSmartlogicUUID,
+							OldID: barackObamaFactsetUUID,
 						},
 					},
 					{
-						ConceptUUID:   appleFactsetUUID,
-						ConceptType:   "PublicCompany",
-						AggregateHash: "14817905512951988663",
+						ConceptUUID:   barackObamaWikidataUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
 					},
 					{
-						ConceptUUID:   appleTmeUUID,
-						ConceptType:   "Organisation",
-						AggregateHash: "14817905512951988663",
+						ConceptUUID:   barackObamaWikidataUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
+						TransactionID: test_tid,
+						EventDetails: concepts.ConcordanceEvent{
+							Type:  concepts.AddedEvent,
+							NewID: barackObamaSmartlogicUUID,
+							OldID: barackObamaWikidataUUID,
+						},
+					},
+					{
+						ConceptUUID:   barackObamaTMEUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
-							NewID: appleTmeUUID,
-							OldID: appleSmartlogicUUID,
+							NewID: barackObamaTMEUUID,
+							OldID: barackObamaAltSmartlogicUUID,
 						},
 					},
 					{
-						ConceptUUID:   appleTmeUUID,
-						ConceptType:   "Organisation",
-						AggregateHash: "14817905512951988663",
+						ConceptUUID:   barackObamaTMEUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
 						TransactionID: test_tid,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
-							NewID: altAppleSmartlogicUUID,
-							OldID: appleTmeUUID,
+							NewID: barackObamaSmartlogicUUID,
+							OldID: barackObamaTMEUUID,
+						},
+					},
+					{
+						ConceptUUID:   barackObamaAuthorUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
+						TransactionID: test_tid,
+						EventDetails: concepts.ConceptEvent{
+							Type: concepts.UpdatedEvent,
+						},
+					},
+					{
+						ConceptUUID:   barackObamaAuthorUUID,
+						ConceptType:   "Person",
+						AggregateHash: "7673463071742625660",
+						TransactionID: test_tid,
+						EventDetails: concepts.ConcordanceEvent{
+							Type:  concepts.AddedEvent,
+							NewID: barackObamaSmartlogicUUID,
+							OldID: barackObamaAuthorUUID,
 						},
 					},
 				},
@@ -405,11 +465,11 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		},
 		{
 			testName:             "Trying to set an existing prefNode as a source results in error",
-			pathToSetUpConcept:   "./fixtures/write/apple_1sl_1tme.json",
-			pathToUpdatedConcept: "./fixtures/write/conflictedApple.json",
+			pathToSetUpConcept:   "./fixtures/write/barackObama_1sl_1tme.json",
+			pathToUpdatedConcept: "./fixtures/write/conflictedBarack.json",
 			pathToReadConcept:    "",
-			conceptUUID:          altAppleSmartlogicUUID,
-			expectedError:        "cannot currently process this record as it will break an existing concordance with prefUuid: " + appleSmartlogicUUID,
+			conceptUUID:          barackObamaSmartlogicUUID,
+			expectedError:        "cannot currently process this record as it will break an existing concordance with prefUuid: " + barackObamaAltSmartlogicUUID,
 			updatedConcepts: concepts.ConceptChanges{
 				UpdatedIds:     []string{},
 				ChangedRecords: []concepts.Event{},
@@ -419,7 +479,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			concepts.CleanTestDB(t, db, relatedUUID, supercededUUID, appleParentUUID, appleFactsetUUID, appleTmeUUID, appleSmartlogicUUID, altAppleSmartlogicUUID)
+			concepts.CleanTestDB(t, db, barackObamaWikidataUUID, barackObamaTMEUUID, barackObamaFactsetUUID, barackObamaAuthorUUID, barackObamaSmartlogicUUID, barackObamaAltSmartlogicUUID)
 			write, _, err := concepts.ReadFileAndDecode(t, test.pathToSetUpConcept)
 			assert.NoError(t, err)
 

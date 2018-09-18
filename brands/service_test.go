@@ -361,7 +361,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Transferring a source from a single concordance produces 1 updated and 1 concordance transferred event",
+			testName:             "Trying to set an existing prefNode as a source results in error",
 			pathToSetUpConcept:   "./fixtures/write/martinSandbu_1sl_1tme.json",
 			pathToUpdatedConcept: "./fixtures/write/conflictedMartinSandbusFreeLunch.json",
 			pathToReadConcept:    "",

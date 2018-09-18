@@ -34,7 +34,7 @@ func (ps *PeopleService) Write(thing interface{}, transID string) (interface{}, 
 	}
 	hashAsString := strconv.FormatUint(payloadHash, 10)
 
-	if err = concepts.ValidateConcept(aggregatedConceptToWrite, transID); err != nil {
+	if err = concepts.ValidateBasicConcept(aggregatedConceptToWrite, transID); err != nil {
 		return updateRecord, err
 	}
 
@@ -122,7 +122,6 @@ func (ps *PeopleService) Write(thing interface{}, transID string) (interface{}, 
 		}
 	}
 
-	aggregatedConceptToWrite.AggregatedHash = hashAsString
 	queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
 	for _, query := range prefUUIDsToBeDeletedQueryBatch {
 		queryBatch = append(queryBatch, query)

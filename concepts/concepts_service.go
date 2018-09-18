@@ -125,7 +125,7 @@ type equivalenceResult struct {
 	Equivalence int      `json:"count"`
 }
 
-func ValidateConcept(aggConcept AggregatedConcept, transID string) error {
+func ValidateBasicConcept(aggConcept AggregatedConcept, transID string) error {
 	if aggConcept.PrefLabel == "" {
 		return requestError{formatError("no prefLabel", aggConcept.PrefUUID, transID)}
 	}
@@ -804,23 +804,26 @@ func CleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 	var cleanSources []Concept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := Concept{
-			UUID:             source.UUID,
-			PrefLabel:        source.PrefLabel,
-			Type:             source.Type,
-			Authority:        source.Authority,
-			AuthorityValue:   source.AuthorityValue,
-			ParentUUIDs:      source.ParentUUIDs,
-			OrganisationUUID: source.OrganisationUUID,
-			PersonUUID:       source.PersonUUID,
-			RelatedUUIDs:     source.RelatedUUIDs,
-			SupersededUUIDs:  source.SupersededUUIDs,
-			BroaderUUIDs:     source.BroaderUUIDs,
-			MembershipRoles:  source.MembershipRoles,
-			IssuedBy:         source.IssuedBy,
-			FigiCode:         source.FigiCode,
-			IsDeprecated:     source.IsDeprecated,
-			// Organisations
+			UUID:            source.UUID,
+			PrefLabel:       source.PrefLabel,
+			Type:            source.Type,
+			Authority:       source.Authority,
+			AuthorityValue:  source.AuthorityValue,
+			RelatedUUIDs:    source.RelatedUUIDs,
+			SupersededUUIDs: source.SupersededUUIDs,
+			BroaderUUIDs:    source.BroaderUUIDs,
+			IsDeprecated:    source.IsDeprecated,
+			//Brands
+			ParentUUIDs: source.ParentUUIDs,
+			//Organisations
 			ParentOrganisation: source.ParentOrganisation,
+			//Memberships
+			PersonUUID:       source.PersonUUID,
+			OrganisationUUID: source.OrganisationUUID,
+			MembershipRoles:  source.MembershipRoles,
+			//Financial Instruments
+			IssuedBy: source.IssuedBy,
+			FigiCode: source.FigiCode,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

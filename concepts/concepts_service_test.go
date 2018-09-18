@@ -2155,7 +2155,7 @@ package concepts
 //	}
 //
 //	for _, scenario := range scenarios {
-//		err := ValidateConcept(scenario.aggConcept, "transaction_id")
+//		err := ValidateBasicConcept(scenario.aggConcept, "transaction_id")
 //		if err != nil {
 //			assert.Contains(t, err.Error(), scenario.returnedError, scenario.testName)
 //		} else {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/Financial-Times/concepts-rw-neo4j/alphaville-series"
 	"github.com/Financial-Times/concepts-rw-neo4j/genres"
 	"github.com/Financial-Times/concepts-rw-neo4j/membership-roles"
 	"github.com/Financial-Times/concepts-rw-neo4j/memberships"
@@ -164,6 +165,7 @@ func outputMetricsIfRequired(graphiteTCPAddress string, graphitePrefix string, l
 
 func createServices(db neoutils.NeoConnection) map[string]concepts.ConceptServicer {
 	serviceMap := make(map[string]concepts.ConceptServicer)
+	serviceMap["alphaville-series"] = alphaville_series.NewAlphavilleseriesService(db)
 	serviceMap["brands"] = brands.NewBrandService(db)
 	serviceMap["genres"] = genres.NewGenreService(db)
 	//serviceMap["locations"] = brands.NewBrandService(db)
@@ -173,7 +175,6 @@ func createServices(db neoutils.NeoConnection) map[string]concepts.ConceptServic
 	serviceMap["people"] = people.NewPeopleService(db)
 	//serviceMap["sections"] = brands.NewBrandService(db)
 	//serviceMap["subjects"] = brands.NewBrandService(db)
-	//serviceMap["alphaville-series"] = brands.NewBrandService(db)
 	//serviceMap["special-reports"] = brands.NewBrandService(db)
 	return serviceMap
 }

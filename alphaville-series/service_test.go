@@ -17,7 +17,7 @@ var db neoutils.NeoConnection
 var conceptsDriver *AlphavilleSeriesService
 
 const (
-	test_tid           = "tid_1234test"
+	testTID            = "tid_1234test"
 	basicAsUUID        = "68856f1d-07c2-35a2-ac78-8c6081259b49"
 	invalidPayloadUUID = "d0360165-3ea7-3506-af2a-9a3b1316a78c"
 )
@@ -29,7 +29,7 @@ func init() {
 
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
-	db, _ = neoutils.Connect(neoUrl(), conf)
+	db, _ = neoutils.Connect(neoURL(), conf)
 	if db == nil {
 		panic("Cannot connect to Neo4J")
 	}
@@ -39,7 +39,7 @@ func init() {
 	time.Sleep(duration)
 }
 
-func neoUrl() string {
+func neoURL() string {
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
 		url = "http://localhost:7474/db/data"
@@ -127,7 +127,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 						ConceptUUID:   basicAsUUID,
 						ConceptType:   "AlphavilleSeries",
 						AggregateHash: "6525844233728771117",
-						TransactionID: test_tid,
+						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
@@ -143,7 +143,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 			write, _, err := concepts.ReadFileAndDecode(t, test.filePathToWrite)
 			assert.NoError(t, err)
 
-			output, err := conceptsDriver.Write(write, test_tid)
+			output, err := conceptsDriver.Write(write, testTID)
 			if test.expectedError != "" {
 				assert.Equal(t, test.expectedError, err.Error(), fmt.Sprintf("test %s failed: actual error received differs from expected", test.testName))
 				return
@@ -157,7 +157,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 			assert.True(t, concepts.ChangedRecordsAreEqual(test.updatedConcepts.ChangedRecords, changes.ChangedRecords), fmt.Sprintf("test %s failed: actual change records differ from expected", test.testName))
 			fmt.Printf("Expected hash is: %s; actual hash is %s\n", test.updatedConcepts.ChangedRecords[0].AggregateHash, changes.ChangedRecords[0].AggregateHash)
 
-			actualConcept, exists, err := conceptsDriver.Read(test.conceptUUID, test_tid)
+			actualConcept, exists, err := conceptsDriver.Read(test.conceptUUID, testTID)
 			assert.NoError(t, err, fmt.Sprintf("test %s failed: there was an error reading the concept from the DB", test.testName))
 			assert.True(t, exists, fmt.Sprintf("test %s failed: written concept could not be found in DB", test.testName))
 

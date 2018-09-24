@@ -107,6 +107,11 @@ func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 
 	transID := transactionidutils.GetTransactionIDFromRequest(r)
 
+	if _, ok := h.ConceptsService[conceptType]; !ok {
+		writeJSONError(w, fmt.Sprintf("concept type %s is not currently supported", conceptType), http.StatusBadRequest)
+		return
+	}
+
 	obj, found, err := h.ConceptsService[conceptType].Read(uuid, transID)
 
 	w.Header().Add("Content-Type", "application/json")

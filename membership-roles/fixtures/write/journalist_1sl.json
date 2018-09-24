@@ -5,6 +5,7 @@
   "aliases": [
     "Journalist"
   ],
+  "scopeNote": "Curated role to be assumed by FT journalists",
   "sourceRepresentations": [
     {
       "uuid": "17432cd1-5518-4c12-92ce-8cb6b09bf267",
@@ -12,6 +13,7 @@
       "prefLabel": "Journalist",
       "authority": "Smartlogic",
       "authorityValue": "17432cd1-5518-4c12-92ce-8cb6b09bf267",
+      "scopeNote": "Curated role to be assumed by FT journalists",
       "aliases": [
         "Journalist"
       ]

@@ -129,6 +129,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		InceptionDateEpoch:   aggregatedConcept.InceptionDateEpoch,
 		TerminationDate:      aggregatedConcept.TerminationDate,
 		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
+		ScopeNote:            aggregatedConcept.ScopeNote,
 	}
 
 	queryBatch = append(queryBatch, concepts.CreateNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
@@ -172,7 +173,7 @@ func validateMembership(aggregatedConceptToWrite concepts.AggregatedConcept, tra
 	return nil
 }
 
-func (h *MembershipService) Read(uuid string, transID string) (interface{}, bool, error) {
+func (ms *MembershipService) Read(uuid string, transID string) (interface{}, bool, error) {
 	var results []concepts.NeoAggregatedConcept
 
 	query := &neoism.CypherQuery{
@@ -227,6 +228,7 @@ func (h *MembershipService) Read(uuid string, transID string) (interface{}, bool
                 canonical.prefUUID as prefUUID,
                 canonical.terminationDate as terminationDate,
                 canonical.terminationDateEpoch as terminationDateEpoch,
+				canonical.scopeNote as scopeNote,
                 collect(sources) as sourceRepresentations,
                 labels(canonical) as types,
                 membershipRoles,
@@ -239,7 +241,7 @@ func (h *MembershipService) Read(uuid string, transID string) (interface{}, bool
 		Result: &results,
 	}
 
-	err := h.conn.CypherBatch([]*neoism.CypherQuery{query})
+	err := ms.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("error executing neo4j read query")
 		return concepts.AggregatedConcept{}, false, err
@@ -262,6 +264,7 @@ func (h *MembershipService) Read(uuid string, transID string) (interface{}, bool
 		Type:                 typeName,
 		OrganisationUUID:     results[0].OrganisationUUID,
 		PersonUUID:           results[0].PersonUUID,
+		ScopeNote:            results[0].ScopeNote,
 		InceptionDate:        results[0].InceptionDate,
 		InceptionDateEpoch:   results[0].InceptionDateEpoch,
 		TerminationDate:      results[0].TerminationDate,

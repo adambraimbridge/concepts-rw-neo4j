@@ -6,6 +6,7 @@
     "Letters to the Editor",
     "Letter"
   ],
+  "scopeNote" : "These letters are to the editor",
   "sourceRepresentations": [
     {
       "uuid": "73394ef6-c73a-386c-b433-21deef7a88ac",
@@ -27,6 +28,7 @@
       "prefLabel": "Letter",
       "authority": "Smartlogic",
       "authorityValue": "f96c16f2-bbfe-11e8-9d1c-da24cd01f044",
+      "scopeNote" : "These letters are to the editor",
       "aliases": [
         "Letter"
       ]

@@ -193,6 +193,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		PrefLabel: aggregatedConcept.PrefLabel,
 		Type:      aggregatedConcept.Type,
 		Aliases:   aggregatedConcept.Aliases,
+		ScopeNote: aggregatedConcept.ScopeNote,
 	}
 
 	queryBatch = append(queryBatch, concepts.CreateNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
@@ -239,6 +240,7 @@ func (gs *GenreService) Read(uuid string, transID string) (interface{}, bool, er
                 canonical.aliases as aliases,
                 canonical.prefLabel as prefLabel,
                 canonical.prefUUID as prefUUID,
+				canonical.scopeNote as scopeNote,
                 collect(sources) as sourceRepresentations,
                 labels(canonical) as types,
                 canonical.isDeprecated as isDeprecated`,
@@ -269,6 +271,7 @@ func (gs *GenreService) Read(uuid string, transID string) (interface{}, bool, er
 		PrefUUID:     results[0].PrefUUID,
 		Type:         typeName,
 		Aliases:      results[0].Aliases,
+		ScopeNote:    results[0].ScopeNote,
 		IsDeprecated: results[0].IsDeprecated,
 	}
 

@@ -14,6 +14,7 @@
     "Apple Inc",
     "Apple Incorporated"
   ],
+  "scopeNote": "American multinational technology company",
   "countryCode": "US",
   "countryOfIncorporation": "US",
   "formerNames": [
@@ -71,6 +72,7 @@
       "prefLabel": "Apple Inc",
       "authority": "Smartlogic",
       "authorityValue": "58f3aeac-8a33-4b9f-a208-14ead197b361",
+      "scopeNote": "American multinational technology company",
       "aliases": [
         "Apple Inc"
       ]

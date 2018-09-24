@@ -19,7 +19,7 @@ var db neoutils.NeoConnection
 var conceptsDriver *BrandService
 
 const (
-	test_tid                             = "tid_1234test"
+	testTID                              = "tid_1234test"
 	martinSandbusFreeLunchTmeUUID        = "e35694c5-0cf2-3dbe-b20d-ff4e200d714c"
 	martinSandbusFreeLunchSmartlogicUUID = "bb4a1ba8-b1c2-11e8-bfb1-da24cd01f044"
 	martinSandbuTmeUUID                  = "4cc4424c-99f1-31b5-a810-5134847e6b02"
@@ -37,7 +37,7 @@ func init() {
 
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
-	db, _ = neoutils.Connect(neoUrl(), conf)
+	db, _ = neoutils.Connect(neoURL(), conf)
 	if db == nil {
 		panic("Cannot connect to Neo4J")
 	}
@@ -47,7 +47,7 @@ func init() {
 	time.Sleep(duration)
 }
 
-func neoUrl() string {
+func neoURL() string {
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
 		url = "http://localhost:7474/db/data"
@@ -134,8 +134,8 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchTmeUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "1256947179891574149",
-						TransactionID: test_tid,
+						AggregateHash: "12529325050796118970",
+						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
@@ -155,8 +155,8 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchSmartlogicUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "10150886392956777844",
-						TransactionID: test_tid,
+						AggregateHash: "3672775894483953632",
+						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
@@ -164,8 +164,8 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchTmeUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "10150886392956777844",
-						TransactionID: test_tid,
+						AggregateHash: "3672775894483953632",
+						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
@@ -173,8 +173,8 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchTmeUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "10150886392956777844",
-						TransactionID: test_tid,
+						AggregateHash: "3672775894483953632",
+						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
 							NewID: martinSandbusFreeLunchSmartlogicUUID,
@@ -192,7 +192,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 			write, _, err := concepts.ReadFileAndDecode(t, test.filePathToWrite)
 			assert.NoError(t, err)
 
-			output, err := conceptsDriver.Write(write, test_tid)
+			output, err := conceptsDriver.Write(write, testTID)
 			if test.expectedError != "" {
 				assert.Equal(t, test.expectedError, err.Error(), fmt.Sprintf("test %s failed: actual error received differs from expected", test.testName))
 				return
@@ -204,8 +204,9 @@ func TestWriteService_EmptyDB(t *testing.T) {
 			assert.Equalf(t, test.updatedConcepts.UpdatedIds, changes.UpdatedIds, fmt.Sprintf("test %s failed: actual updatedID list differs from expected", test.testName))
 			assert.Equalf(t, len(test.updatedConcepts.ChangedRecords), len(changes.ChangedRecords), fmt.Sprintf("test %s failed: recieved %d change events but expected %d", test.testName, len(test.updatedConcepts.ChangedRecords), len(changes.ChangedRecords)))
 			assert.True(t, concepts.ChangedRecordsAreEqual(test.updatedConcepts.ChangedRecords, changes.ChangedRecords), fmt.Sprintf("test %s failed: actual change records differ from expected", test.testName))
+			fmt.Printf("Expected hash is: %s; actual hash is %s\n", test.updatedConcepts.ChangedRecords[0].AggregateHash, changes.ChangedRecords[0].AggregateHash)
 
-			actualConcept, exists, err := conceptsDriver.Read(test.conceptUUID, test_tid)
+			actualConcept, exists, err := conceptsDriver.Read(test.conceptUUID, testTID)
 			assert.NoError(t, err, fmt.Sprintf("test %s failed: there was an error reading the concept from the DB", test.testName))
 			assert.True(t, exists, fmt.Sprintf("test %s failed: written concept could not be found in DB", test.testName))
 
@@ -215,6 +216,8 @@ func TestWriteService_EmptyDB(t *testing.T) {
 			expectedConcept := read.(concepts.AggregatedConcept)
 
 			assert.True(t, reflect.DeepEqual(expectedConcept, actualConcept), fmt.Sprintf("test %s failed: concept read from DB does not match expected", test.testName))
+			fmt.Printf("expected concept is %v\n", expectedConcept)
+			fmt.Printf("  actual concept is %v\n", actualConcept)
 		})
 	}
 }
@@ -243,8 +246,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchSmartlogicUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "10150886392956777844",
-						TransactionID: test_tid,
+						AggregateHash: "3672775894483953632",
+						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
@@ -252,8 +255,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchTmeUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "10150886392956777844",
-						TransactionID: test_tid,
+						AggregateHash: "3672775894483953632",
+						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
 							NewID: martinSandbusFreeLunchSmartlogicUUID,
@@ -276,8 +279,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchSmartlogicUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "16734772535141452345",
-						TransactionID: test_tid,
+						AggregateHash: "3744563581389192870",
+						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
@@ -285,8 +288,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchTmeUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "16734772535141452345",
-						TransactionID: test_tid,
+						AggregateHash: "3744563581389192870",
+						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
 							NewID: martinSandbusFreeLunchTmeUUID,
@@ -309,8 +312,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchSmartlogicUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "15275150044183719781",
-						TransactionID: test_tid,
+						AggregateHash: "15127868877774290918",
+						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
@@ -318,8 +321,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchTmeUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "15275150044183719781",
-						TransactionID: test_tid,
+						AggregateHash: "15127868877774290918",
+						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
 							NewID: martinSandbusFreeLunchSmartlogicUUID,
@@ -329,8 +332,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbusFreeLunchTmeUUID,
 						ConceptType:   "Brand",
-						AggregateHash: "15275150044183719781",
-						TransactionID: test_tid,
+						AggregateHash: "15127868877774290918",
+						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
 						},
@@ -338,8 +341,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbuTmeUUID,
 						ConceptType:   "Person",
-						AggregateHash: "15275150044183719781",
-						TransactionID: test_tid,
+						AggregateHash: "15127868877774290918",
+						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
 							NewID: martinSandbuTmeUUID,
@@ -349,8 +352,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   martinSandbuTmeUUID,
 						ConceptType:   "Person",
-						AggregateHash: "15275150044183719781",
-						TransactionID: test_tid,
+						AggregateHash: "15127868877774290918",
+						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
 							NewID: martinSandbusFreeLunchSmartlogicUUID,
@@ -380,13 +383,13 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			write, _, err := concepts.ReadFileAndDecode(t, test.pathToSetUpConcept)
 			assert.NoError(t, err)
 
-			_, err = conceptsDriver.Write(write, test_tid)
+			_, err = conceptsDriver.Write(write, testTID)
 			assert.NoError(t, err)
 
 			write, _, err = concepts.ReadFileAndDecode(t, test.pathToUpdatedConcept)
 			assert.NoError(t, err)
 
-			output, err := conceptsDriver.Write(write, test_tid)
+			output, err := conceptsDriver.Write(write, testTID)
 			if test.expectedError != "" {
 				assert.Equal(t, test.expectedError, err.Error(), fmt.Sprintf("test %s failed: actual error received differs from expected", test.testName))
 				return
@@ -398,8 +401,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			assert.Equalf(t, test.updatedConcepts.UpdatedIds, changes.UpdatedIds, fmt.Sprintf("test %s failed: actual updatedID list differs from expected", test.testName))
 			assert.Equalf(t, len(test.updatedConcepts.ChangedRecords), len(changes.ChangedRecords), fmt.Sprintf("test %s failed: recieved %d change events but expected %d", test.testName, len(test.updatedConcepts.ChangedRecords), len(changes.ChangedRecords)))
 			assert.True(t, concepts.ChangedRecordsAreEqual(test.updatedConcepts.ChangedRecords, changes.ChangedRecords), fmt.Sprintf("test %s failed: actual change records differ from expected", test.testName))
+			fmt.Printf("Expected hash is: %s; actual hash is %s\n", test.updatedConcepts.ChangedRecords[0].AggregateHash, changes.ChangedRecords[0].AggregateHash)
 
-			actualConcept, exists, err := conceptsDriver.Read(test.conceptUUID, test_tid)
+			actualConcept, exists, err := conceptsDriver.Read(test.conceptUUID, testTID)
 			assert.NoError(t, err, fmt.Sprintf("test %s failed: there was an error reading the concept from the DB", test.testName))
 			assert.True(t, exists, fmt.Sprintf("test %s failed: written concept could not be found in DB", test.testName))
 
@@ -409,6 +413,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			expectedConcept := read.(concepts.AggregatedConcept)
 
 			assert.True(t, reflect.DeepEqual(expectedConcept, actualConcept), fmt.Sprintf("test %s failed: concept read from DB does not match expected", test.testName))
+			fmt.Printf("expected concept is %v\n", expectedConcept)
+			fmt.Printf("  actual concept is %v\n", actualConcept)
 		})
 	}
 }

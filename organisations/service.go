@@ -19,7 +19,7 @@ func NewOrganisationService(db neoutils.NeoConnection) *OrganisationService {
 	return &OrganisationService{db}
 }
 
-func (h *OrganisationService) Write(thing interface{}, transID string) (interface{}, error) {
+func (os *OrganisationService) Write(thing interface{}, transID string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 	var updateRecord concepts.ConceptChanges
@@ -38,7 +38,7 @@ func (h *OrganisationService) Write(thing interface{}, transID string) (interfac
 		return updateRecord, err
 	}
 
-	existingConcept, exists, err := h.Read(aggregatedConceptToWrite.PrefUUID, transID)
+	existingConcept, exists, err := os.Read(aggregatedConceptToWrite.PrefUUID, transID)
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("read request for existing concordance resulted in error")
 		return updateRecord, err
@@ -64,7 +64,7 @@ func (h *OrganisationService) Write(thing interface{}, transID string) (interfac
 
 		//Handle scenarios for transferring source id from an existing concordance to this concordance
 		if len(conceptsToTransferConcordance) > 0 {
-			prefUUIDsToBeDeletedQueryBatch, err = concepts.HandleTransferConcordance(conceptsToTransferConcordance, h.conn, &updateRecord, hashAsString, aggregatedConceptToWrite.PrefUUID, transID)
+			prefUUIDsToBeDeletedQueryBatch, err = concepts.HandleTransferConcordance(conceptsToTransferConcordance, os.conn, &updateRecord, hashAsString, aggregatedConceptToWrite.PrefUUID, transID)
 			if err != nil {
 				return updateRecord, err
 			}
@@ -106,7 +106,7 @@ func (h *OrganisationService) Write(thing interface{}, transID string) (interfac
 			conceptsToCheckForExistingConcordance = append(conceptsToCheckForExistingConcordance, sr.UUID)
 		}
 
-		prefUUIDsToBeDeletedQueryBatch, err = concepts.HandleTransferConcordance(sourceUuidsAndTypes, h.conn, &updateRecord, hashAsString, aggregatedConceptToWrite.PrefUUID, transID)
+		prefUUIDsToBeDeletedQueryBatch, err = concepts.HandleTransferConcordance(sourceUuidsAndTypes, os.conn, &updateRecord, hashAsString, aggregatedConceptToWrite.PrefUUID, transID)
 		if err != nil {
 			return updateRecord, err
 		}
@@ -143,7 +143,7 @@ func (h *OrganisationService) Write(thing interface{}, transID string) (interfac
 		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
 	}
 
-	if err = h.conn.CypherBatch(queryBatch); err != nil {
+	if err = os.conn.CypherBatch(queryBatch); err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error executing neo4j write queries. Concept NOT written.")
 		return updateRecord, err
 	}
@@ -196,6 +196,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		PrefLabel:              aggregatedConcept.PrefLabel,
 		Type:                   aggregatedConcept.Type,
 		Aliases:                aggregatedConcept.Aliases,
+		ScopeNote:              aggregatedConcept.ScopeNote,
 		ProperName:             aggregatedConcept.ProperName,
 		ShortName:              aggregatedConcept.ShortName,
 		LegalName:              aggregatedConcept.LegalName,
@@ -237,7 +238,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 	return queryBatch
 }
 
-func (h *OrganisationService) Read(uuid string, transID string) (interface{}, bool, error) {
+func (os *OrganisationService) Read(uuid string, transID string) (interface{}, bool, error) {
 	var results []concepts.NeoAggregatedConcept
 
 	query := &neoism.CypherQuery{
@@ -273,6 +274,7 @@ func (h *OrganisationService) Read(uuid string, transID string) (interface{}, bo
 				canonical.aliases as aliases,
 				canonical.prefLabel as prefLabel,
 				canonical.prefUUID as prefUUID,
+				canonical.scopeNote as scopeNote,
 				labels(canonical) as types,
 				canonical.properName as properName,
 				canonical.shortName as shortName,
@@ -295,7 +297,7 @@ func (h *OrganisationService) Read(uuid string, transID string) (interface{}, bo
 		Result: &results,
 	}
 
-	err := h.conn.CypherBatch([]*neoism.CypherQuery{query})
+	err := os.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("error executing neo4j read query")
 		return concepts.AggregatedConcept{}, false, err
@@ -315,6 +317,7 @@ func (h *OrganisationService) Read(uuid string, transID string) (interface{}, bo
 		Aliases:                results[0].Aliases,
 		PrefLabel:              results[0].PrefLabel,
 		PrefUUID:               results[0].PrefUUID,
+		ScopeNote:              results[0].ScopeNote,
 		Type:                   typeName,
 		ProperName:             results[0].ProperName,
 		LeiCode:                results[0].LeiCode,

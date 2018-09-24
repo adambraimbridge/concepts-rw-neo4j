@@ -5,6 +5,7 @@
   "aliases": [
     "Asia-Pacific"
   ],
+  "scopeNote": "Covers the Asia-Pacific region",
   "broaderUUIDs": [
     "7254e6c9-e9de-4952-9a94-564cc9ada79c",
     "e073df10-861d-4212-b0ae-436f0ade834f"
@@ -41,6 +42,7 @@
       "prefLabel": "Asia-Pacific",
       "authority": "Smartlogic",
       "authorityValue": "318dc7a8-bcbb-11e8-9c7a-da24cd01f044",
+      "scopeNote": "Covers the Asia-Pacific region",
       "aliases": [
         "Asia-Pacific"
       ],

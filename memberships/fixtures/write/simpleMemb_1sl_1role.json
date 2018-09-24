@@ -5,6 +5,7 @@
   "aliases": [
     "Moscow Bureau Chief"
   ],
+  "scopeNote": "Curated Membership of FT role",
   "membershipRoles": [
     {
       "membershipRoleUUID": "06c838ad-4fa2-4cae-b55b-9a2b0477b6f5"
@@ -22,6 +23,7 @@
       "aliases": [
         "Moscow Bureau Chief"
       ],
+      "scopeNote": "Curated Membership of FT role",
       "membershipRoles": [
         {
           "membershipRoleUUID": "06c838ad-4fa2-4cae-b55b-9a2b0477b6f5"

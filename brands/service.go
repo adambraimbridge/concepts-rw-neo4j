@@ -19,7 +19,7 @@ func NewBrandService(db neoutils.NeoConnection) *BrandService {
 	return &BrandService{db}
 }
 
-func (h *BrandService) Write(thing interface{}, transID string) (interface{}, error) {
+func (bs *BrandService) Write(thing interface{}, transID string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 	var updateRecord concepts.ConceptChanges
@@ -39,7 +39,7 @@ func (h *BrandService) Write(thing interface{}, transID string) (interface{}, er
 		return updateRecord, err
 	}
 
-	existingConcept, exists, err := h.Read(aggregatedConceptToWrite.PrefUUID, transID)
+	existingConcept, exists, err := bs.Read(aggregatedConceptToWrite.PrefUUID, transID)
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("read request for existing concordance resulted in error")
 		return updateRecord, err
@@ -65,7 +65,7 @@ func (h *BrandService) Write(thing interface{}, transID string) (interface{}, er
 
 		//Handle scenarios for transferring source id from an existing concordance to this concordance
 		if len(conceptsToTransferConcordance) > 0 {
-			prefUUIDsToBeDeletedQueryBatch, err = concepts.HandleTransferConcordance(conceptsToTransferConcordance, h.conn, &updateRecord, hashAsString, aggregatedConceptToWrite.PrefUUID, transID)
+			prefUUIDsToBeDeletedQueryBatch, err = concepts.HandleTransferConcordance(conceptsToTransferConcordance, bs.conn, &updateRecord, hashAsString, aggregatedConceptToWrite.PrefUUID, transID)
 			if err != nil {
 				return updateRecord, err
 			}
@@ -107,7 +107,7 @@ func (h *BrandService) Write(thing interface{}, transID string) (interface{}, er
 			conceptsToCheckForExistingConcordance = append(conceptsToCheckForExistingConcordance, sr.UUID)
 		}
 
-		prefUUIDsToBeDeletedQueryBatch, err = concepts.HandleTransferConcordance(sourceUuidsAndTypes, h.conn, &updateRecord, hashAsString, aggregatedConceptToWrite.PrefUUID, transID)
+		prefUUIDsToBeDeletedQueryBatch, err = concepts.HandleTransferConcordance(sourceUuidsAndTypes, bs.conn, &updateRecord, hashAsString, aggregatedConceptToWrite.PrefUUID, transID)
 		if err != nil {
 			return updateRecord, err
 		}
@@ -144,7 +144,7 @@ func (h *BrandService) Write(thing interface{}, transID string) (interface{}, er
 		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
 	}
 
-	if err = h.conn.CypherBatch(queryBatch); err != nil {
+	if err = bs.conn.CypherBatch(queryBatch); err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error executing neo4j write queries. Concept NOT written.")
 		return updateRecord, err
 	}
@@ -162,12 +162,13 @@ func clearDownExistingNodes(ac concepts.AggregatedConcept) []*neoism.CypherQuery
 		deletePreviousSourceIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)<-[iden:IDENTIFIES]-(i)
-			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
-			OPTIONAL MATCH (t)-[par:HAS_PARENT]->(p)
-			OPTIONAL MATCH (t)-[rel:IS_RELATED_TO]->(relNode)
+			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->()
+			OPTIONAL MATCH (t)-[par:HAS_PARENT]->()
+			OPTIONAL MATCH (t)-[rel:IS_RELATED_TO]->()
+			OPTIONAL MATCH (t)-[sup:SUPERSEDED_BY]->()
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE iden, i, eq, par, rel`, concepts.GetLabelsToRemove()),
+			DELETE iden, i, eq, par, rel, sup`, concepts.GetLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -228,7 +229,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 	return queryBatch
 }
 
-func (h *BrandService) Read(uuid string, transID string) (interface{}, bool, error) {
+func (bs *BrandService) Read(uuid string, transID string) (interface{}, bool, error) {
 	var results []concepts.NeoAggregatedConcept
 
 	query := &neoism.CypherQuery{
@@ -236,13 +237,15 @@ func (h *BrandService) Read(uuid string, transID string) (interface{}, bool, err
 			MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
 			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
 			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
+			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
 			WITH
 				canonical,
 				parent,
 				related,
+				supersededBy,
 				source
 				ORDER BY
-					source.uuid
+				source.uuid
 			WITH
 				canonical,
 				parent,
@@ -252,7 +255,8 @@ func (h *BrandService) Read(uuid string, transID string) (interface{}, bool, err
 					lastModifiedEpoch: source.lastModifiedEpoch,
 					parentUUIDs: collect(parent.uuid),
 					prefLabel: source.prefLabel,
-					relatedUUIDs: collect(related.uuid),
+					relatedUUIDs: collect(DISTINCT related.uuid),
+					supersededByUUIDs: collect(DISTINCT supersededBy.uuid),
 					types: labels(source),
 					uuid: source.uuid,
 					isDeprecated: source.isDeprecated
@@ -275,7 +279,7 @@ func (h *BrandService) Read(uuid string, transID string) (interface{}, bool, err
 		Result: &results,
 	}
 
-	err := h.conn.CypherBatch([]*neoism.CypherQuery{query})
+	err := bs.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("error executing neo4j read query")
 		return concepts.AggregatedConcept{}, false, err
@@ -319,6 +323,7 @@ func (h *BrandService) Read(uuid string, transID string) (interface{}, bool, err
 			UUID:              srcConcept.UUID,
 			ParentUUIDs:       concepts.FilterSlice(srcConcept.ParentUUIDs),
 			RelatedUUIDs:      concepts.FilterSlice(srcConcept.RelatedUUIDs),
+			SupersededUUIDs:   concepts.FilterSlice(srcConcept.SupersededUUIDs),
 			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
 			IsDeprecated:      srcConcept.IsDeprecated,
 		}

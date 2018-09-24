@@ -196,6 +196,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		PrefLabel:    aggregatedConcept.PrefLabel,
 		Type:         aggregatedConcept.Type,
 		Aliases:      aggregatedConcept.Aliases,
+		ScopeNote:    aggregatedConcept.ScopeNote,
 		IsDeprecated: aggregatedConcept.IsDeprecated,
 	}
 
@@ -230,7 +231,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 	return queryBatch
 }
 
-func (h *LocationService) Read(uuid string, transID string) (interface{}, bool, error) {
+func (ls *LocationService) Read(uuid string, transID string) (interface{}, bool, error) {
 	var results []concepts.NeoAggregatedConcept
 
 	query := &neoism.CypherQuery{
@@ -265,6 +266,7 @@ func (h *LocationService) Read(uuid string, transID string) (interface{}, bool, 
 				canonical.aliases as aliases,
 				canonical.prefLabel as prefLabel,
 				canonical.prefUUID as prefUUID,
+				canonical.scopeNote as scopeNote,
 				labels(canonical) as types,
 				collect(sources) as sourceRepresentations,
 				canonical.isDeprecated as isDeprecated
@@ -275,7 +277,7 @@ func (h *LocationService) Read(uuid string, transID string) (interface{}, bool, 
 		Result: &results,
 	}
 
-	err := h.conn.CypherBatch([]*neoism.CypherQuery{query})
+	err := ls.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("error executing neo4j read query")
 		return concepts.AggregatedConcept{}, false, err
@@ -295,6 +297,7 @@ func (h *LocationService) Read(uuid string, transID string) (interface{}, bool, 
 		Aliases:      results[0].Aliases,
 		PrefLabel:    results[0].PrefLabel,
 		PrefUUID:     results[0].PrefUUID,
+		ScopeNote:    results[0].ScopeNote,
 		Type:         typeName,
 		IsDeprecated: results[0].IsDeprecated,
 	}

@@ -58,10 +58,6 @@
   version = "1.0.0"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/cyberdelia/go-metrics-graphite"
-
-[[constraint]]
   name = "github.com/jmcvetta/neoism"
   source = "github.com/Financial-Times/neoism"
   version = "^2.0.0"

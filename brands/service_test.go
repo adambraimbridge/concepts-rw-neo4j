@@ -59,68 +59,76 @@ func TestWriteService_EmptyDB(t *testing.T) {
 	defer concepts.CleanTestDB(t, db, martinSandbusFreeLunchTmeUUID, financialTimesUUID, related1UUID, related2UUID, martinSandbusFreeLunchSmartlogicUUID)
 
 	tests := []struct {
-		testName        string
-		filePathToWrite string
-		filePathToRead  string
-		conceptUUID     string
-		expectedError   string
-		updatedConcepts concepts.ConceptChanges
+		testName            string
+		filePathToWriteFunc func(concept string, uuid string) (ret interface{}, err error)
+		filePathToWrite     string
+		filePathToRead      string
+		conceptUUID         string
+		expectedError       string
+		updatedConcepts     concepts.ConceptChanges
 	}{
 		{
-			testName:        "Put payload with no prefLabel results in error",
-			filePathToWrite: "./fixtures/write/invalidPayloads/missingPrefLabel.json",
-			filePathToRead:  "",
-			conceptUUID:     invalidPayloadUUID,
-			expectedError:   "invalid request, no prefLabel has been supplied",
-			updatedConcepts: concepts.ConceptChanges{},
+			testName: "Put payload with no prefLabel results in error",
+			//filePathToWrite: "./fixtures/write/invalidPayloads/missingPrefLabel.json",
+			filePathToWriteFunc: concepts.NewMissingPrefLabel,
+			filePathToRead:      "",
+			conceptUUID:         invalidPayloadUUID,
+			expectedError:       "invalid request, no prefLabel has been supplied",
+			updatedConcepts:     concepts.ConceptChanges{},
 		},
 		{
-			testName:        "Put payload with no type results in error",
-			filePathToWrite: "./fixtures/write/invalidPayloads/missingType.json",
-			filePathToRead:  "",
-			conceptUUID:     invalidPayloadUUID,
-			expectedError:   "invalid request, no type has been supplied",
-			updatedConcepts: concepts.ConceptChanges{},
+			testName: "Put payload with no type results in error",
+			//filePathToWrite: "./fixtures/write/invalidPayloads/missingType.json",
+			filePathToWriteFunc: concepts.NewMissingType,
+			filePathToRead:      "",
+			conceptUUID:         invalidPayloadUUID,
+			expectedError:       "invalid request, no type has been supplied",
+			updatedConcepts:     concepts.ConceptChanges{},
 		},
 		{
-			testName:        "Put payload with invalid type results in error",
-			filePathToWrite: "./fixtures/write/invalidPayloads/invalidType.json",
-			filePathToRead:  "",
-			conceptUUID:     invalidPayloadUUID,
-			expectedError:   "invalid request, invalid type has been supplied",
-			updatedConcepts: concepts.ConceptChanges{},
+			testName: "Put payload with invalid type results in error",
+			//filePathToWrite: "./fixtures/write/invalidPayloads/invalidType.json",
+			filePathToWriteFunc: concepts.NewInvalidType,
+			filePathToRead:      "",
+			conceptUUID:         invalidPayloadUUID,
+			expectedError:       "invalid request, invalid type has been supplied",
+			updatedConcepts:     concepts.ConceptChanges{},
 		},
 		{
-			testName:        "Put payload with no source representations results in error",
-			filePathToWrite: "./fixtures/write/invalidPayloads/missingSources.json",
-			filePathToRead:  "",
-			conceptUUID:     invalidPayloadUUID,
-			expectedError:   "invalid request, no sourceRepresentation has been supplied",
-			updatedConcepts: concepts.ConceptChanges{},
+			testName: "Put payload with no source representations results in error",
+			//filePathToWrite: "./fixtures/write/invalidPayloads/missingSources.json",
+			filePathToWriteFunc: concepts.NewMissingSources,
+			filePathToRead:      "",
+			conceptUUID:         invalidPayloadUUID,
+			expectedError:       "invalid request, no sourceRepresentation has been supplied",
+			updatedConcepts:     concepts.ConceptChanges{},
 		},
 		{
-			testName:        "Put payload with no source representation type results in error",
-			filePathToWrite: "./fixtures/write/invalidPayloads/missingSourceType.json",
-			filePathToRead:  "",
-			conceptUUID:     invalidPayloadUUID,
-			expectedError:   "invalid request, no sourceRepresentation type has been supplied",
-			updatedConcepts: concepts.ConceptChanges{},
+			testName: "Put payload with no source representation type results in error",
+			//filePathToWrite: "./fixtures/write/invalidPayloads/missingSourceType.json",
+			filePathToWriteFunc: concepts.NewMissingSourceType,
+			filePathToRead:      "",
+			conceptUUID:         invalidPayloadUUID,
+			expectedError:       "invalid request, no sourceRepresentation type has been supplied",
+			updatedConcepts:     concepts.ConceptChanges{},
 		},
 		{
-			testName:        "Put payload with invalid source representation type results in error",
-			filePathToWrite: "./fixtures/write/invalidPayloads/invalidSourceType.json",
-			filePathToRead:  "",
-			conceptUUID:     invalidPayloadUUID,
-			expectedError:   "invalid request, invalid sourceRepresentation type has been supplied",
-			updatedConcepts: concepts.ConceptChanges{},
+			testName: "Put payload with invalid source representation type results in error",
+			//filePathToWrite: "./fixtures/write/invalidPayloads/invalidSourceType.json",
+			filePathToWriteFunc: concepts.NewInvalidSourceType,
+			filePathToRead:      "",
+			conceptUUID:         invalidPayloadUUID,
+			expectedError:       "invalid request, invalid sourceRepresentation type has been supplied",
+			updatedConcepts:     concepts.ConceptChanges{},
 		},
 		{
-			testName:        "Put payload with no source representation authority value results in error",
-			filePathToWrite: "./fixtures/write/invalidPayloads/missingSourceAuthValue.json",
-			filePathToRead:  "",
-			conceptUUID:     invalidPayloadUUID,
-			expectedError:   "invalid request, no sourceRepresentation.authorityValue has been supplied",
-			updatedConcepts: concepts.ConceptChanges{},
+			testName: "Put payload with no source representation authority value results in error",
+			//filePathToWrite: "./fixtures/write/invalidPayloads/missingSourceAuthValue.json",
+			filePathToWriteFunc: concepts.NewMissingSourceAuthValue,
+			filePathToRead:      "",
+			conceptUUID:         invalidPayloadUUID,
+			expectedError:       "invalid request, no sourceRepresentation.authorityValue has been supplied",
+			updatedConcepts:     concepts.ConceptChanges{},
 		},
 		{
 			testName:        "Simple TME brand is successful and can be read from DB",
@@ -189,6 +197,19 @@ func TestWriteService_EmptyDB(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			concepts.CleanTestDB(t, db, martinSandbusFreeLunchTmeUUID, financialTimesUUID, related1UUID, related2UUID, martinSandbusFreeLunchSmartlogicUUID)
+
+			if test.filePathToWriteFunc != nil {
+				concepts.RunWriteFailServiceTest(t,
+					test.testName,
+					conceptsDriver,
+					testTID,
+					"Brand",
+					test.conceptUUID,
+					test.expectedError,
+					test.filePathToWriteFunc)
+				return
+			}
+
 			write, _, err := concepts.ReadFileAndDecode(t, test.filePathToWrite)
 			assert.NoError(t, err)
 

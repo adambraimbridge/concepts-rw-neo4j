@@ -1,10 +1,10 @@
 {
-  "prefUUID": "d0360165-3ea7-3506-af2a-9a3b1316a78c",
-  "type": "Brand",
+  "prefUUID": "{{ .Uuid}}",
+  "prefLabel": "Invalid {{ .Type}}",
   "sourceRepresentations": [
     {
-      "uuid": "d0360165-3ea7-3506-af2a-9a3b1316a78c",
-      "type": "Brand",
+      "uuid": "{{ .Uuid}}",
+      "prefLabel": "Invalid {{ .Type}}",
       "authority": "TME",
       "authorityValue": "YmQ4IE38B6P4570NaK4ZjLWE1NWItYjgxNzJi72DHTRh-QnJRz"
     }

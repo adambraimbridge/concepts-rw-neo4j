@@ -4,12 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"os"
 	"reflect"
 	"sort"
 	"strconv"
-	"testing"
 	"time"
 
 	"github.com/Financial-Times/go-logger"
@@ -829,60 +826,6 @@ func CleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 	}
 	c.SourceRepresentations = cleanSources
 	return c
-}
-
-//Cleans the DB of each concept, all outgoing relationships, any identifiers or equivalent nodes
-//Should only be used for testing purposes
-//They are stored here as you cannot not export from test files otherwise they would be in concepts_service_test.go file
-func CleanTestDB(t *testing.T, db neoutils.NeoConnection, uuids ...string) {
-	for _, uuid := range uuids {
-		cleanSourceNodes(t, db, uuid)
-		deleteSourceNodes(t, db, uuid)
-		deleteConcordedNodes(t, db, uuid)
-	}
-}
-
-func cleanSourceNodes(t *testing.T, db neoutils.NeoConnection, uuid string) {
-	var queries []*neoism.CypherQuery
-	queries = append(queries, &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`
-			MATCH (a:Thing {uuid: "%s"})
-			OPTIONAL MATCH (a)-[rel:IDENTIFIES]-(i)
-			OPTIONAL MATCH (a)-[hp:HAS_PARENT]->(p)
-			OPTIONAL MATCH (a)-[eq:EQUIVALENT]->(e)
-			DELETE rel, hp, i, eq`, uuid)})
-	err := db.CypherBatch(queries)
-	assert.NoError(t, err, "error executing clean up source node cypher")
-}
-
-func deleteSourceNodes(t *testing.T, db neoutils.NeoConnection, uuid string) {
-	var queries []*neoism.CypherQuery
-	queries = append(queries, &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`
-			MATCH (a:Thing {uuid: "%s"})
-			OPTIONAL MATCH (a)-[rel:IDENTIFIES]-(i)
-			DETACH DELETE rel, i, a`, uuid)})
-	err := db.CypherBatch(queries)
-	assert.NoError(t, err, "error executing delete source node cypher")
-}
-
-func deleteConcordedNodes(t *testing.T, db neoutils.NeoConnection, uuid string) {
-	var queries []*neoism.CypherQuery
-	queries = append(queries, &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`
-			MATCH (a:Thing {prefUUID: "%s"})
-			DELETE a`, uuid)})
-	err := db.CypherBatch(queries)
-	assert.NoError(t, err, "Error executing delete concorded node cypher")
-}
-
-//Will read the file and decode the contents. Used for the test fixtures
-func ReadFileAndDecode(t *testing.T, pathToFile string) (interface{}, string, error) {
-	f, err := os.Open(pathToFile)
-	assert.NoError(t, err)
-	defer f.Close()
-	dec := json.NewDecoder(f)
-	return DecodeJSON(dec)
 }
 
 //Compares expected and actual events from test cases

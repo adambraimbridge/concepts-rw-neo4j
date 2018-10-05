@@ -8,6 +8,7 @@ import (
 	"github.com/Financial-Times/concepts-rw-neo4j/memberships"
 	"github.com/Financial-Times/concepts-rw-neo4j/organisations"
 	"github.com/Financial-Times/concepts-rw-neo4j/people"
+	"github.com/Financial-Times/concepts-rw-neo4j/sections"
 	"github.com/Financial-Times/concepts-rw-neo4j/special-reports"
 	"github.com/Financial-Times/concepts-rw-neo4j/subjects"
 	"github.com/Financial-Times/concepts-rw-neo4j/topics"
@@ -177,7 +178,7 @@ func createServices(db neoutils.NeoConnection) map[string]concepts.ConceptServic
 	serviceMap["membership-roles"] = membership_roles.NewMembershipRoleService(db)
 	serviceMap["organisations"] = organisations.NewOrganisationService(db)
 	serviceMap["people"] = people.NewPeopleService(db)
-	//serviceMap["sections"] = brands.NewBrandService(db)
+	serviceMap["sections"] = sections.NewSectionService(db)
 	serviceMap["subjects"] = subjects.NewSubjectService(db)
 	serviceMap["special-reports"] = special_reports.NewSpecialReportService(db)
 	serviceMap["topics"] = topics.NewTopicService(db)

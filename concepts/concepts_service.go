@@ -694,6 +694,9 @@ func DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
 
 //Check - checker
 func (s *ConceptService) Check() error {
+	if err := neoutils.CheckWritable(s.conn); err != nil {
+		return err
+	}
 	return neoutils.Check(s.conn)
 }
 

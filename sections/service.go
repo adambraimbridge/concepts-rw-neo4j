@@ -8,6 +8,7 @@ import (
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
 	"github.com/mitchellh/hashstructure"
+	"github.com/pkg/errors"
 	"strconv"
 )
 
@@ -38,6 +39,10 @@ func (ss *SectionService) Write(thing interface{}, transID string) (interface{},
 
 	if err = concepts.ValidateBasicConcept(aggregatedConceptToWrite, transID); err != nil {
 		return updateRecord, err
+	}
+
+	if len(aggregatedConceptToWrite.SourceRepresentations) > 1 {
+		return updateRecord, errors.New("sections do not currently support concordance")
 	}
 
 	//Concept has been updated since last write, so need to send notification of all affected ids

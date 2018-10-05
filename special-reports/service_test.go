@@ -124,8 +124,8 @@ func TestWriteService_EmptyDB(t *testing.T) {
 		},
 		{
 			testName:        "Basic TME SpecialReport is successful and can be read from DB",
-			filePathToWrite: "./write/futureOfRetirement_1tme.json",
-			filePathToRead:  "./read/futureOfRetirement_1tme.json",
+			filePathToWrite: "./fixtures/write/futureOfRetirement_1tme.json",
+			filePathToRead:  "./fixtures/read/futureOfRetirement_1tme.json",
 			conceptUUID:     basicSrUUID,
 			expectedError:   "",
 			updatedConcepts: concepts.ConceptChanges{
@@ -141,6 +141,17 @@ func TestWriteService_EmptyDB(t *testing.T) {
 						},
 					},
 				},
+			},
+		},
+		{
+			testName:        "Concorded Special Reports fails",
+			filePathToWrite: "./fixtures/write/concordedSr.json",
+			filePathToRead:  "",
+			conceptUUID:     invalidPayloadUUID,
+			expectedError:   "special-reports do not currently support concordance",
+			updatedConcepts: concepts.ConceptChanges{
+				UpdatedIds:     []string{},
+				ChangedRecords: []concepts.Event{},
 			},
 		},
 	}
@@ -165,6 +176,11 @@ func TestWriteService_EmptyDB(t *testing.T) {
 			assert.NoError(t, err)
 
 			output, err := conceptsDriver.Write(write, testTID)
+			if test.expectedError != "" {
+				assert.Error(t, err, fmt.Sprintf("test %s failed: expected an error not found", test.testName))
+				assert.Equal(t, err.Error(), test.expectedError, fmt.Sprintf("test %s failed: did not receive expected error", test.testName))
+				return
+			}
 			assert.NoError(t, err)
 
 			changes := output.(concepts.ConceptChanges)

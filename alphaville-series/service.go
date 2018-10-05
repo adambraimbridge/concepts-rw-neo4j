@@ -1,6 +1,7 @@
 package alphaville_series
 
 import (
+	"errors"
 	"fmt"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	"github.com/Financial-Times/go-logger"
@@ -38,6 +39,10 @@ func (ass *AlphavilleSeriesService) Write(thing interface{}, transID string) (in
 
 	if err = concepts.ValidateBasicConcept(aggregatedConceptToWrite, transID); err != nil {
 		return updateRecord, err
+	}
+
+	if len(aggregatedConceptToWrite.SourceRepresentations) > 1 {
+		return updateRecord, errors.New("alphaville-series do not currently support concordance")
 	}
 
 	//Concept has been updated since last write, so need to send notification of all affected ids

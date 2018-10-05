@@ -143,6 +143,17 @@ func TestWriteService_EmptyDB(t *testing.T) {
 				},
 			},
 		},
+		{
+			testName:        "Concorded Subject fails",
+			filePathToWrite: "./fixtures/write/concordedSubject.json",
+			filePathToRead:  "./fixtures/write/concordedSubject.json",
+			conceptUUID:     invalidPayloadUUID,
+			expectedError:   "subjects do not currently support concordance",
+			updatedConcepts: concepts.ConceptChanges{
+				UpdatedIds:     []string{},
+				ChangedRecords: []concepts.Event{},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -165,6 +176,11 @@ func TestWriteService_EmptyDB(t *testing.T) {
 			assert.NoError(t, err)
 
 			output, err := conceptsDriver.Write(write, testTID)
+			if test.expectedError != "" {
+				assert.Error(t, err, fmt.Sprintf("test %s failed: expected an error not found", test.testName))
+				assert.Equal(t, err.Error(), test.expectedError, fmt.Sprintf("test %s failed: did not receive expected error", test.testName))
+				return
+			}
 			assert.NoError(t, err)
 
 			changes := output.(concepts.ConceptChanges)

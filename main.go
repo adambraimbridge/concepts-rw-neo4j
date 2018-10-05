@@ -170,7 +170,7 @@ func outputMetricsIfRequired(graphiteTCPAddress string, graphitePrefix string, l
 
 func createServices(db neoutils.NeoConnection) map[string]concepts.ConceptServicer {
 	serviceMap := make(map[string]concepts.ConceptServicer)
-	serviceMap["alphaville-series"] = alphaville_series.NewAlphavilleseriesService(db)
+	serviceMap["alphaville-series"] = alphaville_series.NewAlphavilleSeriesService(db)
 	serviceMap["brands"] = brands.NewBrandService(db)
 	serviceMap["genres"] = genres.NewGenreService(db)
 	serviceMap["locations"] = locations.NewLocationService(db)

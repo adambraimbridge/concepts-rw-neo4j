@@ -33,7 +33,7 @@ func init() {
 	if db == nil {
 		panic("Cannot connect to Neo4J")
 	}
-	conceptsDriver = NewAlphavilleseriesService(db)
+	conceptsDriver = NewAlphavilleSeriesService(db)
 
 	duration := 2 * time.Second
 	time.Sleep(duration)

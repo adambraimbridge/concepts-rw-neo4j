@@ -15,7 +15,7 @@ type AlphavilleSeriesService struct {
 	conn neoutils.NeoConnection
 }
 
-func NewAlphavilleseriesService(db neoutils.NeoConnection) *AlphavilleSeriesService {
+func NewAlphavilleSeriesService(db neoutils.NeoConnection) *AlphavilleSeriesService {
 	return &AlphavilleSeriesService{db}
 }
 

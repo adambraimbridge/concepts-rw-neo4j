@@ -136,6 +136,9 @@ func ValidateBasicConcept(aggConcept AggregatedConcept, transID string) error {
 		return requestError{formatError("no sourceRepresentation", aggConcept.PrefUUID, transID)}
 	}
 	for _, concept := range aggConcept.SourceRepresentations {
+		if concept.Authority == "" {
+			return requestError{formatError("no sourceRepresentation.authority", concept.UUID, transID)}
+		}
 		// Is Authority recognised?
 		if _, ok := authorityToIdentifierLabelMap[concept.Authority]; !ok {
 			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority, therefore unable to add the relevant Identifier node: %s", concept.Authority)
@@ -145,6 +148,9 @@ func ValidateBasicConcept(aggConcept AggregatedConcept, transID string) error {
 		}
 		if _, ok := constraintMap[concept.Type]; !ok {
 			return requestError{formatError("invalid sourceRepresentation type", aggConcept.PrefUUID, transID)}
+		}
+		if concept.PrefLabel == "" {
+			return requestError{formatError("no sourceRepresentation prefLabel", concept.UUID, transID)}
 		}
 		if concept.AuthorityValue == "" {
 			return requestError{formatError("no sourceRepresentation.authorityValue", concept.UUID, transID)}

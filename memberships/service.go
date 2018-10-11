@@ -92,10 +92,11 @@ func clearDownExistingNodes(ac concepts.AggregatedConcept) []*neoism.CypherQuery
 			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->()
 			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->()
 			OPTIONAL MATCH (t)-[ho:HAS_ORGANISATION]->()
+			OPTIONAL MATCH (t)-[sup:SUPERSEDED_BY]->()
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->()
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE eq, hr, hm, ho`, concepts.GetLabelsToRemove()),
+			DELETE eq, hr, hm, ho, sup`, concepts.GetLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -147,6 +148,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			},
 		}
 		queryBatch = append(queryBatch, equivQuery)
+
+		if len(sourceConcept.SupersededUUIDs) > 0 {
+			queryBatch = concepts.AddRelationship(sourceConcept.UUID, sourceConcept.SupersededUUIDs, "SUPERSEDED_BY", queryBatch)
+		}
 	}
 	return queryBatch
 }
@@ -181,12 +186,14 @@ func (ms *MembershipService) Read(uuid string, transID string) (interface{}, boo
             OPTIONAL MATCH (source)-[:HAS_MEMBER]->(person:Thing)
             OPTIONAL MATCH (source)-[:HAS_ORGANISATION]->(org:Thing)
             OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
+			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
             WITH
                 canonical,
                 org,
                 person,
                 role,
                 roleRel,
+				supersededBy,
                 source
                 ORDER BY
                     source.uuid,     
@@ -211,6 +218,7 @@ func (ms *MembershipService) Read(uuid string, transID string) (interface{}, boo
                     prefLabel: source.prefLabel,
                     types: labels(source),
                     uuid: source.uuid,
+					supersededByUUIDs: collect(DISTINCT supersededBy.uuid),
                     isDeprecated: source.isDeprecated
                 } as sources,
                 collect({
@@ -291,6 +299,7 @@ func (ms *MembershipService) Read(uuid string, transID string) (interface{}, boo
 			PersonUUID:        srcConcept.PersonUUID,
 			MembershipRoles:   srcConcept.MembershipRoles,
 			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
+			SupersededUUIDs:   concepts.FilterSlice(srcConcept.SupersededUUIDs),
 			IsDeprecated:      srcConcept.IsDeprecated,
 		}
 		sourceConcepts = append(sourceConcepts, concept)

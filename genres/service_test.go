@@ -67,7 +67,6 @@ func TestWriteService_EmptyDB(t *testing.T) {
 		{
 			testName:            "Put payload with no prefLabel results in error",
 			filePathToWriteFunc: concepts.NewMissingPrefLabel,
-			filePathToRead:      "",
 			conceptUUID:         invalidPayloadUUID,
 			expectedError:       "invalid request, no prefLabel has been supplied",
 			updatedConcepts:     concepts.ConceptChanges{},
@@ -75,7 +74,6 @@ func TestWriteService_EmptyDB(t *testing.T) {
 		{
 			testName:            "Put payload with no type results in error",
 			filePathToWriteFunc: concepts.NewMissingType,
-			filePathToRead:      "",
 			conceptUUID:         invalidPayloadUUID,
 			expectedError:       "invalid request, no type has been supplied",
 			updatedConcepts:     concepts.ConceptChanges{},
@@ -83,7 +81,6 @@ func TestWriteService_EmptyDB(t *testing.T) {
 		{
 			testName:            "Put payload with invalid type results in error",
 			filePathToWriteFunc: concepts.NewInvalidType,
-			filePathToRead:      "",
 			conceptUUID:         invalidPayloadUUID,
 			expectedError:       "invalid request, invalid type has been supplied",
 			updatedConcepts:     concepts.ConceptChanges{},
@@ -91,7 +88,6 @@ func TestWriteService_EmptyDB(t *testing.T) {
 		{
 			testName:            "Put payload with no source representations results in error",
 			filePathToWriteFunc: concepts.NewMissingSources,
-			filePathToRead:      "",
 			conceptUUID:         invalidPayloadUUID,
 			expectedError:       "invalid request, no sourceRepresentation has been supplied",
 			updatedConcepts:     concepts.ConceptChanges{},
@@ -99,7 +95,6 @@ func TestWriteService_EmptyDB(t *testing.T) {
 		{
 			testName:            "Put payload with no source representation type results in error",
 			filePathToWriteFunc: concepts.NewMissingSourceType,
-			filePathToRead:      "",
 			conceptUUID:         invalidPayloadUUID,
 			expectedError:       "invalid request, no sourceRepresentation type has been supplied",
 			updatedConcepts:     concepts.ConceptChanges{},
@@ -107,7 +102,6 @@ func TestWriteService_EmptyDB(t *testing.T) {
 		{
 			testName:            "Put payload with invalid source representation type results in error",
 			filePathToWriteFunc: concepts.NewInvalidSourceType,
-			filePathToRead:      "",
 			conceptUUID:         invalidPayloadUUID,
 			expectedError:       "invalid request, invalid sourceRepresentation type has been supplied",
 			updatedConcepts:     concepts.ConceptChanges{},
@@ -115,9 +109,22 @@ func TestWriteService_EmptyDB(t *testing.T) {
 		{
 			testName:            "Put payload with no source representation authority value results in error",
 			filePathToWriteFunc: concepts.NewMissingSourceAuthValue,
-			filePathToRead:      "",
 			conceptUUID:         invalidPayloadUUID,
 			expectedError:       "invalid request, no sourceRepresentation.authorityValue has been supplied",
+			updatedConcepts:     concepts.ConceptChanges{},
+		},
+		{
+			testName:            "Put payload with no source representation authority results in error",
+			filePathToWriteFunc: concepts.NewMissingSourceAuth,
+			conceptUUID:         invalidPayloadUUID,
+			expectedError:       "invalid request, no sourceRepresentation.authority has been supplied",
+			updatedConcepts:     concepts.ConceptChanges{},
+		},
+		{
+			testName:            "Put payload with no source representation prefLabel results in error",
+			filePathToWriteFunc: concepts.NewMissingSourcePrefLabel,
+			conceptUUID:         invalidPayloadUUID,
+			expectedError:       "invalid request, no sourceRepresentation prefLabel has been supplied",
 			updatedConcepts:     concepts.ConceptChanges{},
 		},
 		{

@@ -160,9 +160,10 @@ func clearDownExistingNodes(ac concepts.AggregatedConcept) []*neoism.CypherQuery
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)<-[iden:IDENTIFIES]-(i)
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
+			OPTIONAL MATCH (t)-[sup:SUPERSEDED_BY]->()
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE iden, i, eq`, concepts.GetLabelsToRemove()),
+			DELETE iden, i, eq, sup`, concepts.GetLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -217,6 +218,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			},
 		}
 		queryBatch = append(queryBatch, equivQuery)
+
+		if len(sourceConcept.SupersededUUIDs) > 0 {
+			queryBatch = concepts.AddRelationship(sourceConcept.UUID, sourceConcept.SupersededUUIDs, "SUPERSEDED_BY", queryBatch)
+		}
 	}
 	return queryBatch
 }
@@ -227,8 +232,10 @@ func (ps *PeopleService) Read(uuid string, transID string) (interface{}, bool, e
 	query := &neoism.CypherQuery{
 		Statement: `
 			MATCH (canonical:Person {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
 			WITH
 				canonical,
+				supersededBy,
 				source
 				ORDER BY
 					source.uuid
@@ -241,6 +248,7 @@ func (ps *PeopleService) Read(uuid string, transID string) (interface{}, bool, e
 					prefLabel: source.prefLabel,
 					types: labels(source),
 					uuid: source.uuid,
+					supersededByUUIDs: collect(DISTINCT supersededBy.uuid),
 					isDeprecated: source.isDeprecated
 				} as sources
 			RETURN
@@ -310,6 +318,7 @@ func (ps *PeopleService) Read(uuid string, transID string) (interface{}, bool, e
 			Authority:         srcConcept.Authority,
 			AuthorityValue:    srcConcept.AuthorityValue,
 			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
+			SupersededUUIDs:   concepts.FilterSlice(srcConcept.SupersededUUIDs),
 			IsDeprecated:      srcConcept.IsDeprecated,
 		}
 		sourceConcepts = append(sourceConcepts, concept)

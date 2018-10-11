@@ -109,6 +109,14 @@ func NewMissingSourceAuthValue(concept string, uuid string) (ret interface{}, er
 		uuid)
 }
 
+func NewMissingSourceAuth(concept string, uuid string) (ret interface{}, err error) {
+	return parseInvalidPayload(
+		"../concepts/fixtures/missingSourceAuth.json",
+		"missing-source-auth",
+		concept,
+		uuid)
+}
+
 func NewMissingSources(concept string, uuid string) (ret interface{}, err error) {
 	return parseInvalidPayload(
 		"../concepts/fixtures/missingSources.json",
@@ -129,6 +137,14 @@ func NewMissingType(concept string, uuid string) (ret interface{}, err error) {
 	return parseInvalidPayload(
 		"../concepts/fixtures/missingType.json",
 		"missing-type",
+		concept,
+		uuid)
+}
+
+func NewMissingSourcePrefLabel(concept string, uuid string) (ret interface{}, err error) {
+	return parseInvalidPayload(
+		"../concepts/fixtures/missingSourcePrefLabel.json",
+		"missing-source-pref-label",
 		concept,
 		uuid)
 }

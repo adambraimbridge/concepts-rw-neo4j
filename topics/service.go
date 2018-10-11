@@ -165,9 +165,10 @@ func clearDownExistingNodes(ac concepts.AggregatedConcept) []*neoism.CypherQuery
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->()
 			OPTIONAL MATCH (t)-[brd:BROADER]->()
 			OPTIONAL MATCH (t)-[rel:IS_RELATED_TO]->()
+			OPTIONAL MATCH (t)-[sup:SUPERSEDED_BY]->()
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE iden, i, eq, brd, rel`, concepts.GetLabelsToRemove()),
+			DELETE iden, i, eq, brd, rel, sup`, concepts.GetLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},

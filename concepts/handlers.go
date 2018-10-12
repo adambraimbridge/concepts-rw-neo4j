@@ -100,6 +100,13 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//DecodeJSON - decode json
+func DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
+	sub := AggregatedConcept{}
+	err := dec.Decode(&sub)
+	return sub, sub.PrefUUID, err
+}
+
 func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]

@@ -1,7 +1,6 @@
 package concepts
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -691,21 +690,6 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 	return query
 }
 
-//DecodeJSON - decode json
-func DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
-	sub := AggregatedConcept{}
-	err := dec.Decode(&sub)
-	return sub, sub.PrefUUID, err
-}
-
-//Check - checker
-func (s *ConceptService) Check() error {
-	if err := neoutils.CheckWritable(s.conn); err != nil {
-		return err
-	}
-	return neoutils.Check(s.conn)
-}
-
 type requestError struct {
 	details string
 }
@@ -718,55 +702,6 @@ func (re requestError) Error() string {
 //InvalidRequestDetails - Specific error for providing bad request (400) back
 func (re requestError) InvalidRequestDetails() string {
 	return re.details
-}
-
-func processMembershipRoles(v interface{}) interface{} {
-	switch c := v.(type) {
-	case AggregatedConcept:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
-		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
-		for _, s := range c.SourceRepresentations {
-			processMembershipRoles(s)
-		}
-	case Concept:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
-		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
-	case MembershipRole:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
-	}
-	return v
-}
-
-func cleanMembershipRoles(m []MembershipRole) []MembershipRole {
-	deleted := 0
-	for i := range m {
-		j := i - deleted
-		if m[j].RoleUUID == "" {
-			m = m[:j+copy(m[j:], m[j+1:])]
-			deleted++
-			continue
-		}
-		m[j].InceptionDateEpoch = getEpoch(m[j].InceptionDate)
-		m[j].TerminationDateEpoch = getEpoch(m[j].TerminationDate)
-	}
-
-	if len(m) == 0 {
-		return nil
-	}
-
-	return m
-}
-
-func getEpoch(t string) int64 {
-	if t == "" {
-		return 0
-	}
-
-	tt, _ := time.Parse(iso8601DateOnly, t)
-	return tt.Unix()
 }
 
 func FilterSlice(a []string) []string {

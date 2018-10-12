@@ -1,6 +1,7 @@
 package concepts
 
 import (
+	"fmt"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"net/http"
 	"time"
@@ -42,8 +43,10 @@ func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCod
 }
 
 func (h *ConceptsHandler) GTG() gtg.Status {
+	fmt.Println("here!")
 	var statusChecker []gtg.StatusChecker
 	for _, c := range h.checks() {
+		fmt.Println("here 2")
 		checkFunc := func() gtg.Status {
 			return gtgCheck(c.Checker)
 		}
@@ -68,6 +71,9 @@ func (h *ConceptsHandler) makeNeo4jAvailabilityCheck() fthealth.Check {
 }
 
 func (h *ConceptsHandler) checkNeo4jAvailability() (string, error) {
+	if err := neoutils.CheckWritable(h.Connection); err != nil {
+		return "Database is non-writable!", err
+	}
 	err := neoutils.Check(h.Connection)
 	if err != nil {
 		return "Could not connect to database!", err

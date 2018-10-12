@@ -18,9 +18,9 @@ or update:
 
 ## Running
 
-`$GOPATH/bin/concepts-rw-neo4j --neo-url={neo4jUrl} --port={port} --batchSize=50 --graphiteTCPAddress=graphite.ft.com:2003 --graphitePrefix=content.{env}c.concepts.rw.neo4j.{hostname} --logMetrics=false --logLevel=Info --requestLoggingOn=true
+`$GOPATH/bin/concepts-rw-neo4j --neo-url={neo4jUrl} --port={port} --batchSize=50 --logLevel=Info --requestLoggingOn=true
 
-All arguments are optional, they default to a local Neo4j install on the default port (7474), application running on port 8080, batchSize of 1024, graphiteTCPAddress of "" (meaning metrics won't be written to Graphite), graphitePrefix of "" and logMetrics false.
+All arguments are optional, they default to a local Neo4j install on the default port (7474), application running on port 8080, batchSize of 1024.
 
 ## Deployment
 

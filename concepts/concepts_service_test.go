@@ -91,7 +91,7 @@ package concepts
 //		ShortLabel:     "Label",
 //		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           basicConceptUUID,
+//			Uuid:           basicConceptUUID,
 //			PrefLabel:      "The Best Label",
 //			Type:           "Brand",
 //			Strapline:      "Keeping it simple",
@@ -125,7 +125,7 @@ package concepts
 //		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:           basicConceptUUID,
+//				Uuid:           basicConceptUUID,
 //				PrefLabel:      "The Best Label",
 //				Type:           "Brand",
 //				Strapline:      "Keeping it simple",
@@ -141,7 +141,7 @@ package concepts
 //				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //			},
 //			{
-//				UUID:           sourceId_1,
+//				Uuid:           sourceId_1,
 //				PrefLabel:      "Not as good Label",
 //				Type:           "Brand",
 //				Strapline:      "Boring strapline",
@@ -170,7 +170,7 @@ package concepts
 //		Aliases:        []string{"oneLabel", "secondLabel"},
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:           basicConceptUUID,
+//				Uuid:           basicConceptUUID,
 //				PrefLabel:      "The Best Label",
 //				Type:           "Brand",
 //				Strapline:      "Much more complicated",
@@ -186,7 +186,7 @@ package concepts
 //				Aliases:        []string{"oneLabel", "secondLabel"},
 //			},
 //			{
-//				UUID:           sourceId_1,
+//				Uuid:           sourceId_1,
 //				PrefLabel:      "The Biggest, Bestest, Brandiest Brand",
 //				Type:           "Brand",
 //				Strapline:      "Boring strapline",
@@ -215,7 +215,7 @@ package concepts
 //		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:           basicConceptUUID,
+//				Uuid:           basicConceptUUID,
 //				PrefLabel:      "The Best Label",
 //				Type:           "Brand",
 //				Strapline:      "Keeping it simple",
@@ -231,7 +231,7 @@ package concepts
 //				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //			},
 //			{
-//				UUID:           sourceId_1,
+//				Uuid:           sourceId_1,
 //				PrefLabel:      "Not as good Label",
 //				Type:           "Brand",
 //				Strapline:      "Boring strapline",
@@ -241,7 +241,7 @@ package concepts
 //				AuthorityValue: "987as3dza654-TME",
 //			},
 //			{
-//				UUID:           sourceId_2,
+//				Uuid:           sourceId_2,
 //				PrefLabel:      "Even worse Label",
 //				Type:           "Brand",
 //				Strapline:      "Bad strapline",
@@ -270,7 +270,7 @@ package concepts
 //		SourceRepresentations: []LeafConcept{
 //			{
 //
-//				UUID:           anotherBasicConceptUUID,
+//				Uuid:           anotherBasicConceptUUID,
 //				PrefLabel:      "Not as good Label",
 //				Type:           "Brand",
 //				Strapline:      "Boring strapline",
@@ -280,7 +280,7 @@ package concepts
 //				AuthorityValue: "987as3dz344-TME",
 //			},
 //			{
-//				UUID:           basicConceptUUID,
+//				Uuid:           basicConceptUUID,
 //				PrefLabel:      "The Best Label",
 //				Type:           "Brand",
 //				Strapline:      "Keeping it simple",
@@ -296,7 +296,7 @@ package concepts
 //				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //			},
 //			{
-//				UUID:           sourceId_2,
+//				Uuid:           sourceId_2,
 //				PrefLabel:      "Even worse Label",
 //				Type:           "Brand",
 //				Strapline:      "Bad strapline",
@@ -325,7 +325,7 @@ package concepts
 //		SourceRepresentations: []LeafConcept{
 //			{
 //
-//				UUID:           anotherBasicConceptUUID,
+//				Uuid:           anotherBasicConceptUUID,
 //				PrefLabel:      "A decent label",
 //				Type:           "Brand",
 //				Strapline:      "Keeping it simple",
@@ -336,7 +336,7 @@ package concepts
 //			},
 //			{
 //
-//				UUID:           sourceId_1,
+//				Uuid:           sourceId_1,
 //				PrefLabel:      "Not as good Label",
 //				Type:           "Brand",
 //				Strapline:      "Boring strapline",
@@ -365,7 +365,7 @@ package concepts
 //		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:           simpleSmartlogicTopicUUID,
+//				Uuid:           simpleSmartlogicTopicUUID,
 //				PrefLabel:      "A decent label",
 //				Type:           "Topic",
 //				Strapline:      "Keeping it simple",
@@ -375,7 +375,7 @@ package concepts
 //				AuthorityValue: simpleSmartlogicTopicUUID,
 //			},
 //			{
-//				UUID:           basicConceptUUID,
+//				Uuid:           basicConceptUUID,
 //				PrefLabel:      "The Best Label",
 //				Type:           "Section",
 //				Strapline:      "Keeping it simple",
@@ -391,7 +391,7 @@ package concepts
 //				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //			},
 //			{
-//				UUID:           yetAnotherBasicConceptUUID,
+//				Uuid:           yetAnotherBasicConceptUUID,
 //				PrefLabel:      "LeafConcept PrefLabel",
 //				Type:           "Section",
 //				Authority:      "TME",
@@ -420,7 +420,7 @@ package concepts
 //		ShortLabel:     "Label",
 //		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           basicConceptUUID,
+//			Uuid:           basicConceptUUID,
 //			PrefLabel:      "LeafConcept PrefLabel",
 //			Type:           "Section",
 //			Strapline:      "Some strapline",
@@ -444,7 +444,7 @@ package concepts
 //		PrefLabel: "LeafConcept PrefLabel",
 //		Type:      "Section",
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           yetAnotherBasicConceptUUID,
+//			Uuid:           yetAnotherBasicConceptUUID,
 //			PrefLabel:      "LeafConcept PrefLabel",
 //			Type:           "Section",
 //			Authority:      "Smartlogic",
@@ -460,7 +460,7 @@ package concepts
 //		PrefLabel: "LeafConcept PrefLabel",
 //		Type:      "Section",
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           yetAnotherBasicConceptUUID,
+//			Uuid:           yetAnotherBasicConceptUUID,
 //			PrefLabel:      "LeafConcept PrefLabel",
 //			Type:           "Section",
 //			Authority:      "TME",
@@ -481,7 +481,7 @@ package concepts
 //		ImageURL:       "Some image url",
 //		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           anotherBasicConceptUUID,
+//			Uuid:           anotherBasicConceptUUID,
 //			PrefLabel:      "Another LeafConcept PrefLabel",
 //			Type:           "Section",
 //			Authority:      "Smartlogic",
@@ -492,7 +492,7 @@ package concepts
 //			ParentUUIDs:    []string{parentUuid},
 //			Aliases:        []string{"anotheroneLabel", "anothersecondLabel"},
 //		}, {
-//			UUID:           basicConceptUUID,
+//			Uuid:           basicConceptUUID,
 //			PrefLabel:      "LeafConcept PrefLabel",
 //			Type:           "Section",
 //			Authority:      "TME",
@@ -509,7 +509,7 @@ package concepts
 //		Type:      "Section",
 //		Aliases:   []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           basicConceptUUID,
+//			Uuid:           basicConceptUUID,
 //			PrefLabel:      prefLabel,
 //			Type:           "Section",
 //			Authority:      "TME",
@@ -524,14 +524,14 @@ package concepts
 //		PrefLabel: "LeafConcept PrefLabel",
 //		Type:      "Section",
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           anotherBasicConceptUUID,
+//			Uuid:           anotherBasicConceptUUID,
 //			PrefLabel:      "Another LeafConcept PrefLabel",
 //			Type:           "Section",
 //			Authority:      "TME",
 //			AuthorityValue: "1234",
 //			Aliases:        []string{"anotheroneLabel", "anothersecondLabel"},
 //		}, {
-//			UUID:           basicConceptUUID,
+//			Uuid:           basicConceptUUID,
 //			PrefLabel:      "LeafConcept PrefLabel",
 //			Type:           "Section",
 //			Authority:      "TME",
@@ -547,7 +547,7 @@ package concepts
 //		PrefLabel: "Pref Label",
 //		Type:      "Section",
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           basicConceptUUID,
+//			Uuid:           basicConceptUUID,
 //			PrefLabel:      "Pref Label",
 //			Type:           "Section",
 //			Authority:      "BooHalloo",
@@ -562,7 +562,7 @@ package concepts
 //		PrefLabel: "Pref Label",
 //		Type:      "Section",
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           basicConceptUUID,
+//			Uuid:           basicConceptUUID,
 //			PrefLabel:      "Pref Label",
 //			Type:           "Section",
 //			Authority:      "Smartlogic",
@@ -578,7 +578,7 @@ package concepts
 //		PrefLabel: "Pref Label",
 //		Type:      "Section",
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           basicConceptUUID,
+//			Uuid:           basicConceptUUID,
 //			PrefLabel:      "Pref Label",
 //			Type:           "Section",
 //			Authority:      "Smartlogic",
@@ -594,7 +594,7 @@ package concepts
 //		PrefLabel: "Pref Label",
 //		Type:      "Section",
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           basicConceptUUID,
+//			Uuid:           basicConceptUUID,
 //			PrefLabel:      "Pref Label",
 //			Type:           "Section",
 //			Authority:      "Smartlogic",
@@ -610,7 +610,7 @@ package concepts
 //		PrefLabel: "Pref Label",
 //		Type:      "Section",
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           basicConceptUUID,
+//			Uuid:           basicConceptUUID,
 //			PrefLabel:      "Pref Label",
 //			Type:           "Section",
 //			Authority:      "Smartlogic",
@@ -626,7 +626,7 @@ package concepts
 //		PrefLabel: "MembershipRole Pref Label",
 //		Type:      "MembershipRole",
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           membershipRole.RoleUUID,
+//			Uuid:           membershipRole.RoleUUID,
 //			PrefLabel:      "MembershipRole Pref Label",
 //			Type:           "MembershipRole",
 //			Authority:      "Smartlogic",
@@ -640,7 +640,7 @@ package concepts
 //		PrefLabel: "BoardRole Pref Label",
 //		Type:      "BoardRole",
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:           boardRoleUUID,
+//			Uuid:           boardRoleUUID,
 //			PrefLabel:      "BoardRole Pref Label",
 //			Type:           "BoardRole",
 //			Authority:      "Smartlogic",
@@ -665,7 +665,7 @@ package concepts
 //		BirthYear:  2018,
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:             membershipUUID,
+//				Uuid:             membershipUUID,
 //				PrefLabel:        "Membership Pref Label",
 //				Type:             "Membership",
 //				Authority:        "Smartlogic",
@@ -687,7 +687,7 @@ package concepts
 //
 //func getOldMembership() LeafConcept {
 //	return LeafConcept{
-//		UUID:             membershipUUID,
+//		Uuid:             membershipUUID,
 //		PrefLabel:        "Membership Pref Label",
 //		Type:             "Membership",
 //		Authority:        "Smartlogic",
@@ -718,7 +718,7 @@ package concepts
 //		FigiCode:  "12345",
 //		IssuedBy:  financialOrgUUID,
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:               financialInstrumentUUID,
+//			Uuid:               financialInstrumentUUID,
 //			PrefLabel:          "FinancialInstrument Pref Label",
 //			Type:               "FinancialInstrument",
 //			Authority:          "FACTSET",
@@ -738,7 +738,7 @@ package concepts
 //		FigiCode:  "12345678",
 //		IssuedBy:  financialOrgUUID,
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:               financialInstrumentSameIssuerUUID,
+//			Uuid:               financialInstrumentSameIssuerUUID,
 //			PrefLabel:          "FinancialInstrument Pref Label 2",
 //			Type:               "FinancialInstrument",
 //			Authority:          "FACTSET",
@@ -758,7 +758,7 @@ package concepts
 //		FigiCode:  "123457",
 //		IssuedBy:  anotherFinancialOrgUUID,
 //		SourceRepresentations: []LeafConcept{{
-//			UUID:               financialInstrumentUUID,
+//			Uuid:               financialInstrumentUUID,
 //			PrefLabel:          "FinancialInstrument Pref Label",
 //			Type:               "FinancialInstrument",
 //			Authority:          "FACTSET",
@@ -799,7 +799,7 @@ package concepts
 //		LeiCode:                "213800KZEW5W6BZMNT62",
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:           testOrgUUID,
+//				Uuid:           testOrgUUID,
 //				Type:           "PublicCompany",
 //				Authority:      "FACTSET",
 //				AuthorityValue: "B000BB-S",
@@ -861,7 +861,7 @@ package concepts
 //		LeiCode:                "213800KZEW5W6BZMNT62",
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:           testOrgUUID,
+//				Uuid:           testOrgUUID,
 //				Type:           "PublicCompany",
 //				Authority:      "FACTSET",
 //				AuthorityValue: "B000BB-S",
@@ -908,7 +908,7 @@ package concepts
 //		},
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:             membershipUUID,
+//				Uuid:             membershipUUID,
 //				PrefLabel:        "Membership Pref Label",
 //				Type:             "Membership",
 //				Authority:        "Smartlogic",
@@ -1262,7 +1262,7 @@ package concepts
 //				if len(test.aggregatedConcept.SourceRepresentations) != 1 {
 //					// Check leaf nodes for Identifiers
 //					for _, leaf := range test.aggregatedConcept.SourceRepresentations {
-//						actualValue := getIdentifierValue(t, "uuid", leaf.UUID, fmt.Sprintf("%vIdentifier", leaf.Authority))
+//						actualValue := getIdentifierValue(t, "uuid", leaf.Uuid, fmt.Sprintf("%vIdentifier", leaf.Authority))
 //						assert.Equal(t, leaf.AuthorityValue, actualValue, "Identifier value incorrect")
 //					}
 //
@@ -2066,7 +2066,7 @@ package concepts
 //		Type:      "Brand",
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:           basicConceptUUID,
+//				Uuid:           basicConceptUUID,
 //				Type:           "Brand",
 //				AuthorityValue: "123456-UPP",
 //				Authority:      "UPP",
@@ -2079,7 +2079,7 @@ package concepts
 //		Type:      "Brand",
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:      basicConceptUUID,
+//				Uuid:      basicConceptUUID,
 //				PrefLabel: "The Best Label",
 //			},
 //		},
@@ -2090,7 +2090,7 @@ package concepts
 //		Type:      "Brand",
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:      basicConceptUUID,
+//				Uuid:      basicConceptUUID,
 //				PrefLabel: "The Best Label",
 //				Type:      "Brand",
 //			},
@@ -2102,7 +2102,7 @@ package concepts
 //		Type:      "Brand",
 //		SourceRepresentations: []LeafConcept{
 //			{
-//				UUID:           basicConceptUUID,
+//				Uuid:           basicConceptUUID,
 //				PrefLabel:      "The Best Label",
 //				Type:           "Brand",
 //				AuthorityValue: "123456-UPP",

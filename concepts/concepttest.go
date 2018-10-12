@@ -40,10 +40,10 @@ func parseInvalidPayload(
 	uuid string) (ret interface{}, err error) {
 	a := struct {
 		Type string
-		UUID string
+		Uuid string
 	}{
 		Type: concept,
-		UUID: uuid,
+		Uuid: uuid,
 	}
 
 	b, err := ioutil.ReadFile(file)

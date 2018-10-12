@@ -242,7 +242,7 @@ func HandleTransferConcordance(conceptData map[string]string, conn neoutils.NeoC
 			return deleteLonePrefUUIDQueries, err
 		}
 
-		logger.WithField("UUID", result[0].SourceUUID).Debug("existing prefUUID is " + result[0].PrefUUID + " equivalence count is " + strconv.Itoa(result[0].Equivalence))
+		logger.WithField("Uuid", result[0].SourceUUID).Debug("existing prefUUID is " + result[0].PrefUUID + " equivalence count is " + strconv.Itoa(result[0].Equivalence))
 		// Source is old as exists in Neo4j without a prefNode. It can be transferred without issue
 		if result[0].Equivalence == 0 {
 			continue
@@ -314,7 +314,7 @@ func HandleTransferConcordance(conceptData map[string]string, conn neoutils.NeoC
 
 //Clean up canonical nodes of a concept that has become a source of current concept
 func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
-	logger.WithField("UUID", prefUUID).Debug("deleting orphaned prefUUID node")
+	logger.WithField("Uuid", prefUUID).Debug("deleting orphaned prefUUID node")
 	equivQuery := &neoism.CypherQuery{
 		Statement: `MATCH (t:Thing {prefUUID:{id}}) DETACH DELETE t`,
 		Parameters: map[string]interface{}{
@@ -342,7 +342,7 @@ func CreateNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			},
 		}
 	} else {
-		// Canonical node that doesn't have UUID
+		// Canonical node that doesn't have Uuid
 		allProps := setProps(concept, prefUUID, false)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
@@ -474,7 +474,7 @@ func CreateNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 
 	queryBatch = append(queryBatch, createConceptQuery)
 
-	// If no UUID then it is the canonical node and will not have identifier nodes
+	// If no Uuid then it is the canonical node and will not have identifier nodes
 	if uuid != "" && concept.Type != "Membership" {
 		queryBatch = append(queryBatch, addIdentifierNodes(uuid, concept.Authority, concept.AuthorityValue)...)
 	}
@@ -507,7 +507,7 @@ func AddRelationship(conceptID string, relationshipIDs []string, relationshipTyp
 //WriteCanonicalNodeForUnconcordedConcepts will create a canonical node for any concepts that were removed from an existing concordance and thus would become lone
 func WriteCanonicalNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
 	allProps := setProps(concept, concept.UUID, false)
-	logger.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
+	logger.WithField("Uuid", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`	MATCH (t:Thing{uuid:{prefUUID}})
 										MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
@@ -544,7 +544,7 @@ func GetLabelsToRemove() string {
 	return labelsToRemove
 }
 
-//GetUUIDAndTypeFromSources returns UUID & type of each source node
+//GetUUIDAndTypeFromSources returns Uuid & type of each source node
 func GetUUIDAndTypeFromSources(sourceConcepts []Concept) map[string]string {
 	conceptData := make(map[string]string)
 	for _, concept := range sourceConcepts {

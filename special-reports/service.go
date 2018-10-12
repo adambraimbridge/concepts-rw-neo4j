@@ -120,7 +120,7 @@ func clearDownExistingNodes(ac concepts.AggregatedConcept) []*neoism.CypherQuery
 }
 
 func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept concepts.AggregatedConcept) []*neoism.CypherQuery {
-	// Create a sourceConcept from the canonical information - WITH NO UUID
+	// Create a sourceConcept from the canonical information - WITH NO Uuid
 	concept := concepts.Concept{
 		PrefLabel:    aggregatedConcept.PrefLabel,
 		Type:         aggregatedConcept.Type,

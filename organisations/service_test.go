@@ -408,7 +408,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   appleTmeUUID,
 						ConceptType:   "Organisation",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,

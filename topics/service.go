@@ -226,8 +226,8 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			queryBatch = concepts.AddRelationship(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", queryBatch)
 		}
 
-		if len(sourceConcept.SupersededUUIDs) > 0 {
-			queryBatch = concepts.AddRelationship(sourceConcept.UUID, sourceConcept.SupersededUUIDs, "SUPERSEDED_BY", queryBatch)
+		if len(sourceConcept.SupersededByUUIDs) > 0 {
+			queryBatch = concepts.AddRelationship(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", queryBatch)
 		}
 	}
 	return queryBatch
@@ -320,7 +320,7 @@ func (ts *TopicService) Read(uuid string, transID string) (interface{}, bool, er
 			UUID:              srcConcept.UUID,
 			RelatedUUIDs:      concepts.FilterSlice(srcConcept.RelatedUUIDs),
 			BroaderUUIDs:      concepts.FilterSlice(srcConcept.BroaderUUIDs),
-			SupersededUUIDs:   concepts.FilterSlice(srcConcept.SupersededUUIDs),
+			SupersededByUUIDs: concepts.FilterSlice(srcConcept.SupersededUUIDs),
 			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
 			IsDeprecated:      srcConcept.IsDeprecated,
 		}

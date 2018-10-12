@@ -174,7 +174,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   basicFsMembershipUUID,
 						ConceptType:   "Membership",
-						AggregateHash: "4621968759979891502",
+						AggregateHash: "13359611713231072576",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -195,7 +195,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   basicSlMembershipUUID,
 						ConceptType:   "Membership",
-						AggregateHash: "14363719023273140851",
+						AggregateHash: "17753846049123574313",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -216,7 +216,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   complexFsMembershipUUID,
 						ConceptType:   "Membership",
-						AggregateHash: "18084077275062715527",
+						AggregateHash: "15635993764074561321",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -302,7 +302,7 @@ func TestWriteService_ConceptsCanBeUpdated(t *testing.T) {
 					{
 						ConceptUUID:   basicFsMembershipUUID,
 						ConceptType:   "Membership",
-						AggregateHash: "4621968759979891502",
+						AggregateHash: "13359611713231072576",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -324,7 +324,7 @@ func TestWriteService_ConceptsCanBeUpdated(t *testing.T) {
 					{
 						ConceptUUID:   complexFsMembershipUUID,
 						ConceptType:   "Membership",
-						AggregateHash: "3004744693657445758",
+						AggregateHash: "13469763115481050918",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,

@@ -135,7 +135,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   basicFsMembershipRoleUUID,
 						ConceptType:   "MembershipRole",
-						AggregateHash: "5843833460112634822",
+						AggregateHash: "3942826707094733046",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -156,7 +156,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   basicSlMembershipRoleUUID,
 						ConceptType:   "MembershipRole",
-						AggregateHash: "18352663449440436806",
+						AggregateHash: "14448244402611794809",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,

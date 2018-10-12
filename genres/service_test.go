@@ -139,7 +139,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   letterTmeUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "4399488848060230691",
+						AggregateHash: "5207007797745973891",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -160,7 +160,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   letterSmartlogicUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "18287724757811512496",
+						AggregateHash: "10174895412509843074",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -169,7 +169,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   letterTmeUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "18287724757811512496",
+						AggregateHash: "10174895412509843074",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -178,7 +178,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   letterTmeUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "18287724757811512496",
+						AggregateHash: "10174895412509843074",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -189,7 +189,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   lettersToTheEditorUUID,
 						ConceptType:   "Section",
-						AggregateHash: "18287724757811512496",
+						AggregateHash: "10174895412509843074",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -198,7 +198,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   lettersToTheEditorUUID,
 						ConceptType:   "Section",
-						AggregateHash: "18287724757811512496",
+						AggregateHash: "10174895412509843074",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -280,7 +280,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   letterAltSmartlogicUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "12015196050462457629",
+						AggregateHash: "13146433331602868990",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -302,7 +302,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   letterAltSmartlogicUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "12015196050462457629",
+						AggregateHash: "13146433331602868990",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -311,7 +311,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   letterTmeUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "12015196050462457629",
+						AggregateHash: "13146433331602868990",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -320,7 +320,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   letterTmeUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "12015196050462457629",
+						AggregateHash: "13146433331602868990",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -344,7 +344,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   letterAltSmartlogicUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "1370788919109100398",
+						AggregateHash: "821911387633104374",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -353,7 +353,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   letterTmeUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "1370788919109100398",
+						AggregateHash: "821911387633104374",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
@@ -377,7 +377,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   letterSmartlogicUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "18287724757811512496",
+						AggregateHash: "10174895412509843074",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -386,7 +386,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   letterTmeUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "18287724757811512496",
+						AggregateHash: "10174895412509843074",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
@@ -397,7 +397,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   letterTmeUUID,
 						ConceptType:   "Genre",
-						AggregateHash: "18287724757811512496",
+						AggregateHash: "10174895412509843074",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -408,7 +408,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   lettersToTheEditorUUID,
 						ConceptType:   "Section",
-						AggregateHash: "18287724757811512496",
+						AggregateHash: "10174895412509843074",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -417,7 +417,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   lettersToTheEditorUUID,
 						ConceptType:   "Section",
-						AggregateHash: "18287724757811512496",
+						AggregateHash: "10174895412509843074",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,

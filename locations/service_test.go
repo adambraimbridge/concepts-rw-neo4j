@@ -146,7 +146,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificLocationTmeUUID,
 						ConceptType:   "Location",
-						AggregateHash: "12138059654390222113",
+						AggregateHash: "16487057592411441084",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -167,7 +167,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificSmartlogicUUID,
 						ConceptType:   "Location",
-						AggregateHash: "17965800055448892728",
+						AggregateHash: "11940516222520648946",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -176,7 +176,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificLocationTmeUUID,
 						ConceptType:   "Location",
-						AggregateHash: "17965800055448892728",
+						AggregateHash: "11940516222520648946",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -185,7 +185,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificLocationTmeUUID,
 						ConceptType:   "Location",
-						AggregateHash: "17965800055448892728",
+						AggregateHash: "11940516222520648946",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -196,7 +196,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificSectionTmeUUID,
 						ConceptType:   "Section",
-						AggregateHash: "17965800055448892728",
+						AggregateHash: "11940516222520648946",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -205,7 +205,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificSectionTmeUUID,
 						ConceptType:   "Section",
-						AggregateHash: "17965800055448892728",
+						AggregateHash: "11940516222520648946",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -293,7 +293,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificAltSmartlogicUUID,
 						ConceptType:   "Location",
-						AggregateHash: "14443462472124171404",
+						AggregateHash: "776668893078123080",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -315,7 +315,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificAltSmartlogicUUID,
 						ConceptType:   "Location",
-						AggregateHash: "14443462472124171404",
+						AggregateHash: "776668893078123080",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -324,7 +324,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificLocationTmeUUID,
 						ConceptType:   "Location",
-						AggregateHash: "14443462472124171404",
+						AggregateHash: "776668893078123080",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -348,7 +348,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificAltSmartlogicUUID,
 						ConceptType:   "Location",
-						AggregateHash: "7424322751747506863",
+						AggregateHash: "14063650178371408195",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -357,7 +357,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificLocationTmeUUID,
 						ConceptType:   "Location",
-						AggregateHash: "7424322751747506863",
+						AggregateHash: "14063650178371408195",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
@@ -381,7 +381,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificSmartlogicUUID,
 						ConceptType:   "Location",
-						AggregateHash: "17965800055448892728",
+						AggregateHash: "11940516222520648946",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -390,7 +390,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificSectionTmeUUID,
 						ConceptType:   "Section",
-						AggregateHash: "17965800055448892728",
+						AggregateHash: "11940516222520648946",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -399,7 +399,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificSectionTmeUUID,
 						ConceptType:   "Section",
-						AggregateHash: "17965800055448892728",
+						AggregateHash: "11940516222520648946",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -410,7 +410,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificLocationTmeUUID,
 						ConceptType:   "Location",
-						AggregateHash: "17965800055448892728",
+						AggregateHash: "11940516222520648946",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -421,7 +421,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   asiaPacificLocationTmeUUID,
 						ConceptType:   "Location",
-						AggregateHash: "17965800055448892728",
+						AggregateHash: "11940516222520648946",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,

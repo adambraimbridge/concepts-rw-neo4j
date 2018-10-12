@@ -134,7 +134,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   commoditiesUUID,
 						ConceptType:   "Subject",
-						AggregateHash: "13142572839650193111",
+						AggregateHash: "6324555955119382294",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,

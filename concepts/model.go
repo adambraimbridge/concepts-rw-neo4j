@@ -70,7 +70,7 @@ type Concept struct {
 	ShortLabel           string           `json:"shortLabel,omitempty"`
 	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
 	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
-	SupersededUUIDs      []string         `json:"supersededByUUIDs,omitempty"`
+	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
 	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
 	PersonUUID           string           `json:"personUUID,omitempty"`
 	Hash                 string           `json:"hash,omitempty"`
@@ -172,7 +172,6 @@ var conceptLabels = [...]string{
 
 // Map of authority and nodelabel for identifiers - we should be removing
 // Identifiers after all the concepts have been migrated to the new model
-//TODO wikidata and managed location dont exist
 var authorityToIdentifierLabelMap = map[string]string{
 	"TME":        "TMEIdentifier",
 	"UPP":        "UPPIdentifier",

@@ -751,7 +751,7 @@ func CleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 			Authority:       source.Authority,
 			AuthorityValue:  source.AuthorityValue,
 			RelatedUUIDs:    source.RelatedUUIDs,
-			SupersededUUIDs: source.SupersededUUIDs,
+			SupersededByUUIDs: source.SupersededByUUIDs,
 			BroaderUUIDs:    source.BroaderUUIDs,
 			IsDeprecated:    source.IsDeprecated,
 			//Brands

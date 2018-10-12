@@ -142,7 +142,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   appleFactsetUUID,
 						ConceptType:   "PublicCompany",
-						AggregateHash: "1117817062624358552",
+						AggregateHash: "9355132498402894989",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -163,7 +163,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   altAppleSmartlogicUUID,
 						ConceptType:   "PublicCompany",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -172,7 +172,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   appleTmeUUID,
 						ConceptType:   "Organisation",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -181,7 +181,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   appleTmeUUID,
 						ConceptType:   "Organisation",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -192,7 +192,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   appleFactsetUUID,
 						ConceptType:   "PublicCompany",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -201,7 +201,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   appleFactsetUUID,
 						ConceptType:   "PublicCompany",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -280,7 +280,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   appleSmartlogicUUID,
 						ConceptType:   "PublicCompany",
-						AggregateHash: "16326938742065553603",
+						AggregateHash: "8746192846972605183",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -302,7 +302,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   appleSmartlogicUUID,
 						ConceptType:   "PublicCompany",
-						AggregateHash: "16326938742065553603",
+						AggregateHash: "8746192846972605183",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -311,7 +311,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   appleTmeUUID,
 						ConceptType:   "Organisation",
-						AggregateHash: "16326938742065553603",
+						AggregateHash: "8746192846972605183",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -335,7 +335,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   appleSmartlogicUUID,
 						ConceptType:   "PublicCompany",
-						AggregateHash: "6267402458710279170",
+						AggregateHash: "10610334823062494641",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -344,7 +344,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   appleTmeUUID,
 						ConceptType:   "Organisation",
-						AggregateHash: "6267402458710279170",
+						AggregateHash: "10610334823062494641",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
@@ -368,7 +368,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   altAppleSmartlogicUUID,
 						ConceptType:   "PublicCompany",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -377,7 +377,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   appleFactsetUUID,
 						ConceptType:   "PublicCompany",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -388,7 +388,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   appleFactsetUUID,
 						ConceptType:   "PublicCompany",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -397,7 +397,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   appleTmeUUID,
 						ConceptType:   "Organisation",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
@@ -408,7 +408,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   appleTmeUUID,
 						ConceptType:   "Organisation",
-						AggregateHash: "10809334173264930655",
+						AggregateHash: "378578028895595540",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,

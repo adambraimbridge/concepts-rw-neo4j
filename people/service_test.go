@@ -141,7 +141,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaSmartlogicUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -150,7 +150,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaFactsetUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -159,7 +159,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaFactsetUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -170,7 +170,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaWikidataUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -179,7 +179,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaWikidataUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -190,7 +190,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaTMEUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -199,7 +199,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaTMEUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -210,7 +210,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaAuthorUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -219,7 +219,7 @@ func TestWriteService_EmptyDB(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaAuthorUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -301,7 +301,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaAltSmartlogicUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7504724365733510478",
+						AggregateHash: "5325651572798695401",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -323,7 +323,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaAltSmartlogicUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7504724365733510478",
+						AggregateHash: "5325651572798695401",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -332,7 +332,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaTMEUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7504724365733510478",
+						AggregateHash: "5325651572798695401",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -356,7 +356,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaAltSmartlogicUUID,
 						ConceptType:   "Person",
-						AggregateHash: "14315953667614583887",
+						AggregateHash: "2803435629242666447",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -365,7 +365,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaTMEUUID,
 						ConceptType:   "Person",
-						AggregateHash: "14315953667614583887",
+						AggregateHash: "2803435629242666447",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
@@ -389,7 +389,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaSmartlogicUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -398,7 +398,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaFactsetUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -407,7 +407,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaFactsetUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -418,7 +418,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaWikidataUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -427,7 +427,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaWikidataUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -438,7 +438,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaTMEUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.RemovedEvent,
@@ -449,7 +449,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaTMEUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,
@@ -460,7 +460,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaAuthorUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConceptEvent{
 							Type: concepts.UpdatedEvent,
@@ -469,7 +469,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					{
 						ConceptUUID:   barackObamaAuthorUUID,
 						ConceptType:   "Person",
-						AggregateHash: "7673463071742625660",
+						AggregateHash: "6175303859824525987",
 						TransactionID: testTID,
 						EventDetails: concepts.ConcordanceEvent{
 							Type:  concepts.AddedEvent,

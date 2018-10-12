@@ -40,10 +40,10 @@ func parseInvalidPayload(
 	uuid string) (ret interface{}, err error) {
 	a := struct {
 		Type string
-		Uuid string
+		UUID string
 	}{
 		Type: concept,
-		Uuid: uuid,
+		UUID: uuid,
 	}
 
 	b, err := ioutil.ReadFile(file)
@@ -149,7 +149,7 @@ func NewMissingSourcePrefLabel(concept string, uuid string) (ret interface{}, er
 		uuid)
 }
 
-//Cleans the DB of each concept, all outgoing relationships, any identifiers or equivalent nodes
+//CleanTestDB cleans the DB of each concept, all outgoing relationships, any identifiers or equivalent nodes
 //Should only be used for testing purposes
 //They are stored here as you cannot not export from test files otherwise they would be in concepts_service_test.go file
 func CleanTestDB(t *testing.T, db neoutils.NeoConnection, uuids ...string) {
@@ -194,7 +194,7 @@ func deleteConcordedNodes(t *testing.T, db neoutils.NeoConnection, uuid string) 
 	assert.NoError(t, err, "Error executing delete concorded node cypher")
 }
 
-//Will read the file and decode the contents. Used for the test fixtures
+//ReadFileAndDecode will read the file and decode the contents. Used for the test fixtures
 func ReadFileAndDecode(t *testing.T, pathToFile string) (interface{}, string, error) {
 	f, err := os.Open(pathToFile)
 	assert.NoError(t, err)

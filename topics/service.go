@@ -26,7 +26,7 @@ func (ts *TopicService) Write(thing interface{}, transID string) (interface{}, e
 	var updatedUUIDList []string
 	aggregatedConceptToWrite := thing.(concepts.AggregatedConcept)
 	aggregatedConceptToWrite = concepts.CleanSourceProperties(aggregatedConceptToWrite)
-	sourceUuidsAndTypes := concepts.GetUuidAndTypeFromSources(aggregatedConceptToWrite.SourceRepresentations)
+	sourceUuidsAndTypes := concepts.GetUUIDAndTypeFromSources(aggregatedConceptToWrite.SourceRepresentations)
 	payloadHash, err := hashstructure.Hash(aggregatedConceptToWrite, nil)
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("read request for existing concordance resulted in error")
@@ -49,7 +49,7 @@ func (ts *TopicService) Write(thing interface{}, transID string) (interface{}, e
 	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
 	if exists {
 		existingAggregateConcept := existingConcept.(concepts.AggregatedConcept)
-		existingSourceUuidsAndTypes := concepts.GetUuidAndTypeFromSources(existingAggregateConcept.SourceRepresentations)
+		existingSourceUuidsAndTypes := concepts.GetUUIDAndTypeFromSources(existingAggregateConcept.SourceRepresentations)
 
 		//Concept has been updated since last write, so need to send notification of all affected ids
 		for _, source := range aggregatedConceptToWrite.SourceRepresentations {

@@ -93,11 +93,10 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
-	} else {
-		w.WriteHeader(http.StatusOK)
-		w.Write(updateIDsBody)
-		return
 	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(updateIDsBody)
+	return
 }
 
 //DecodeJSON - decode json

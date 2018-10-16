@@ -27,7 +27,7 @@ const (
 	anotherBasicConceptUUID    = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
 	yetAnotherBasicConceptUUID = "f7e3fe2d-7496-4d42-b19f-378094efd263"
 	simpleSmartlogicTopicUUID  = "abd38d90-2152-11e8-9ac1-da24cd01f044"
-	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
+	parentUUID                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
 	boardRoleUUID                     = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
 	membershipRoleUUID                = "f807193d-337b-412f-b32c-afa14b385819"
@@ -38,7 +38,6 @@ const (
 	financialOrgUUID                  = "4290f028-05e9-4c2d-9f11-61ec59ba081a"
 	anotherFinancialOrgUUID           = "230e3a74-694a-4d94-8294-6a45ec1ced26"
 	membershipUUID                    = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
-	anotherMembershipRoleUUID         = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
 	anotherOrganisationUUID           = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
 	anotherPersonUUID                 = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
 	testOrgUUID                       = "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
@@ -46,9 +45,9 @@ const (
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
-	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
-	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
-	sourceId_3 = "5b1d8c31-dfe4-4326-b6a9-6227cb59af1f"
+	sourceID1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
+	sourceID2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
+	sourceID3 = "5b1d8c31-dfe4-4326-b6a9-6227cb59af1f"
 
 	unknownThingUUID = "b5d7c6b5-db7d-4bce-9d6a-f62195571f92"
 )
@@ -143,7 +142,7 @@ func getDualConcordance() AggregatedConcept {
 				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 			},
 			{
-				UUID:           sourceId_1,
+				UUID:           sourceID1,
 				PrefLabel:      "Not as good Label",
 				Type:           "Brand",
 				Strapline:      "Boring strapline",
@@ -188,7 +187,7 @@ func getUpdatedDualConcordance() AggregatedConcept {
 				Aliases:        []string{"oneLabel", "secondLabel"},
 			},
 			{
-				UUID:           sourceId_1,
+				UUID:           sourceID1,
 				PrefLabel:      "The Biggest, Bestest, Brandiest Brand",
 				Type:           "Brand",
 				Strapline:      "Boring strapline",
@@ -233,7 +232,7 @@ func getTriConcordance() AggregatedConcept {
 				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 			},
 			{
-				UUID:           sourceId_1,
+				UUID:           sourceID1,
 				PrefLabel:      "Not as good Label",
 				Type:           "Brand",
 				Strapline:      "Boring strapline",
@@ -243,7 +242,7 @@ func getTriConcordance() AggregatedConcept {
 				AuthorityValue: "987as3dza654-TME",
 			},
 			{
-				UUID:           sourceId_2,
+				UUID:           sourceID2,
 				PrefLabel:      "Even worse Label",
 				Type:           "Brand",
 				Strapline:      "Bad strapline",
@@ -298,7 +297,7 @@ func getPrefUUIDAsASource() AggregatedConcept {
 				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
 			},
 			{
-				UUID:           sourceId_2,
+				UUID:           sourceID2,
 				PrefLabel:      "Even worse Label",
 				Type:           "Brand",
 				Strapline:      "Bad strapline",
@@ -338,7 +337,7 @@ func getTransferSourceConcordance() AggregatedConcept {
 			},
 			{
 
-				UUID:           sourceId_1,
+				UUID:           sourceID1,
 				PrefLabel:      "Not as good Label",
 				Type:           "Brand",
 				Strapline:      "Boring strapline",
@@ -491,7 +490,7 @@ func getFullConcordedAggregatedConcept() AggregatedConcept {
 			Strapline:      "Some strapline",
 			DescriptionXML: "Some description",
 			ImageURL:       "Some image url",
-			ParentUUIDs:    []string{parentUuid},
+			ParentUUIDs:    []string{parentUUID},
 			Aliases:        []string{"anotheroneLabel", "anothersecondLabel"},
 		}, {
 			UUID:           basicConceptUUID,
@@ -950,7 +949,7 @@ func init() {
 
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
-	db, _ = neoutils.Connect(neoUrl(), conf)
+	db, _ = neoutils.Connect(newURL(), conf)
 	if db == nil {
 		panic("Cannot connect to Neo4J")
 	}
@@ -998,7 +997,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   basicConceptUUID,
 						AggregateHash: "18217680559604723523",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1019,7 +1018,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   membershipRoleUUID,
 						AggregateHash: "626026888245642483",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1040,7 +1039,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   boardRoleUUID,
 						AggregateHash: "5191031906473576557",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1061,7 +1060,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   membershipUUID,
 						AggregateHash: "6336311123699493320",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1082,7 +1081,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   financialInstrumentUUID,
 						AggregateHash: "16714109803628321556",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1105,7 +1104,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   basicConceptUUID,
 						AggregateHash: "14123256815784827089",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1126,7 +1125,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   basicConceptUUID,
 						AggregateHash: "503692675376090287",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1149,7 +1148,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   basicConceptUUID,
 						AggregateHash: "17181694952709845235",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1170,7 +1169,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   basicConceptUUID,
 						AggregateHash: "8737279664250995129",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1191,7 +1190,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   anotherBasicConceptUUID,
 						AggregateHash: "12581157713226480961",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 					{
@@ -1199,7 +1198,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   anotherBasicConceptUUID,
 						AggregateHash: "12581157713226480961",
 						EventDetails: ConcordanceEvent{
-							Type:  "Concordance Added",
+							Type:  AddedEvent,
 							OldID: anotherBasicConceptUUID,
 							NewID: basicConceptUUID,
 						},
@@ -1209,7 +1208,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   basicConceptUUID,
 						AggregateHash: "12581157713226480961",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1231,7 +1230,7 @@ func TestWriteService(t *testing.T) {
 						ConceptUUID:   basicConceptUUID,
 						AggregateHash: "7905740243792170251",
 						EventDetails: ConceptEvent{
-							Type: "Concept Updated",
+							Type: UpdatedEvent,
 						},
 					},
 				},
@@ -1438,7 +1437,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		testConcept:  getDualConcordance(),
 		uuidsToCheck: []string{
 			basicConceptUUID,
-			sourceId_1,
+			sourceID1,
 		},
 		updatedConcepts: ConceptChanges{
 			UpdatedIds: emptyList,
@@ -1450,25 +1449,27 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		testConcept:  getDualConcordance(),
 		uuidsToCheck: []string{
 			basicConceptUUID,
-			sourceId_1,
+			sourceID1,
 		},
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
 					ConceptType:   "Brand",
-					ConceptUUID:   sourceId_1,
+					ConceptUUID:   sourceID1,
 					AggregateHash: "5498409837155114638",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 				{
 					ConceptType:   "Brand",
-					ConceptUUID:   sourceId_1,
+					ConceptUUID:   sourceID1,
 					AggregateHash: "5498409837155114638",
+					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
-						Type:  "Concordance Added",
-						OldID: sourceId_1,
+						Type:  AddedEvent,
+						OldID: sourceID1,
 						NewID: basicConceptUUID,
 					},
 				},
@@ -1476,14 +1477,15 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
 					AggregateHash: "5498409837155114638",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 			},
 			UpdatedIds: []string{
 				basicConceptUUID,
-				sourceId_1,
+				sourceID1,
 			},
 		},
 	}
@@ -1493,32 +1495,34 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		testConcept:  getSingleConcordance(),
 		uuidsToCheck: []string{
 			basicConceptUUID,
-			sourceId_1,
+			sourceID1,
 		},
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
 					ConceptType:   "Brand",
-					ConceptUUID:   sourceId_1,
+					ConceptUUID:   sourceID1,
 					AggregateHash: "15541375985173636353",
+					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
-						Type:  "Concordance Removed",
+						Type:  RemovedEvent,
 						OldID: basicConceptUUID,
-						NewID: sourceId_1,
+						NewID: sourceID1,
 					},
 				},
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
 					AggregateHash: "15541375985173636353",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 			},
 			UpdatedIds: []string{
 				basicConceptUUID,
-				sourceId_1,
+				sourceID1,
 			},
 		},
 	}
@@ -1535,7 +1539,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		uuidsToCheck: []string{
 			anotherBasicConceptUUID,
 			basicConceptUUID,
-			sourceId_2,
+			sourceID2,
 		},
 		returnedError: "",
 		updatedConcepts: ConceptChanges{
@@ -1544,27 +1548,30 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
 					AggregateHash: "12098846919176676980",
+					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
-						Type:  "Concordance Added",
+						Type:  AddedEvent,
 						OldID: basicConceptUUID,
 						NewID: anotherBasicConceptUUID,
 					},
 				},
 				{
 					ConceptType:   "Brand",
-					ConceptUUID:   sourceId_2,
+					ConceptUUID:   sourceID2,
 					AggregateHash: "12098846919176676980",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 				{
 					ConceptType:   "Brand",
-					ConceptUUID:   sourceId_2,
+					ConceptUUID:   sourceID2,
 					AggregateHash: "12098846919176676980",
+					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
-						Type:  "Concordance Added",
-						OldID: sourceId_2,
+						Type:  AddedEvent,
+						OldID: sourceID2,
 						NewID: anotherBasicConceptUUID,
 					},
 				},
@@ -1572,15 +1579,16 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					ConceptType:   "Brand",
 					ConceptUUID:   anotherBasicConceptUUID,
 					AggregateHash: "12098846919176676980",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 			},
 			UpdatedIds: []string{
 				anotherBasicConceptUUID,
 				basicConceptUUID,
-				sourceId_2,
+				sourceID2,
 			},
 		},
 	}
@@ -1590,18 +1598,30 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		testConcept:  getTransferSourceConcordance(),
 		uuidsToCheck: []string{
 			anotherBasicConceptUUID,
-			sourceId_1,
+			sourceID1,
 			basicConceptUUID,
 		},
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
 					ConceptType:   "Brand",
-					ConceptUUID:   sourceId_1,
+					ConceptUUID:   sourceID1,
 					AggregateHash: "4132683304372164963",
+					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
-						Type:  "Concordance Transferred",
+						Type:  RemovedEvent,
 						OldID: basicConceptUUID,
+						NewID: sourceID1,
+					},
+				},
+				{
+					ConceptType:   "Brand",
+					ConceptUUID:   sourceID1,
+					AggregateHash: "4132683304372164963",
+					TransactionID: "test_tid",
+					EventDetails: ConcordanceEvent{
+						Type:  AddedEvent,
+						OldID: sourceID1,
 						NewID: anotherBasicConceptUUID,
 					},
 				},
@@ -1609,14 +1629,15 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					ConceptType:   "Brand",
 					ConceptUUID:   anotherBasicConceptUUID,
 					AggregateHash: "4132683304372164963",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 			},
 			UpdatedIds: []string{
 				anotherBasicConceptUUID,
-				sourceId_1,
+				sourceID1,
 			},
 		},
 	}
@@ -1626,26 +1647,28 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		testConcept:  getTriConcordance(),
 		uuidsToCheck: []string{
 			basicConceptUUID,
-			sourceId_1,
-			sourceId_2,
+			sourceID1,
+			sourceID2,
 		},
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
 					ConceptType:   "Brand",
-					ConceptUUID:   sourceId_2,
+					ConceptUUID:   sourceID2,
 					AggregateHash: "14149073981840644803",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 				{
 					ConceptType:   "Brand",
-					ConceptUUID:   sourceId_2,
+					ConceptUUID:   sourceID2,
 					AggregateHash: "14149073981840644803",
+					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
-						Type:  "Concordance Added",
-						OldID: sourceId_2,
+						Type:  AddedEvent,
+						OldID: sourceID2,
 						NewID: basicConceptUUID,
 					},
 				},
@@ -1653,15 +1676,16 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
 					AggregateHash: "14149073981840644803",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 			},
 			UpdatedIds: []string{
 				basicConceptUUID,
-				sourceId_1,
-				sourceId_2,
+				sourceID1,
+				sourceID2,
 			},
 		},
 	}
@@ -1671,34 +1695,36 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		testConcept:  getDualConcordance(),
 		uuidsToCheck: []string{
 			basicConceptUUID,
-			sourceId_1,
-			sourceId_2,
+			sourceID1,
+			sourceID2,
 		},
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
 					ConceptType:   "Brand",
-					ConceptUUID:   sourceId_2,
+					ConceptUUID:   sourceID2,
 					AggregateHash: "5498409837155114638",
+					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
-						Type:  "Concordance Removed",
+						Type:  RemovedEvent,
 						OldID: basicConceptUUID,
-						NewID: sourceId_2,
+						NewID: sourceID2,
 					},
 				},
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
 					AggregateHash: "5498409837155114638",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 			},
 			UpdatedIds: []string{
 				basicConceptUUID,
-				sourceId_1,
-				sourceId_2,
+				sourceID1,
+				sourceID2,
 			},
 		},
 	}
@@ -1708,7 +1734,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		testConcept:  getUpdatedDualConcordance(),
 		uuidsToCheck: []string{
 			basicConceptUUID,
-			sourceId_1,
+			sourceID1,
 		},
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
@@ -1716,14 +1742,15 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
 					AggregateHash: "15186139450362096558",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 			},
 			UpdatedIds: []string{
 				basicConceptUUID,
-				sourceId_1,
+				sourceID1,
 			},
 		},
 	}
@@ -1745,8 +1772,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
 					AggregateHash: "3233196015556568285",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 			},
@@ -1772,8 +1800,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
 					AggregateHash: "15231745720249194119",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 			},
@@ -1800,8 +1829,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
 					AggregateHash: "15541375985173636353",
+					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
-						Type: "Concept Updated",
+						Type: UpdatedEvent,
 					},
 				},
 			},
@@ -1914,20 +1944,20 @@ func TestInvalidTypesThrowError(t *testing.T) {
 
 	type testStruct struct {
 		testName         string
-		prefUuid         string
+		prefUUID         string
 		statementToWrite string
 		returnedError    error
 	}
 
 	invalidPrefConceptTypeTest := testStruct{
 		testName:         "invalidPrefConceptTypeTest",
-		prefUuid:         basicConceptUUID,
+		prefUUID:         basicConceptUUID,
 		statementToWrite: invalidPrefConceptType,
 		returnedError:    nil,
 	}
 	invalidSourceConceptTypeTest := testStruct{
 		testName:         "invalidSourceConceptTypeTest",
-		prefUuid:         anotherBasicConceptUUID,
+		prefUUID:         anotherBasicConceptUUID,
 		statementToWrite: invalidSourceConceptType,
 		returnedError:    nil,
 	}
@@ -1936,7 +1966,7 @@ func TestInvalidTypesThrowError(t *testing.T) {
 
 	for _, scenario := range scenarios {
 		db.CypherBatch([]*neoism.CypherQuery{{Statement: scenario.statementToWrite}})
-		aggConcept, found, err := conceptsDriver.Read(scenario.prefUuid, "")
+		aggConcept, found, err := conceptsDriver.Read(scenario.prefUUID, "")
 		assert.Equal(t, AggregatedConcept{}, aggConcept, "Scenario "+scenario.testName+" failed; aggregate concept should be empty")
 		assert.Equal(t, false, found, "Scenario "+scenario.testName+" failed; aggregate concept should not be returned from read")
 		assert.Error(t, err, "Scenario "+scenario.testName+" failed; read of concept should return error")
@@ -2085,7 +2115,7 @@ func TestTransferConcordance(t *testing.T) {
 			"3": "Brand"},
 		returnedError: errors.New("This source id: 3 the only concordance to a non-matching node with prefUuid: 4"),
 	}
-	nodeIsPrefUuidForExistingConcordance := testStruct{
+	nodeIsPrefUUIDForExistingConcordance := testStruct{
 		testName: "nodeIsPrefUuidForExistingConcordance",
 		updatedSourceIds: map[string]string{
 			"1": "Brand"},
@@ -2104,7 +2134,7 @@ func TestTransferConcordance(t *testing.T) {
 		nodeHasExistingConcordanceWhichWouldCauseDataIssues,
 		nodeHasExistingConcordanceWhichNeedsToBeReWritten,
 		nodeHasInvalidConcordance,
-		nodeIsPrefUuidForExistingConcordance,
+		nodeIsPrefUUIDForExistingConcordance,
 		nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted,
 	}
 
@@ -2260,7 +2290,7 @@ func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName str
 	assert.True(t, found, fmt.Sprintf("Test %s failed: Concept has not been found", testName))
 }
 
-func neoUrl() string {
+func newURL() string {
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
 		url = "http://localhost:7474/db/data"
@@ -2271,7 +2301,7 @@ func neoUrl() string {
 func getConceptService(t *testing.T) ConceptService {
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
-	db, err := neoutils.Connect(neoUrl(), conf)
+	db, err := neoutils.Connect(newURL(), conf)
 	assert.NoError(t, err, "Failed to connect to Neo4j")
 	service := NewConceptService(db)
 	service.Initialise()
@@ -2280,12 +2310,12 @@ func getConceptService(t *testing.T) ConceptService {
 
 func cleanDB(t *testing.T) {
 	cleanSourceNodes(t,
-		parentUuid,
+		parentUUID,
 		anotherBasicConceptUUID,
 		basicConceptUUID,
-		sourceId_1,
-		sourceId_2,
-		sourceId_3,
+		sourceID1,
+		sourceID2,
+		sourceID3,
 		unknownThingUUID,
 		yetAnotherBasicConceptUUID,
 		membershipRole.RoleUUID,
@@ -2306,12 +2336,12 @@ func cleanDB(t *testing.T) {
 		testOrgUUID,
 	)
 	deleteSourceNodes(t,
-		parentUuid,
+		parentUUID,
 		anotherBasicConceptUUID,
 		basicConceptUUID,
-		sourceId_1,
-		sourceId_2,
-		sourceId_3,
+		sourceID1,
+		sourceID2,
+		sourceID3,
 		unknownThingUUID,
 		yetAnotherBasicConceptUUID,
 		membershipRole.RoleUUID,
@@ -2332,12 +2362,12 @@ func cleanDB(t *testing.T) {
 		testOrgUUID,
 	)
 	deleteConcordedNodes(t,
-		parentUuid,
+		parentUUID,
 		basicConceptUUID,
 		anotherBasicConceptUUID,
-		sourceId_1,
-		sourceId_2,
-		sourceId_3,
+		sourceID1,
+		sourceID2,
+		sourceID3,
 		unknownThingUUID,
 		yetAnotherBasicConceptUUID,
 		membershipRole.RoleUUID,

@@ -960,12 +960,6 @@ func init() {
 	time.Sleep(duration)
 }
 
-func TestConnectivityCheck(t *testing.T) {
-	conceptsDriver := getConceptService(t)
-	err := conceptsDriver.Check()
-	assert.NoError(t, err, "Unexpected error on connectivity check")
-}
-
 func TestWriteService(t *testing.T) {
 	defer cleanDB(t)
 

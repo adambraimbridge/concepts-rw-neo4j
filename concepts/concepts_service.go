@@ -740,6 +740,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 				if updatedSourceID != newAggregatedConcept.PrefUUID {
 					authority := getCanonicalAuthority(newAggregatedConcept)
 					if result[0].Authority != authority && stringInArr(result[0].Authority, concordancesSources) {
+						logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Canonical node for main source %s will need to be deleted and all concordances will be transfered to the new concordance", updatedSourceID)
 						// just delete the lone prefUUID node because the other concordances to
 						// this node should already be in the new sourceRepresentations (aggregate-concept-transformer responsability)
 						deleteLonePrefUUIDQueries = append(deleteLonePrefUUIDQueries, deleteLonePrefUUID(result[0].PrefUUID))

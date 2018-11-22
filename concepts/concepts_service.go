@@ -1109,10 +1109,12 @@ func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(concept Concep
 	allProps := setProps(concept, concept.UUID, false)
 	logger.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`	MATCH (t:Thing{uuid:{prefUUID}})
-										MERGE (n:Thing {prefUUID: {prefUUID}})<-[:EQUIVALENT_TO]-(t)
-										set n={allprops}
-										set n :%s`, getAllLabels(concept.Type)),
+		Statement: fmt.Sprintf(`
+					MATCH (t:Thing{uuid:{prefUUID}})
+					MERGE (n:Thing {prefUUID: {prefUUID}})
+					MERGE (n)<-[:EQUIVALENT_TO]-(t)
+					set n={allprops}
+					set n :%s`, getAllLabels(concept.Type)),
 		Parameters: map[string]interface{}{
 			"prefUUID": concept.UUID,
 			"allprops": allProps,

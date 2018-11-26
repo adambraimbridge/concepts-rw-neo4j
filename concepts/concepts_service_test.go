@@ -2133,7 +2133,7 @@ func TestTransferConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", "", "")
+		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", AggregatedConcept{}, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
 			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
@@ -2144,6 +2144,97 @@ func TestTransferConcordance(t *testing.T) {
 
 	defer deleteSourceNodes(t, "1", "2", "3", "5", "6")
 	defer deleteConcordedNodes(t, "1", "4", "6")
+}
+
+func TestTransferCanonicalMultipleConcordance(t *testing.T) {
+	statement := `
+	MERGE (editorialCanonical:Thing{prefUUID:"1"}) 
+	MERGE (editorial:Thing{uuid:"1"}) 
+	SET editorial.authority="Smartlogic"
+	
+	MERGE (mlCanonical:Thing{prefUUID:"2"}) 
+	MERGE (ml:Thing{uuid:"2"}) 
+	SET ml.authority="ManagedLocation"
+
+	MERGE (geonames:Thing{uuid:"3"})
+	SET geonames.authority="Geonames"
+
+	MERGE (factset:Thing{uuid:"4"})
+	SET factset.authority="FACTSET"
+
+	MERGE (tme:Thing{uuid:"5"})
+	SET tme.authority="TME"
+	
+	MERGE (editorial)-[:EQUIVALENT_TO]->(editorialCanonical)<-[:EQUIVALENT_TO]-(factset)
+	MERGE (ml)-[:EQUIVALENT_TO]->(mlCanonical)<-[:EQUIVALENT_TO]-(tme)`
+	db.CypherBatch([]*neoism.CypherQuery{{Statement: statement}})
+	var emptyQuery []*neoism.CypherQuery
+	var updatedConcept ConceptChanges
+
+	type testStruct struct {
+		testName          string
+		updatedSourceIds  map[string]string
+		returnResult      bool
+		returnedError     error
+		targetConcordance AggregatedConcept
+	}
+	mergeManagedLocationCanonicalWithTwoSources := testStruct{
+		testName: "mergeManagedLocationCanonicalWithTwoSources",
+		updatedSourceIds: map[string]string{
+			"2": "Brand"},
+		returnedError: nil,
+		returnResult:  true,
+		targetConcordance: AggregatedConcept{
+			PrefUUID: "1",
+			SourceRepresentations: []Concept{
+				Concept{UUID: "1", Authority: "Smartlogic"},
+				Concept{UUID: "4", Authority: "FACTSET"},
+				Concept{UUID: "2", Authority: "ManagedLocation"},
+			},
+		},
+	}
+	mergeManagedLocationCanonicalWithTwoSourcesAndGeonames := testStruct{
+		testName: "mergeManagedLocationCanonicalWithTwoSourcesAndGeonames",
+		updatedSourceIds: map[string]string{
+			"3": "Brand",
+			"2": "Brand"},
+		returnedError: nil,
+		returnResult:  true,
+		targetConcordance: AggregatedConcept{
+			PrefUUID: "1",
+			SourceRepresentations: []Concept{
+				Concept{UUID: "1", Authority: "Smartlogic"},
+				Concept{UUID: "4", Authority: "FACTSET"},
+				Concept{UUID: "2", Authority: "ManagedLocation"},
+				Concept{UUID: "5", Authority: "TME"},
+			},
+		},
+	}
+	mergeJustASourceConcordance := testStruct{
+		testName: "mergeJustASourceConcordance",
+		updatedSourceIds: map[string]string{
+			"4": "Brand"},
+		returnedError: nil,
+	}
+
+	scenarios := []testStruct{
+		mergeManagedLocationCanonicalWithTwoSources,
+		mergeManagedLocationCanonicalWithTwoSourcesAndGeonames,
+		mergeJustASourceConcordance,
+	}
+
+	for _, scenario := range scenarios {
+		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", scenario.targetConcordance, "")
+		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
+		if scenario.returnResult == true {
+			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+			continue
+		}
+		assert.Equal(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+	}
+
+	defer deleteSourceNodes(t, "1", "2", "3", "5")
+	defer deleteConcordedNodes(t, "1", "2")
 }
 
 func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {

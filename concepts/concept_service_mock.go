@@ -19,52 +19,52 @@ type mockConceptService struct {
 	failCheck    bool
 }
 
-func (dS *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
+func (mcs *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
 	mockList := ConceptChanges{}
-	if dS.failWrite {
+	if mcs.failWrite {
 		return mockList, errors.New("TEST failing to WRITE")
 	}
-	if dS.failConflict {
+	if mcs.failConflict {
 		return mockList, rwapi.ConstraintOrTransactionError{}
 	}
-	if len(dS.uuidList) > 0 {
-		mockList.UpdatedIds = dS.uuidList
+	if len(mcs.uuidList) > 0 {
+		mockList.UpdatedIds = mcs.uuidList
 	}
-	dS.transID = transID
+	mcs.transID = transID
 	return mockList, nil
 }
 
-func (dS *mockConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
-	if dS.failRead {
+func (mcs *mockConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
+	if mcs.failRead {
 		return nil, false, errors.New("TEST failing to READ")
 	}
-	if uuid == dS.uuid {
+	if uuid == mcs.uuid {
 		return AggregatedConcept{
-			PrefUUID: dS.uuid,
-			Type:     dS.conceptType,
+			PrefUUID: mcs.uuid,
+			Type:     mcs.conceptType,
 		}, true, nil
 	}
-	dS.transID = transID
+	mcs.transID = transID
 	return nil, false, nil
 }
 
-func (dS *mockConceptService) DecodeJSON(*json.Decoder) (interface{}, string, error) {
-	if dS.failParse {
+func (mcs *mockConceptService) DecodeJSON(*json.Decoder) (interface{}, string, error) {
+	if mcs.failParse {
 		return "", "", errors.New("TEST failing to DECODE")
 	}
 	return AggregatedConcept{
-		PrefUUID: dS.uuid,
-		Type:     dS.conceptType,
-	}, dS.uuid, nil
+		PrefUUID: mcs.uuid,
+		Type:     mcs.conceptType,
+	}, mcs.uuid, nil
 }
 
-func (dS *mockConceptService) Check() error {
-	if dS.failCheck {
+func (mcs *mockConceptService) Check() error {
+	if mcs.failCheck {
 		return errors.New("TEST failing to CHECK")
 	}
 	return nil
 }
 
-func (dS *mockConceptService) Initialise() error {
+func (mcs *mockConceptService) Initialise() error {
 	return nil
 }

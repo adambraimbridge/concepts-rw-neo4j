@@ -17,6 +17,8 @@ type mockConceptService struct {
 	failRead     bool
 	failConflict bool
 	failCheck    bool
+
+	read func(uuid string, transID string) (interface{}, bool, error)
 }
 
 func (mcs *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
@@ -35,17 +37,10 @@ func (mcs *mockConceptService) Write(thing interface{}, transID string) (interfa
 }
 
 func (mcs *mockConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
-	if mcs.failRead {
-		return nil, false, errors.New("TEST failing to READ")
+	if mcs.read != nil {
+		return mcs.read(uuid, transID)
 	}
-	if uuid == mcs.uuid {
-		return AggregatedConcept{
-			PrefUUID: mcs.uuid,
-			Type:     mcs.conceptType,
-		}, true, nil
-	}
-	mcs.transID = transID
-	return nil, false, nil
+	return nil, false, errors.New("not implemented")
 }
 
 func (mcs *mockConceptService) DecodeJSON(*json.Decoder) (interface{}, string, error) {

@@ -1,6 +1,7 @@
 package concepts
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -129,8 +130,9 @@ func TestGetHandler(t *testing.T) {
 			name: "Success",
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
 			ds: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "Dummy",
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+				},
 			},
 			statusCode:  http.StatusOK,
 			contentType: "",
@@ -140,8 +142,9 @@ func TestGetHandler(t *testing.T) {
 			name: "NotFound",
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", "99999")),
 			ds: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "Dummy",
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return nil, false, nil
+				},
 			},
 			statusCode:  http.StatusNotFound,
 			contentType: "",
@@ -151,9 +154,9 @@ func TestGetHandler(t *testing.T) {
 			name: "ReadError",
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
 			ds: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "Dummy",
-				failRead:    true,
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return nil, false, errors.New("TEST failing to READ")
+				},
 			},
 			statusCode:  http.StatusServiceUnavailable,
 			contentType: "",
@@ -163,8 +166,9 @@ func TestGetHandler(t *testing.T) {
 			name: "BadConceptOrPath",
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
 			ds: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "not-dummy",
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return AggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, true, nil
+				},
 			},
 			statusCode:  http.StatusBadRequest,
 			contentType: "",

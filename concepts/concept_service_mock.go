@@ -3,8 +3,6 @@ package concepts
 import (
 	"encoding/json"
 	"errors"
-
-	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 )
 
 type mockConceptService struct {
@@ -18,22 +16,16 @@ type mockConceptService struct {
 	failConflict bool
 	failCheck    bool
 
-	read func(uuid string, transID string) (interface{}, bool, error)
+	write      func(thing interface{}, transID string) (interface{}, error)
+	read       func(uuid string, transID string) (interface{}, bool, error)
+	decodeJSON func(*json.Decoder) (interface{}, string, error)
 }
 
 func (mcs *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
-	mockList := ConceptChanges{}
-	if mcs.failWrite {
-		return mockList, errors.New("TEST failing to WRITE")
+	if mcs.write != nil {
+		return mcs.write(thing, transID)
 	}
-	if mcs.failConflict {
-		return mockList, rwapi.ConstraintOrTransactionError{}
-	}
-	if len(mcs.uuidList) > 0 {
-		mockList.UpdatedIds = mcs.uuidList
-	}
-	mcs.transID = transID
-	return mockList, nil
+	return nil, errors.New("not implemented")
 }
 
 func (mcs *mockConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
@@ -43,14 +35,11 @@ func (mcs *mockConceptService) Read(uuid string, transID string) (interface{}, b
 	return nil, false, errors.New("not implemented")
 }
 
-func (mcs *mockConceptService) DecodeJSON(*json.Decoder) (interface{}, string, error) {
-	if mcs.failParse {
-		return "", "", errors.New("TEST failing to DECODE")
+func (mcs *mockConceptService) DecodeJSON(d *json.Decoder) (interface{}, string, error) {
+	if mcs.decodeJSON != nil {
+		return mcs.decodeJSON(d)
 	}
-	return AggregatedConcept{
-		PrefUUID: mcs.uuid,
-		Type:     mcs.conceptType,
-	}, mcs.uuid, nil
+	return nil, "", errors.New("not implemented")
 }
 
 func (mcs *mockConceptService) Check() error {

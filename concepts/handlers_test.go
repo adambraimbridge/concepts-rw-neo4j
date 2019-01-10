@@ -221,8 +221,30 @@ func TestGtgHandler(t *testing.T) {
 		contentType string // Contents of the Content-Type header
 		body        string
 	}{
-		{"Success", newRequest("GET", "/__gtg"), &mockConceptService{failCheck: false}, http.StatusOK, "", "OK"},
-		{"GTGError", newRequest("GET", "/__gtg"), &mockConceptService{failCheck: true}, http.StatusServiceUnavailable, "", "TEST failing to CHECK"},
+		{
+			"Success",
+			newRequest("GET", "/__gtg"),
+			&mockConceptService{
+				check: func() error {
+					return nil
+				},
+			},
+			http.StatusOK,
+			"",
+			"OK",
+		},
+		{
+			"GTGError",
+			newRequest("GET", "/__gtg"),
+			&mockConceptService{
+				check: func() error {
+					return errors.New("TEST failing to CHECK")
+				},
+			},
+			http.StatusServiceUnavailable,
+			"",
+			"TEST failing to CHECK",
+		},
 	}
 
 	for _, test := range tests {

@@ -6,19 +6,10 @@ import (
 )
 
 type mockConceptService struct {
-	uuid         string
-	conceptType  string
-	transID      string
-	uuidList     []string
-	failParse    bool
-	failWrite    bool
-	failRead     bool
-	failConflict bool
-	failCheck    bool
-
 	write      func(thing interface{}, transID string) (interface{}, error)
 	read       func(uuid string, transID string) (interface{}, bool, error)
 	decodeJSON func(*json.Decoder) (interface{}, string, error)
+	check      func() error
 }
 
 func (mcs *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
@@ -43,10 +34,10 @@ func (mcs *mockConceptService) DecodeJSON(d *json.Decoder) (interface{}, string,
 }
 
 func (mcs *mockConceptService) Check() error {
-	if mcs.failCheck {
-		return errors.New("TEST failing to CHECK")
+	if mcs.check != nil {
+		return mcs.check()
 	}
-	return nil
+	return errors.New("not implemented")
 }
 
 func (mcs *mockConceptService) Initialise() error {

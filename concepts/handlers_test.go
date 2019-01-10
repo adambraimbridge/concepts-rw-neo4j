@@ -27,7 +27,7 @@ func TestPutHandler(t *testing.T) {
 	}{
 		{
 			name: "Success",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
@@ -42,7 +42,7 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "RegularPathSuccess",
-			req:  newRequest("PUT", fmt.Sprintf("/financial-instruments/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/financial-instruments/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "FinancialInstrument"}, knownUUID, nil
@@ -57,7 +57,7 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "ParseError",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return nil, "", errors.New("TEST failing to DECODE")
@@ -69,7 +69,7 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "UUIDMisMatch",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999")),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999"), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
@@ -84,7 +84,7 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "WriteFailed",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
@@ -99,7 +99,7 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "WriteFailedDueToConflict",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
@@ -114,7 +114,7 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "BadConceptOrPath",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, knownUUID, nil
@@ -152,7 +152,7 @@ func TestGetHandler(t *testing.T) {
 	}{
 		{
 			name: "Success",
-			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
@@ -164,7 +164,7 @@ func TestGetHandler(t *testing.T) {
 		},
 		{
 			name: "NotFound",
-			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", "99999")),
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", "99999"), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return nil, false, nil
@@ -176,7 +176,7 @@ func TestGetHandler(t *testing.T) {
 		},
 		{
 			name: "ReadError",
-			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return nil, false, errors.New("TEST failing to READ")
@@ -188,7 +188,7 @@ func TestGetHandler(t *testing.T) {
 		},
 		{
 			name: "BadConceptOrPath",
-			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, true, nil
@@ -223,7 +223,7 @@ func TestGtgHandler(t *testing.T) {
 	}{
 		{
 			"Success",
-			newRequest("GET", "/__gtg"),
+			newRequest("GET", "/__gtg", t),
 			&mockConceptService{
 				check: func() error {
 					return nil
@@ -235,7 +235,7 @@ func TestGtgHandler(t *testing.T) {
 		},
 		{
 			"GTGError",
-			newRequest("GET", "/__gtg"),
+			newRequest("GET", "/__gtg", t),
 			&mockConceptService{
 				check: func() error {
 					return errors.New("TEST failing to CHECK")
@@ -258,10 +258,10 @@ func TestGtgHandler(t *testing.T) {
 	}
 }
 
-func newRequest(method, url string) *http.Request {
+func newRequest(method, url string, t *testing.T) *http.Request {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	return req
 }

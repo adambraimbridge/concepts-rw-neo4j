@@ -5,11 +5,9 @@ import (
 	"errors"
 
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
-	"github.com/stretchr/testify/mock"
 )
 
 type mockConceptService struct {
-	mock.Mock
 	uuid         string
 	conceptType  string
 	transID      string

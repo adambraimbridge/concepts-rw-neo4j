@@ -32,18 +32,10 @@ Options:
 
 All arguments are optional, they default to a local Neo4j install on the default port (7474), application running on port 8080, batchSize of 1024.
 
-Testing:
+## Testing
 
-* A running Neo4j server is needed for the tests to complete successfully:
-
-        docker run --rm -p=7474:7474 -p=7687:7687 \
-                -e NEO4J_ACCEPT_LICENSE_AGREEMENT="yes" \
-                -e NEO4J_AUTH="none" \
-	        neo4j
-
-* After it has started do:
-
-	go test -race ./...
+* Unit tests only: `go test -race ./...`
+* Unit and integration tests: `go test -race -tags=integration ./...`
 
 ## Deployment
 

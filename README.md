@@ -35,7 +35,7 @@ All arguments are optional, they default to a local Neo4j install on the default
 ## Testing
 
 * Unit tests only: `go test -race ./...`
-* Unit and integration tests: `go test -race -tags=integration ./...`
+* Unit and integration tests: `docker-compose up -d`
 
 ## Deployment
 

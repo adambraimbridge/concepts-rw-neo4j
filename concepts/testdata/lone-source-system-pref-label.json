@@ -1,0 +1,26 @@
+{  
+    "prefUUID":"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+    "prefLabel":"Herr Ümlaut und Frau Groß",
+    "type":"Section",
+    "aliases":[  
+        "oneLabel",
+        "secondLabel",
+        "anotherOne",
+        "whyNot"
+    ],
+    "sourceRepresentations":[  
+        {  
+            "uuid":"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+            "prefLabel":"Herr Ümlaut und Frau Groß",
+            "type":"Section",
+            "authority":"TME",
+            "authorityValue":"1234",
+            "aliases":[  
+                "oneLabel",
+                "secondLabel",
+                "anotherOne",
+                "whyNot"
+            ]
+        }
+    ]
+}

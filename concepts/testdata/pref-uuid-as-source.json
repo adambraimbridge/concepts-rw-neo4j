@@ -1,0 +1,61 @@
+{  
+    "prefUUID":"4c41f314-4548-4fb6-ac48-4618fcbfa84c",
+    "prefLabel":"The Best Label",
+    "type":"Brand",
+    "aliases":[  
+        "oneLabel",
+        "secondLabel",
+        "anotherOne",
+        "whyNot"
+    ],
+    "strapline":"Keeping it simple",
+    "descriptionXML":"<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+    "_imageUrl":"http://media.ft.com/brand.png",
+    "emailAddress":"simple@ft.com",
+    "facebookPage":"#facebookFTComment",
+    "twitterHandle":"@ftComment",
+    "scopeNote":"Comments about stuff",
+    "shortLabel":"Label",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"4c41f314-4548-4fb6-ac48-4618fcbfa84c",
+            "prefLabel":"Not as good Label",
+            "type":"Brand",
+            "authority":"TME",
+            "authorityValue":"987as3dz344-TME",
+            "strapline":"Boring strapline",
+            "descriptionXML":"<p>Some stuff</p>",
+            "_imageUrl":"http://media.ft.com/brand.png"
+        },
+        {  
+            "uuid":"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+            "prefLabel":"The Best Label",
+            "type":"Brand",
+            "authority":"TME",
+            "authorityValue":"1234",
+            "aliases":[  
+                "oneLabel",
+                "secondLabel",
+                "anotherOne",
+                "whyNot"
+            ],
+            "strapline":"Keeping it simple",
+            "descriptionXML":"<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+            "_imageUrl":"http://media.ft.com/brand.png",
+            "emailAddress":"simple@ft.com",
+            "facebookPage":"#facebookFTComment",
+            "twitterHandle":"@ftComment",
+            "scopeNote":"Comments about stuff",
+            "shortLabel":"Label"
+        },
+        {  
+            "uuid":"de3bcb30-992c-424e-8891-73f5bd9a7d3a",
+            "prefLabel":"Even worse Label",
+            "type":"Brand",
+            "authority":"TME",
+            "authorityValue":"123bc3xwa456-TME",
+            "strapline":"Bad strapline",
+            "descriptionXML":"<p>More stuff</p>"
+        }
+    ]
+}

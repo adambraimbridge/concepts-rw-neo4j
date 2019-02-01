@@ -1,0 +1,63 @@
+{  
+    "prefUUID":"abd38d90-2152-11e8-9ac1-da24cd01f044",
+    "prefLabel":"The Best Label",
+    "type":"Topic",
+    "aliases":[  
+        "oneLabel",
+        "secondLabel",
+        "anotherOne",
+        "whyNot"
+    ],
+    "strapline":"Keeping it simple",
+    "descriptionXML":"<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+    "_imageUrl":"http://media.ft.com/brand.png",
+    "emailAddress":"simple@ft.com",
+    "facebookPage":"#facebookFTComment",
+    "twitterHandle":"@ftComment",
+    "scopeNote":"Comments about stuff",
+    "shortLabel":"Label",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"abd38d90-2152-11e8-9ac1-da24cd01f044",
+            "prefLabel":"A decent label",
+            "type":"Topic",
+            "authority":"Smartlogic",
+            "authorityValue":"abd38d90-2152-11e8-9ac1-da24cd01f044",
+            "strapline":"Keeping it simple",
+            "descriptionXML":"<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+            "_imageUrl":"http://media.ft.com/brand.png"
+        },
+        {  
+            "uuid":"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+            "prefLabel":"The Best Label",
+            "type":"Section",
+            "authority":"TME",
+            "authorityValue":"1234",
+            "aliases":[  
+                "oneLabel",
+                "secondLabel",
+                "anotherOne",
+                "whyNot"
+            ],
+            "strapline":"Keeping it simple",
+            "descriptionXML":"<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+            "_imageUrl":"http://media.ft.com/brand.png",
+            "emailAddress":"simple@ft.com",
+            "facebookPage":"#facebookFTComment",
+            "twitterHandle":"@ftComment",
+            "scopeNote":"Comments about stuff",
+            "shortLabel":"Label"
+        },
+        {  
+            "uuid":"f7e3fe2d-7496-4d42-b19f-378094efd263",
+            "prefLabel":"Concept PrefLabel",
+            "type":"Section",
+            "authority":"TME",
+            "authorityValue":"randomTmeID",
+            "aliases":[  
+                "oneLabel",
+                "secondLabel"
+            ]
+        }
+    ]
+}

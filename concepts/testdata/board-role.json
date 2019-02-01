@@ -1,0 +1,14 @@
+{  
+    "prefUUID":"aa9ef631-c025-43b2-b0ce-d78d394cc6e6",
+    "prefLabel":"BoardRole Pref Label",
+    "type":"BoardRole",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"aa9ef631-c025-43b2-b0ce-d78d394cc6e6",
+            "prefLabel":"BoardRole Pref Label",
+            "type":"BoardRole",
+            "authority":"Smartlogic",
+            "authorityValue":"987654321"
+        }
+    ]
+}

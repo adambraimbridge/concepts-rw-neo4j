@@ -1,0 +1,32 @@
+{  
+    "prefUUID":"cbadd9a7-5da9-407a-a5ec-e379460991f2",
+    "prefLabel":"Membership Pref Label",
+    "type":"Membership",
+    "organisationUUID":"7ccf2673-2ec0-4b42-b69e-9a2460b945c6",
+    "personUUID":"69a8e241-2bfb-4aed-a441-8489d813c5f7",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"cbadd9a7-5da9-407a-a5ec-e379460991f2",
+            "prefLabel":"Membership Pref Label",
+            "type":"Membership",
+            "authority":"Smartlogic",
+            "authorityValue":"746464",
+            "organisationUUID":"7ccf2673-2ec0-4b42-b69e-9a2460b945c6",
+            "personUUID":"69a8e241-2bfb-4aed-a441-8489d813c5f7",
+            "membershipRoles":[  
+                {  
+                    "membershipRoleUUID":"fe94adc6-ca44-438f-ad8f-0188d4a74987",
+                    "inceptionDate":"2011-06-27"
+                }
+            ],
+            "inceptionDate":"2011-06-27"
+        }
+    ],
+    "membershipRoles":[  
+        {  
+            "membershipRoleUUID":"fe94adc6-ca44-438f-ad8f-0188d4a74987",
+            "inceptionDate":"2011-06-27"
+        }
+    ],
+    "inceptionDate":"2011-06-27"
+}

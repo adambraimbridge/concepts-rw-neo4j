@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"testing"
@@ -80,592 +82,21 @@ var conceptsDriver ConceptService
 
 var emptyList []string
 
-func getSingleConcordance() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:       basicConceptUUID,
-		PrefLabel:      "The Best Label",
-		Type:           "Brand",
-		Strapline:      "Keeping it simple",
-		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-		ImageURL:       "http://media.ft.com/brand.png",
-		EmailAddress:   "simple@ft.com",
-		FacebookPage:   "#facebookFTComment",
-		TwitterHandle:  "@ftComment",
-		ScopeNote:      "Comments about stuff",
-		ShortLabel:     "Label",
-		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		SourceRepresentations: []Concept{{
-			UUID:           basicConceptUUID,
-			PrefLabel:      "The Best Label",
-			Type:           "Brand",
-			Strapline:      "Keeping it simple",
-			DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-			ImageURL:       "http://media.ft.com/brand.png",
-			EmailAddress:   "simple@ft.com",
-			FacebookPage:   "#facebookFTComment",
-			TwitterHandle:  "@ftComment",
-			ScopeNote:      "Comments about stuff",
-			ShortLabel:     "Label",
-			Authority:      "TME",
-			AuthorityValue: "1234",
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		}},
+func helperLoadBytes(t *testing.T, name string) []byte {
+	path := filepath.Join("testdata", name)
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
 	}
-}
-
-func getDualConcordance() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:       basicConceptUUID,
-		PrefLabel:      "The Best Label",
-		Type:           "Brand",
-		Strapline:      "Keeping it simple",
-		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-		ImageURL:       "http://media.ft.com/brand.png",
-		EmailAddress:   "simple@ft.com",
-		FacebookPage:   "#facebookFTComment",
-		TwitterHandle:  "@ftComment",
-		ScopeNote:      "Comments about stuff",
-		ShortLabel:     "Label",
-		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		SourceRepresentations: []Concept{
-			{
-				UUID:           basicConceptUUID,
-				PrefLabel:      "The Best Label",
-				Type:           "Brand",
-				Strapline:      "Keeping it simple",
-				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				EmailAddress:   "simple@ft.com",
-				FacebookPage:   "#facebookFTComment",
-				TwitterHandle:  "@ftComment",
-				ScopeNote:      "Comments about stuff",
-				ShortLabel:     "Label",
-				Authority:      "TME",
-				AuthorityValue: "1234",
-				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			},
-			{
-				UUID:           sourceID1,
-				PrefLabel:      "Not as good Label",
-				Type:           "Brand",
-				Strapline:      "Boring strapline",
-				DescriptionXML: "<p>Some stuff</p>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				Authority:      "TME",
-				AuthorityValue: "987as3dza654-TME",
-			},
-		},
-	}
-}
-
-func getUpdatedDualConcordance() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:       basicConceptUUID,
-		PrefLabel:      "The Biggest, Bestest, Brandiest Brand",
-		Type:           "Brand",
-		Strapline:      "Much more complicated",
-		DescriptionXML: "<body>One brand to rule them all, one brand to find them; one brand to bring them all and in the darkness bind them</body>",
-		ImageURL:       "http://media.ft.com/brand.png",
-		EmailAddress:   "simple@ft.com",
-		FacebookPage:   "#facebookFTComment",
-		TwitterHandle:  "@ftComment",
-		ScopeNote:      "Comments about stuff",
-		ShortLabel:     "Label",
-		Aliases:        []string{"oneLabel", "secondLabel"},
-		SourceRepresentations: []Concept{
-			{
-				UUID:           basicConceptUUID,
-				PrefLabel:      "The Best Label",
-				Type:           "Brand",
-				Strapline:      "Much more complicated",
-				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				EmailAddress:   "simple@ft.com",
-				FacebookPage:   "#facebookFTComment",
-				TwitterHandle:  "@ftComment",
-				ScopeNote:      "Comments about stuff",
-				ShortLabel:     "Label",
-				Authority:      "TME",
-				AuthorityValue: "1234",
-				Aliases:        []string{"oneLabel", "secondLabel"},
-			},
-			{
-				UUID:           sourceID1,
-				PrefLabel:      "The Biggest, Bestest, Brandiest Brand",
-				Type:           "Brand",
-				Strapline:      "Boring strapline",
-				DescriptionXML: "<body>One brand to rule them all, one brand to find them; one brand to bring them all and in the darkness bind them</body>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				Authority:      "TME",
-				AuthorityValue: "987as3dza654-TME",
-			},
-		},
-	}
-}
-
-func getTriConcordance() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:       basicConceptUUID,
-		PrefLabel:      "The Best Label",
-		Type:           "Brand",
-		Strapline:      "Keeping it simple",
-		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-		ImageURL:       "http://media.ft.com/brand.png",
-		EmailAddress:   "simple@ft.com",
-		FacebookPage:   "#facebookFTComment",
-		TwitterHandle:  "@ftComment",
-		ScopeNote:      "Comments about stuff",
-		ShortLabel:     "Label",
-		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		SourceRepresentations: []Concept{
-			{
-				UUID:           basicConceptUUID,
-				PrefLabel:      "The Best Label",
-				Type:           "Brand",
-				Strapline:      "Keeping it simple",
-				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				EmailAddress:   "simple@ft.com",
-				FacebookPage:   "#facebookFTComment",
-				TwitterHandle:  "@ftComment",
-				ScopeNote:      "Comments about stuff",
-				ShortLabel:     "Label",
-				Authority:      "TME",
-				AuthorityValue: "1234",
-				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			},
-			{
-				UUID:           sourceID1,
-				PrefLabel:      "Not as good Label",
-				Type:           "Brand",
-				Strapline:      "Boring strapline",
-				DescriptionXML: "<p>Some stuff</p>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				Authority:      "TME",
-				AuthorityValue: "987as3dza654-TME",
-			},
-			{
-				UUID:           sourceID2,
-				PrefLabel:      "Even worse Label",
-				Type:           "Brand",
-				Strapline:      "Bad strapline",
-				DescriptionXML: "<p>More stuff</p>",
-				Authority:      "TME",
-				AuthorityValue: "123bc3xwa456-TME",
-			},
-		},
-	}
-}
-
-func getPrefUUIDAsASource() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:       anotherBasicConceptUUID,
-		PrefLabel:      "The Best Label",
-		Type:           "Brand",
-		Strapline:      "Keeping it simple",
-		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-		ImageURL:       "http://media.ft.com/brand.png",
-		EmailAddress:   "simple@ft.com",
-		FacebookPage:   "#facebookFTComment",
-		TwitterHandle:  "@ftComment",
-		ScopeNote:      "Comments about stuff",
-		ShortLabel:     "Label",
-		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		SourceRepresentations: []Concept{
-			{
-
-				UUID:           anotherBasicConceptUUID,
-				PrefLabel:      "Not as good Label",
-				Type:           "Brand",
-				Strapline:      "Boring strapline",
-				DescriptionXML: "<p>Some stuff</p>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				Authority:      "TME",
-				AuthorityValue: "987as3dz344-TME",
-			},
-			{
-				UUID:           basicConceptUUID,
-				PrefLabel:      "The Best Label",
-				Type:           "Brand",
-				Strapline:      "Keeping it simple",
-				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				EmailAddress:   "simple@ft.com",
-				FacebookPage:   "#facebookFTComment",
-				TwitterHandle:  "@ftComment",
-				ScopeNote:      "Comments about stuff",
-				ShortLabel:     "Label",
-				Authority:      "TME",
-				AuthorityValue: "1234",
-				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			},
-			{
-				UUID:           sourceID2,
-				PrefLabel:      "Even worse Label",
-				Type:           "Brand",
-				Strapline:      "Bad strapline",
-				DescriptionXML: "<p>More stuff</p>",
-				Authority:      "TME",
-				AuthorityValue: "123bc3xwa456-TME",
-			},
-		},
-	}
-}
-
-func getTransferSourceConcordance() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:       anotherBasicConceptUUID,
-		PrefLabel:      "A decent label",
-		Type:           "Brand",
-		Strapline:      "Keeping it simple",
-		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-		ImageURL:       "http://media.ft.com/brand.png",
-		EmailAddress:   "simple@ft.com",
-		FacebookPage:   "#facebookFTComment",
-		TwitterHandle:  "@ftComment",
-		ScopeNote:      "Comments about stuff",
-		ShortLabel:     "Short",
-		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		SourceRepresentations: []Concept{
-			{
-
-				UUID:           anotherBasicConceptUUID,
-				PrefLabel:      "A decent label",
-				Type:           "Brand",
-				Strapline:      "Keeping it simple",
-				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				Authority:      "TME",
-				AuthorityValue: "123abc456-TME",
-			},
-			{
-
-				UUID:           sourceID1,
-				PrefLabel:      "Not as good Label",
-				Type:           "Brand",
-				Strapline:      "Boring strapline",
-				DescriptionXML: "<p>Some stuff</p>",
-				ImageURL:       "http://media.ft.com/brand2.png",
-				Authority:      "TME",
-				AuthorityValue: "987as3dza654-TME",
-			},
-		},
-	}
-}
-
-func getTransferMultipleSourceConcordance() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:       simpleSmartlogicTopicUUID,
-		PrefLabel:      "The Best Label",
-		Type:           "Topic",
-		Strapline:      "Keeping it simple",
-		DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-		ImageURL:       "http://media.ft.com/brand.png",
-		EmailAddress:   "simple@ft.com",
-		FacebookPage:   "#facebookFTComment",
-		TwitterHandle:  "@ftComment",
-		ScopeNote:      "Comments about stuff",
-		ShortLabel:     "Label",
-		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		SourceRepresentations: []Concept{
-			{
-				UUID:           simpleSmartlogicTopicUUID,
-				PrefLabel:      "A decent label",
-				Type:           "Topic",
-				Strapline:      "Keeping it simple",
-				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				Authority:      "Smartlogic",
-				AuthorityValue: simpleSmartlogicTopicUUID,
-			},
-			{
-				UUID:           basicConceptUUID,
-				PrefLabel:      "The Best Label",
-				Type:           "Section",
-				Strapline:      "Keeping it simple",
-				DescriptionXML: "<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
-				ImageURL:       "http://media.ft.com/brand.png",
-				EmailAddress:   "simple@ft.com",
-				FacebookPage:   "#facebookFTComment",
-				TwitterHandle:  "@ftComment",
-				ScopeNote:      "Comments about stuff",
-				ShortLabel:     "Label",
-				Authority:      "TME",
-				AuthorityValue: "1234",
-				Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			},
-			{
-				UUID:           yetAnotherBasicConceptUUID,
-				PrefLabel:      "Concept PrefLabel",
-				Type:           "Section",
-				Authority:      "TME",
-				AuthorityValue: "randomTmeID",
-				Aliases:        []string{"oneLabel", "secondLabel"},
-			},
-		},
-	}
-
+	return bytes
 }
 
 // A lone concept should always have matching pref labels and uuid at the src system level and the top level - We are
 // currently missing validation around this
-func getFullLoneAggregatedConcept() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:       basicConceptUUID,
-		PrefLabel:      "Concept PrefLabel",
-		Type:           "Section",
-		Strapline:      "Some strapline",
-		DescriptionXML: "Some description",
-		ImageURL:       "Some image url",
-		EmailAddress:   "simple@ft.com",
-		FacebookPage:   "#facebookFTComment",
-		TwitterHandle:  "@ftComment",
-		ScopeNote:      "Comments about stuff",
-		ShortLabel:     "Label",
-		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		SourceRepresentations: []Concept{{
-			UUID:           basicConceptUUID,
-			PrefLabel:      "Concept PrefLabel",
-			Type:           "Section",
-			Strapline:      "Some strapline",
-			DescriptionXML: "Some description",
-			ImageURL:       "Some image url",
-			Authority:      "TME",
-			AuthorityValue: "1234",
-			EmailAddress:   "simple@ft.com",
-			FacebookPage:   "#facebookFTComment",
-			TwitterHandle:  "@ftComment",
-			ScopeNote:      "Comments about stuff",
-			ShortLabel:     "Label",
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		}},
-	}
-}
-
-func getYetAnotherFullLoneAggregatedConcept() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  yetAnotherBasicConceptUUID,
-		PrefLabel: "Concept PrefLabel",
-		Type:      "Section",
-		SourceRepresentations: []Concept{{
-			UUID:           yetAnotherBasicConceptUUID,
-			PrefLabel:      "Concept PrefLabel",
-			Type:           "Section",
-			Authority:      "Smartlogic",
-			AuthorityValue: yetAnotherBasicConceptUUID,
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		}},
-	}
-}
-
-func getLoneTmeSection() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  yetAnotherBasicConceptUUID,
-		PrefLabel: "Concept PrefLabel",
-		Type:      "Section",
-		SourceRepresentations: []Concept{{
-			UUID:           yetAnotherBasicConceptUUID,
-			PrefLabel:      "Concept PrefLabel",
-			Type:           "Section",
-			Authority:      "TME",
-			AuthorityValue: "randomTmeID",
-			Aliases:        []string{"oneLabel", "secondLabel"},
-		}},
-	}
-
-}
-
-func getFullConcordedAggregatedConcept() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:       basicConceptUUID,
-		PrefLabel:      "Concept PrefLabel",
-		Type:           "Section",
-		Strapline:      "Some strapline",
-		DescriptionXML: "Some description",
-		ImageURL:       "Some image url",
-		Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		SourceRepresentations: []Concept{{
-			UUID:           anotherBasicConceptUUID,
-			PrefLabel:      "Another Concept PrefLabel",
-			Type:           "Section",
-			Authority:      "Smartlogic",
-			AuthorityValue: anotherBasicConceptUUID,
-			Strapline:      "Some strapline",
-			DescriptionXML: "Some description",
-			ImageURL:       "Some image url",
-			ParentUUIDs:    []string{parentUUID},
-			Aliases:        []string{"anotheroneLabel", "anothersecondLabel"},
-		}, {
-			UUID:           basicConceptUUID,
-			PrefLabel:      "Concept PrefLabel",
-			Type:           "Section",
-			Authority:      "TME",
-			AuthorityValue: "1234",
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		}},
-	}
-}
-
-func updateLoneSourceSystemPrefLabel(prefLabel string) AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: prefLabel,
-		Type:      "Section",
-		Aliases:   []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		SourceRepresentations: []Concept{{
-			UUID:           basicConceptUUID,
-			PrefLabel:      prefLabel,
-			Type:           "Section",
-			Authority:      "TME",
-			AuthorityValue: "1234",
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		}}}
-}
-
-func getConcordedConceptWithConflictedIdentifier() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "Concept PrefLabel",
-		Type:      "Section",
-		SourceRepresentations: []Concept{{
-			UUID:           anotherBasicConceptUUID,
-			PrefLabel:      "Another Concept PrefLabel",
-			Type:           "Section",
-			Authority:      "TME",
-			AuthorityValue: "1234",
-			Aliases:        []string{"anotheroneLabel", "anothersecondLabel"},
-		}, {
-			UUID:           basicConceptUUID,
-			PrefLabel:      "Concept PrefLabel",
-			Type:           "Section",
-			Authority:      "TME",
-			AuthorityValue: "1234",
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		}},
-	}
-}
-
-func getUnknownAuthority() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "Pref Label",
-		Type:      "Section",
-		SourceRepresentations: []Concept{{
-			UUID:           basicConceptUUID,
-			PrefLabel:      "Pref Label",
-			Type:           "Section",
-			Authority:      "BooHalloo",
-			AuthorityValue: "1234",
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-		}}}
-}
-
-func getConceptWithRelatedTo() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "Pref Label",
-		Type:      "Section",
-		SourceRepresentations: []Concept{{
-			UUID:           basicConceptUUID,
-			PrefLabel:      "Pref Label",
-			Type:           "Section",
-			Authority:      "Smartlogic",
-			AuthorityValue: basicConceptUUID,
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			RelatedUUIDs:   []string{yetAnotherBasicConceptUUID},
-		}}}
-}
-
-func getConceptWithRelatedToUnknownThing() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "Pref Label",
-		Type:      "Section",
-		SourceRepresentations: []Concept{{
-			UUID:           basicConceptUUID,
-			PrefLabel:      "Pref Label",
-			Type:           "Section",
-			Authority:      "Smartlogic",
-			AuthorityValue: "1234",
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			RelatedUUIDs:   []string{unknownThingUUID},
-		}}}
-}
-
-func getConceptWithHasBroaderToUnknownThing() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "Pref Label",
-		Type:      "Section",
-		SourceRepresentations: []Concept{{
-			UUID:           basicConceptUUID,
-			PrefLabel:      "Pref Label",
-			Type:           "Section",
-			Authority:      "Smartlogic",
-			AuthorityValue: "1234",
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			BroaderUUIDs:   []string{unknownThingUUID},
-		}}}
-}
-
-func getConceptWithHasBroader() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "Pref Label",
-		Type:      "Section",
-		SourceRepresentations: []Concept{{
-			UUID:           basicConceptUUID,
-			PrefLabel:      "Pref Label",
-			Type:           "Section",
-			Authority:      "Smartlogic",
-			AuthorityValue: "1234",
-			Aliases:        []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			BroaderUUIDs:   []string{yetAnotherBasicConceptUUID},
-		}}}
-}
-
-func getConceptWithSupersededByUUIDs() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "Pref Label",
-		Type:      "Section",
-		SourceRepresentations: []Concept{{
-			UUID:              basicConceptUUID,
-			PrefLabel:         "Pref Label",
-			Type:              "Section",
-			Authority:         "Smartlogic",
-			AuthorityValue:    "1234",
-			Aliases:           []string{"oneLabel", "secondLabel", "anotherOne", "whyNot"},
-			SupersededByUUIDs: []string{supersededByUUID},
-		}}}
-}
-
-func getMembershipRole() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  membershipRole.RoleUUID,
-		PrefLabel: "MembershipRole Pref Label",
-		Type:      "MembershipRole",
-		SourceRepresentations: []Concept{{
-			UUID:           membershipRole.RoleUUID,
-			PrefLabel:      "MembershipRole Pref Label",
-			Type:           "MembershipRole",
-			Authority:      "Smartlogic",
-			AuthorityValue: "987654321",
-		}}}
-}
-
-func getBoardRole() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  boardRoleUUID,
-		PrefLabel: "BoardRole Pref Label",
-		Type:      "BoardRole",
-		SourceRepresentations: []Concept{{
-			UUID:           boardRoleUUID,
-			PrefLabel:      "BoardRole Pref Label",
-			Type:           "BoardRole",
-			Authority:      "Smartlogic",
-			AuthorityValue: "987654321",
-		}}}
+func getAggregatedConcept(t *testing.T, name string) AggregatedConcept {
+	ac := AggregatedConcept{}
+	json.Unmarshal(helperLoadBytes(t, name), &ac)
+	return ac
 }
 
 func getMembership() AggregatedConcept {
@@ -1012,6 +443,10 @@ func getUpdatedMembership() AggregatedConcept {
 			},
 		},
 	}
+func getConcept(t *testing.T, name string) Concept {
+	c := Concept{}
+	json.Unmarshal(helperLoadBytes(t, name), &c)
+	return c
 }
 
 func getLocation() AggregatedConcept {
@@ -1136,7 +571,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Creates All Values Present for a Lone Concept",
-			aggregatedConcept:    getFullLoneAggregatedConcept(),
+			aggregatedConcept:    getAggregatedConcept(t, "full-lone-aggregated-concept.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "",
 			updatedConcepts: ConceptChanges{
@@ -1157,7 +592,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Creates All Values Present for a MembershipRole",
-			aggregatedConcept:    getMembershipRole(),
+			aggregatedConcept:    getAggregatedConcept(t, "membership-role.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "",
 			updatedConcepts: ConceptChanges{
@@ -1178,7 +613,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Creates All Values Present for a BoardRole",
-			aggregatedConcept:    getBoardRole(),
+			aggregatedConcept:    getAggregatedConcept(t, "board-role.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "",
 			updatedConcepts: ConceptChanges{
@@ -1199,7 +634,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Creates All Values Present for a Membership",
-			aggregatedConcept:    getMembership(),
+			aggregatedConcept:    getAggregatedConcept(t, "membership.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "",
 			updatedConcepts: ConceptChanges{
@@ -1220,7 +655,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Creates All Values Present for a FinancialInstrument",
-			aggregatedConcept:    getFinancialInstrument(),
+			aggregatedConcept:    getAggregatedConcept(t, "financial-instrument.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "",
 			updatedConcepts: ConceptChanges{
@@ -1241,9 +676,9 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:          "Creates All Values Present for a Concept with a RELATED_TO relationship",
-			aggregatedConcept: getConceptWithRelatedTo(),
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-related-to.json"),
 			otherRelatedConcepts: []AggregatedConcept{
-				getYetAnotherFullLoneAggregatedConcept(),
+				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
 			errStr: "",
 			updatedConcepts: ConceptChanges{
@@ -1264,7 +699,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing",
-			aggregatedConcept:    getConceptWithRelatedToUnknownThing(),
+			aggregatedConcept:    getAggregatedConcept(t, "concept-with-related-to-unknown-thing.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "",
 			updatedConcepts: ConceptChanges{
@@ -1285,9 +720,9 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:          "Creates All Values Present for a Concept with a HAS_BROADER relationship",
-			aggregatedConcept: getConceptWithHasBroader(),
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-has-broader.json"),
 			otherRelatedConcepts: []AggregatedConcept{
-				getYetAnotherFullLoneAggregatedConcept(),
+				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
 			errStr: "",
 			updatedConcepts: ConceptChanges{
@@ -1308,7 +743,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing",
-			aggregatedConcept:    getConceptWithHasBroaderToUnknownThing(),
+			aggregatedConcept:    getAggregatedConcept(t, "concept-with-has-broader-to-unknown-thing.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "",
 			updatedConcepts: ConceptChanges{
@@ -1329,7 +764,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Creates All Values Present for a Concorded Concept",
-			aggregatedConcept:    getFullConcordedAggregatedConcept(),
+			aggregatedConcept:    getAggregatedConcept(t, "full-concorded-aggregated-concept.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "",
 			updatedConcepts: ConceptChanges{
@@ -1369,7 +804,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Creates Handles Special Characters",
-			aggregatedConcept:    updateLoneSourceSystemPrefLabel("Herr Ümlaut und Frau Groß"),
+			aggregatedConcept:    getAggregatedConcept(t, "lone-source-system-pref-label.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "",
 			updatedConcepts: ConceptChanges{
@@ -1390,7 +825,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Adding Concept with existing Identifiers fails",
-			aggregatedConcept:    getConcordedConceptWithConflictedIdentifier(),
+			aggregatedConcept:    getAggregatedConcept(t, "concorded-concept-with-conflicted-identifier.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "already exists with label `TMEIdentifier` and property `value` = '1234'",
 			updatedConcepts: ConceptChanges{
@@ -1423,7 +858,7 @@ func TestWriteService(t *testing.T) {
 		},
 		{
 			testName:             "Unknown Authority Should Fail",
-			aggregatedConcept:    getUnknownAuthority(),
+			aggregatedConcept:    getAggregatedConcept(t, "unknown-authority.json"),
 			otherRelatedConcepts: nil,
 			errStr:               "Invalid Request",
 			updatedConcepts: ConceptChanges{
@@ -1512,12 +947,12 @@ func TestWriteService(t *testing.T) {
 func TestWriteMemberships_Organisation(t *testing.T) {
 	defer cleanDB(t)
 
-	org := getOrganisation()
+	org := getAggregatedConcept(t, "organisation.json")
 	_, err := conceptsDriver.Write(org, "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, org, "TestWriteMemberships_Organisation")
 
-	upOrg := getUpdatedOrganisation()
+	upOrg := getAggregatedConcept(t, "updated-organisation.json")
 	_, err = conceptsDriver.Write(upOrg, "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, upOrg, "TestWriteMemberships_Organisation.Updated")
@@ -1526,7 +961,7 @@ func TestWriteMemberships_Organisation(t *testing.T) {
 func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	defer cleanDB(t)
 
-	_, err := conceptsDriver.Write(getMembership(), "test_tid")
+	_, err := conceptsDriver.Write(getAggregatedConcept(t, "membership.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write membership")
 
 	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
@@ -1545,7 +980,7 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	assert.Equal(t, "Mr", originalMembership.Salutation)
 	assert.Equal(t, 2018, originalMembership.BirthYear)
 
-	_, err = conceptsDriver.Write(getUpdatedMembership(), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "updated-membership.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write membership")
 
 	updatedResult, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
@@ -1564,11 +999,11 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 func TestWriteMemberships_FixOldData(t *testing.T) {
 	defer cleanDB(t)
 
-	queries := createNodeQueries(getOldMembership(), "", membershipUUID)
+	queries := createNodeQueries(getConcept(t, "old-membership.json"), "", membershipUUID)
 	err := db.CypherBatch(queries)
 	assert.NoError(t, err, "Failed to write source")
 
-	_, err = conceptsDriver.Write(getMembership(), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "membership.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write membership")
 
 	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
@@ -1589,35 +1024,35 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {
 	defer cleanDB(t)
 
-	_, err := conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	_, err := conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	_, err = conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
 
-	_, err = conceptsDriver.Write(getUpdatedFinancialInstrument(), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "updated-financial-instrument.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	_, err = conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
 }
 
 func TestFinancialInstrumentIssuerOrgRelationRemoved(t *testing.T) {
 	defer cleanDB(t)
 
-	_, err := conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	_, err := conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
 
-	_, err = conceptsDriver.Write(getFinancialInstrumentWithSameIssuer(), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument-with-same-issuer.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	readConceptAndCompare(t, getFinancialInstrumentWithSameIssuer(), "TestFinancialInstrumentExistingIssuedByRemoved")
+	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument-with-same-issuer.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
 }
 
 func TestWriteService_HandlingConcordance(t *testing.T) {
@@ -1633,8 +1068,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	singleConcordanceNoChangesNoUpdates := testStruct{
 		testName:     "singleConcordanceNoChangesNoUpdates",
-		setUpConcept: getSingleConcordance(),
-		testConcept:  getSingleConcordance(),
+		setUpConcept: getAggregatedConcept(t, "single-concordance.json"),
+		testConcept:  getAggregatedConcept(t, "single-concordance.json"),
 		uuidsToCheck: []string{
 			basicConceptUUID,
 		},
@@ -1644,8 +1079,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	dualConcordanceNoChangesNoUpdates := testStruct{
 		testName:     "dualConcordanceNoChangesNoUpdates",
-		setUpConcept: getDualConcordance(),
-		testConcept:  getDualConcordance(),
+		setUpConcept: getAggregatedConcept(t, "dual-concordance.json"),
+		testConcept:  getAggregatedConcept(t, "dual-concordance.json"),
 		uuidsToCheck: []string{
 			basicConceptUUID,
 			sourceID1,
@@ -1656,8 +1091,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	singleConcordanceToDualConcordanceUpdatesBoth := testStruct{
 		testName:     "singleConcordanceToDualConcordanceUpdatesBoth",
-		setUpConcept: getSingleConcordance(),
-		testConcept:  getDualConcordance(),
+		setUpConcept: getAggregatedConcept(t, "single-concordance.json"),
+		testConcept:  getAggregatedConcept(t, "dual-concordance.json"),
 		uuidsToCheck: []string{
 			basicConceptUUID,
 			sourceID1,
@@ -1702,8 +1137,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	dualConcordanceToSingleConcordanceUpdatesBoth := testStruct{
 		testName:     "dualConcordanceToSingleConcordanceUpdatesBoth",
-		setUpConcept: getDualConcordance(),
-		testConcept:  getSingleConcordance(),
+		setUpConcept: getAggregatedConcept(t, "dual-concordance.json"),
+		testConcept:  getAggregatedConcept(t, "single-concordance.json"),
 		uuidsToCheck: []string{
 			basicConceptUUID,
 			sourceID1,
@@ -1713,7 +1148,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID1,
-					AggregateHash: "1662521097489170851",
+					AggregateHash: "15207796918306738565",
 					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
 						Type:  RemovedEvent,
@@ -1724,7 +1159,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "1662521097489170851",
+					AggregateHash: "15207796918306738565",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1739,14 +1174,14 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	errorsOnAddingConcordanceOfCanonicalNode := testStruct{
 		testName:      "errorsOnAddingConcordanceOfCanonicalNode",
-		setUpConcept:  getDualConcordance(),
-		testConcept:   getPrefUUIDAsASource(),
+		setUpConcept:  getAggregatedConcept(t, "dual-concordance.json"),
+		testConcept:   getAggregatedConcept(t, "pref-uuid-as-source.json"),
 		returnedError: "Cannot currently process this record as it will break an existing concordance with prefUuid: bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
 	}
 	oldCanonicalRemovedWhenSingleConcordancebecomesSource := testStruct{
 		testName:     "oldCanonicalRemovedWhenSingleConcordancebecomesSource",
-		setUpConcept: getSingleConcordance(),
-		testConcept:  getPrefUUIDAsASource(),
+		setUpConcept: getAggregatedConcept(t, "single-concordance.json"),
+		testConcept:  getAggregatedConcept(t, "pref-uuid-as-source.json"),
 		uuidsToCheck: []string{
 			anotherBasicConceptUUID,
 			basicConceptUUID,
@@ -1805,8 +1240,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	transferSourceFromOneConcordanceToAnother := testStruct{
 		testName:     "transferSourceFromOneConcordanceToAnother",
-		setUpConcept: getDualConcordance(),
-		testConcept:  getTransferSourceConcordance(),
+		setUpConcept: getAggregatedConcept(t, "dual-concordance.json"),
+		testConcept:  getAggregatedConcept(t, "transfer-source-concordance.json"),
 		uuidsToCheck: []string{
 			anotherBasicConceptUUID,
 			sourceID1,
@@ -1854,8 +1289,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	addThirdSourceToDualConcordanceUpdateAll := testStruct{
 		testName:     "addThirdSourceToDualConcordanceUpdateAll",
-		setUpConcept: getDualConcordance(),
-		testConcept:  getTriConcordance(),
+		setUpConcept: getAggregatedConcept(t, "dual-concordance.json"),
+		testConcept:  getAggregatedConcept(t, "tri-concordance.json"),
 		uuidsToCheck: []string{
 			basicConceptUUID,
 			sourceID1,
@@ -1902,8 +1337,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	triConcordanceToDualConcordanceUpdatesAll := testStruct{
 		testName:     "triConcordanceToDualConcordanceUpdatesAll",
-		setUpConcept: getTriConcordance(),
-		testConcept:  getDualConcordance(),
+		setUpConcept: getAggregatedConcept(t, "tri-concordance.json"),
+		testConcept:  getAggregatedConcept(t, "dual-concordance.json"),
 		uuidsToCheck: []string{
 			basicConceptUUID,
 			sourceID1,
@@ -1941,8 +1376,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	dataChangesOnCanonicalUpdateBoth := testStruct{
 		testName:     "dataChangesOnCanonicalUpdateBoth",
-		setUpConcept: getDualConcordance(),
-		testConcept:  getUpdatedDualConcordance(),
+		setUpConcept: getAggregatedConcept(t, "dual-concordance.json"),
+		testConcept:  getAggregatedConcept(t, "updated-dual-concordance.json"),
 		uuidsToCheck: []string{
 			basicConceptUUID,
 			sourceID1,
@@ -1967,9 +1402,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	singleConcordanceDeprecationChangesUpdates := testStruct{
 		testName:     "singleConcordanceDeprecationChangesUpdates",
-		setUpConcept: getSingleConcordance(),
+		setUpConcept: getAggregatedConcept(t, "single-concordance.json"),
 		testConcept: func() AggregatedConcept {
-			concept := getSingleConcordance()
+			concept := getAggregatedConcept(t, "single-concordance.json")
 			concept.IsDeprecated = true
 			concept.SourceRepresentations[0].IsDeprecated = true
 			return concept
@@ -1982,7 +1417,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "8369935886443934960",
+					AggregateHash: "2917315517571043417",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1996,9 +1431,9 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	singleConcordanceSupersededByAddRelationship := testStruct{
 		testName:     "singleConcordanceSupersededByAddRelationship",
-		setUpConcept: getSingleConcordance(),
+		setUpConcept: getAggregatedConcept(t, "single-concordance.json"),
 		testConcept: func() AggregatedConcept {
-			concept := getSingleConcordance()
+			concept := getAggregatedConcept(t, "single-concordance.json")
 			concept.SourceRepresentations[0].SupersededByUUIDs = []string{supersededByUUID}
 			return concept
 		}(),
@@ -2010,7 +1445,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "12788016086851009818",
+					AggregateHash: "15546696036700135939",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -2029,8 +1464,8 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	}
 	singleConcordanceSupersededByRemoveRelationship := testStruct{
 		testName:     "singleConcordanceSupersededByRemoveRelationship",
-		setUpConcept: getConceptWithSupersededByUUIDs(),
-		testConcept:  getSingleConcordance(),
+		setUpConcept: getAggregatedConcept(t, "concept-with-superseded-by-uuids.json"),
+		testConcept:  getAggregatedConcept(t, "single-concordance.json"),
 		uuidsToCheck: []string{
 			basicConceptUUID,
 		},
@@ -2039,7 +1474,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "1662521097489170851",
+					AggregateHash: "15207796918306738565",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -2132,13 +1567,13 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 func TestMultipleConcordancesAreHandled(t *testing.T) {
 	defer cleanDB(t)
 
-	_, err := conceptsDriver.Write(getFullLoneAggregatedConcept(), "test_tid")
+	_, err := conceptsDriver.Write(getAggregatedConcept(t, "full-lone-aggregated-concept.json"), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
-	_, err = conceptsDriver.Write(getLoneTmeSection(), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "lone-tme-section.json"), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
-	_, err = conceptsDriver.Write(getTransferMultipleSourceConcordance(), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "transfer-multiple-source-concordance.json"), "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
 	conceptIf, found, err := conceptsDriver.Read(simpleSmartlogicTopicUUID, "test_tid")
@@ -2146,7 +1581,7 @@ func TestMultipleConcordancesAreHandled(t *testing.T) {
 	assert.NoError(t, err, "Should be able to read concept with no problems")
 	assert.True(t, found, "Concept should exist")
 	assert.NotNil(t, concept, "Concept should be populated")
-	readConceptAndCompare(t, getTransferMultipleSourceConcordance(), "TestMultipleConcordancesAreHandled")
+	readConceptAndCompare(t, getAggregatedConcept(t, "transfer-multiple-source-concordance.json"), "TestMultipleConcordancesAreHandled")
 }
 
 func TestInvalidTypesThrowError(t *testing.T) {

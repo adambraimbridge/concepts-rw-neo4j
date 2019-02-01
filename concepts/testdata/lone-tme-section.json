@@ -1,0 +1,18 @@
+{  
+    "prefUUID":"f7e3fe2d-7496-4d42-b19f-378094efd263",
+    "prefLabel":"Concept PrefLabel",
+    "type":"Section",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"f7e3fe2d-7496-4d42-b19f-378094efd263",
+            "prefLabel":"Concept PrefLabel",
+            "type":"Section",
+            "authority":"TME",
+            "authorityValue":"randomTmeID",
+            "aliases":[  
+                "oneLabel",
+                "secondLabel"
+            ]
+        }
+    ]
+}

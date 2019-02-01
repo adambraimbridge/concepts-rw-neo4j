@@ -1,0 +1,52 @@
+{  
+    "prefUUID":"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+    "prefLabel":"The Best Label",
+    "type":"Brand",
+    "aliases":[  
+        "oneLabel",
+        "secondLabel",
+        "anotherOne",
+        "whyNot"
+    ],
+    "strapline":"Keeping it simple",
+    "descriptionXML":"<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+    "_imageUrl":"http://media.ft.com/brand.png",
+    "emailAddress":"simple@ft.com",
+    "facebookPage":"#facebookFTComment",
+    "twitterHandle":"@ftComment",
+    "scopeNote":"Comments about stuff",
+    "shortLabel":"Label",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+            "prefLabel":"The Best Label",
+            "type":"Brand",
+            "authority":"TME",
+            "authorityValue":"1234",
+            "aliases":[  
+                "oneLabel",
+                "secondLabel",
+                "anotherOne",
+                "whyNot"
+            ],
+            "strapline":"Keeping it simple",
+            "descriptionXML":"<body>This <i>brand</i> has no parent but otherwise has valid values for all fields</body>",
+            "_imageUrl":"http://media.ft.com/brand.png",
+            "emailAddress":"simple@ft.com",
+            "facebookPage":"#facebookFTComment",
+            "twitterHandle":"@ftComment",
+            "scopeNote":"Comments about stuff",
+            "shortLabel":"Label"
+        },
+        {  
+            "uuid":"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b",
+            "prefLabel":"Not as good Label",
+            "type":"Brand",
+            "authority":"TME",
+            "authorityValue":"987as3dza654-TME",
+            "strapline":"Boring strapline",
+            "descriptionXML":"<p>Some stuff</p>",
+            "_imageUrl":"http://media.ft.com/brand.png"
+        }
+    ]
+}

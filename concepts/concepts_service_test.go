@@ -989,7 +989,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Section",
 						ConceptUUID:   basicConceptUUID,
-						AggregateHash: "18217680559604723523",
+						AggregateHash: "1307310626632228868",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1010,7 +1010,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "MembershipRole",
 						ConceptUUID:   membershipRoleUUID,
-						AggregateHash: "626026888245642483",
+						AggregateHash: "8713344765640911936",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1031,7 +1031,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "BoardRole",
 						ConceptUUID:   boardRoleUUID,
-						AggregateHash: "5191031906473576557",
+						AggregateHash: "3982430385453699400",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1052,7 +1052,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Membership",
 						ConceptUUID:   membershipUUID,
-						AggregateHash: "6336311123699493320",
+						AggregateHash: "11278594537862690241",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1073,7 +1073,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "FinancialInstrument",
 						ConceptUUID:   financialInstrumentUUID,
-						AggregateHash: "16714109803628321556",
+						AggregateHash: "6651820823968351829",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1096,7 +1096,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Section",
 						ConceptUUID:   basicConceptUUID,
-						AggregateHash: "14123256815784827089",
+						AggregateHash: "384971097268832220",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1117,7 +1117,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Section",
 						ConceptUUID:   basicConceptUUID,
-						AggregateHash: "503692675376090287",
+						AggregateHash: "7724343239641595186",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1140,7 +1140,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Section",
 						ConceptUUID:   basicConceptUUID,
-						AggregateHash: "17181694952709845235",
+						AggregateHash: "4928305994368619585",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1161,7 +1161,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Section",
 						ConceptUUID:   basicConceptUUID,
-						AggregateHash: "8737279664250995129",
+						AggregateHash: "6092818985121270925",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1182,7 +1182,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Section",
 						ConceptUUID:   anotherBasicConceptUUID,
-						AggregateHash: "12581157713226480961",
+						AggregateHash: "14333505159911349247",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1190,7 +1190,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Section",
 						ConceptUUID:   anotherBasicConceptUUID,
-						AggregateHash: "12581157713226480961",
+						AggregateHash: "14333505159911349247",
 						EventDetails: ConcordanceEvent{
 							Type:  AddedEvent,
 							OldID: anotherBasicConceptUUID,
@@ -1200,7 +1200,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Section",
 						ConceptUUID:   basicConceptUUID,
-						AggregateHash: "12581157713226480961",
+						AggregateHash: "14333505159911349247",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1222,7 +1222,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Section",
 						ConceptUUID:   basicConceptUUID,
-						AggregateHash: "7905740243792170251",
+						AggregateHash: "8932248955662658798",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -1450,7 +1450,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID1,
-					AggregateHash: "5498409837155114638",
+					AggregateHash: "13899956166801176828",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1459,7 +1459,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID1,
-					AggregateHash: "5498409837155114638",
+					AggregateHash: "13899956166801176828",
 					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
 						Type:  AddedEvent,
@@ -1470,7 +1470,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "5498409837155114638",
+					AggregateHash: "13899956166801176828",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1496,7 +1496,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID1,
-					AggregateHash: "15541375985173636353",
+					AggregateHash: "15897258429027770620",
 					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
 						Type:  RemovedEvent,
@@ -1507,7 +1507,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "15541375985173636353",
+					AggregateHash: "15897258429027770620",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1541,7 +1541,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "12098846919176676980",
+					AggregateHash: "10761487746093427142",
 					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
 						Type:  AddedEvent,
@@ -1552,7 +1552,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID2,
-					AggregateHash: "12098846919176676980",
+					AggregateHash: "10761487746093427142",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1561,7 +1561,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID2,
-					AggregateHash: "12098846919176676980",
+					AggregateHash: "10761487746093427142",
 					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
 						Type:  AddedEvent,
@@ -1572,7 +1572,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   anotherBasicConceptUUID,
-					AggregateHash: "12098846919176676980",
+					AggregateHash: "10761487746093427142",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1600,7 +1600,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID1,
-					AggregateHash: "4132683304372164963",
+					AggregateHash: "13318980283048007113",
 					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
 						Type:  RemovedEvent,
@@ -1611,7 +1611,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID1,
-					AggregateHash: "4132683304372164963",
+					AggregateHash: "13318980283048007113",
 					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
 						Type:  AddedEvent,
@@ -1622,7 +1622,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   anotherBasicConceptUUID,
-					AggregateHash: "4132683304372164963",
+					AggregateHash: "13318980283048007113",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1649,7 +1649,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID2,
-					AggregateHash: "14149073981840644803",
+					AggregateHash: "18349103166358122976",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1658,7 +1658,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID2,
-					AggregateHash: "14149073981840644803",
+					AggregateHash: "18349103166358122976",
 					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
 						Type:  AddedEvent,
@@ -1669,7 +1669,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "14149073981840644803",
+					AggregateHash: "18349103166358122976",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1697,7 +1697,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID2,
-					AggregateHash: "5498409837155114638",
+					AggregateHash: "13899956166801176828",
 					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
 						Type:  RemovedEvent,
@@ -1708,7 +1708,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "5498409837155114638",
+					AggregateHash: "13899956166801176828",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1735,7 +1735,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "15186139450362096558",
+					AggregateHash: "10631665281696547475",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1765,7 +1765,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "3233196015556568285",
+					AggregateHash: "745856139254717240",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1793,7 +1793,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "15231745720249194119",
+					AggregateHash: "16924497807513574742",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1822,7 +1822,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "15541375985173636353",
+					AggregateHash: "15897258429027770620",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,

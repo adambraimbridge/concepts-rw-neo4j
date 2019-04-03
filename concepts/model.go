@@ -44,7 +44,7 @@ type AggregatedConcept struct {
 	LeiCode                string   `json:"leiCode,omitempty"`
 	IsDeprecated           bool     `json:"isDeprecated,omitempty"`
 	// Location
-	ISO13661 string `json:"iso13661,omitempty"`
+	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
 	Salutation string `json:"salutation,omitempty"`
 	BirthYear  int    `json:"birthYear,omitempty"`
@@ -94,7 +94,7 @@ type Concept struct {
 	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
 	IsDeprecated           bool     `json:"isDeprecated,omitempty"`
 	// Location
-	ISO13661 string `json:"iso13661,omitempty"`
+	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
 	Salutation string `json:"salutation,omitempty"`
 	BirthYear  int    `json:"birthYear,omitempty"`

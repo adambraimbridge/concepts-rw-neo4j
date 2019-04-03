@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Financial-Times/go-logger"
+	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/bradfitz/slice"
@@ -115,7 +115,7 @@ type neoAggregatedConcept struct {
 	LeiCode                string   `json:"leiCode,omitempty"`
 	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
 	// Location
-	ISO13661 string `json:"iso13661,omitempty"`
+	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
 	Salutation string `json:"salutation,omitempty"`
 	BirthYear  int    `json:"birthYear,omitempty"`
@@ -164,7 +164,7 @@ type neoConcept struct {
 	LeiCode                string   `json:"leiCode,omitempty"`
 	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
 	// Location
-	ISO13661 string `json:"iso13661,omitempty"`
+	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
 	Salutation string `json:"salutation,omitempty"`
 	BirthYear  int    `json:"birthYear,omitempty"`
@@ -345,6 +345,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		// Person
 		Salutation: results[0].Salutation,
 		BirthYear:  results[0].BirthYear,
+		// Location
+		ISO31661: results[0].ISO31661,
 	}
 
 	var sourceConcepts []Concept
@@ -896,6 +898,8 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		// Person
 		Salutation: aggregatedConcept.Salutation,
 		BirthYear:  aggregatedConcept.BirthYear,
+		// Location
+		ISO31661: aggregatedConcept.ISO31661,
 	}
 
 	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
@@ -1262,6 +1266,9 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	}
 	if concept.BirthYear > 0 {
 		nodeProps["birthYear"] = concept.BirthYear
+	}
+	if concept.ISO31661 != "" {
+		nodeProps["iso31661"] = concept.ISO31661
 	}
 
 	return nodeProps

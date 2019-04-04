@@ -65,8 +65,9 @@ func (s *ConceptService) Initialise() error {
 	}
 
 	err = s.conn.EnsureConstraints(map[string]string{
-		"Thing":   "prefUUID",
-		"Concept": "prefUUID",
+		"Thing":    "prefUUID",
+		"Concept":  "prefUUID",
+		"Location": "iso31661",
 	})
 	if err != nil {
 		logger.WithError(err).Error("Could not run db constraints")

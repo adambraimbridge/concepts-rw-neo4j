@@ -286,7 +286,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				canonical.leiCode as leiCode,
 				canonical.isDeprecated as isDeprecated,
 				canonical.salutation as salutation,
-				canonical.birthYear as birthYear
+				canonical.birthYear as birthYear,
+				canonical.iso31661 as iso31661
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,

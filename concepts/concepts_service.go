@@ -19,7 +19,7 @@ const (
 	iso8601DateOnly = "2006-01-02"
 	//Event types
 	UpdatedEvent = "CONCEPT_UPDATED"
-	AddedEvent   = "CONCORDDANCE_ADDED"
+	AddedEvent   = "CONCORDANCE_ADDED"
 	RemovedEvent = "CONCORDANCE_REMOVED"
 )
 

@@ -114,8 +114,6 @@ type neoAggregatedConcept struct {
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`
 	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
-	// Location
-	ISO13661 string `json:"iso13661,omitempty"`
 	// Person
 	Salutation string `json:"salutation,omitempty"`
 	BirthYear  int    `json:"birthYear,omitempty"`
@@ -163,8 +161,6 @@ type neoConcept struct {
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`
 	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
-	// Location
-	ISO13661 string `json:"iso13661,omitempty"`
 	// Person
 	Salutation string `json:"salutation,omitempty"`
 	BirthYear  int    `json:"birthYear,omitempty"`

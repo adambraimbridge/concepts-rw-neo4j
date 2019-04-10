@@ -41,6 +41,7 @@ const (
 	anotherPersonUUID                 = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
 	testOrgUUID                       = "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
 	parentOrgUUID                     = "c001ee9c-94c5-11e8-8f42-da24cd01f044"
+	locationUUID                      = "82cba3ce-329b-3010-b29d-4282a215889f"
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
@@ -938,6 +939,48 @@ func getUpdatedMembership() AggregatedConcept {
 				},
 			},
 		},
+	}
+}
+
+func getLocation() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  locationUUID,
+		PrefLabel: "Location Pref Label",
+		Type:      "Location",
+		SourceRepresentations: []Concept{{
+			UUID:           locationUUID,
+			PrefLabel:      "Location Pref Label",
+			Type:           "Location",
+			Authority:      "ManagedLocation",
+			AuthorityValue: locationUUID,
+		}},
+	}
+}
+
+func getLocationWithISO31661() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  locationUUID,
+		PrefLabel: "Location Pref Label 2",
+		Type:      "Location",
+		Aliases: []string{
+			"Bulgaria",
+			"Bulgarie",
+			"Bulgarien",
+		},
+		ISO31661: "BG",
+		SourceRepresentations: []Concept{{
+			UUID:           locationUUID,
+			PrefLabel:      "Location Pref Label 2",
+			Type:           "Location",
+			Authority:      "ManagedLocation",
+			AuthorityValue: locationUUID,
+			Aliases: []string{
+				"Bulgaria",
+				"Bulgarie",
+				"Bulgarien",
+			},
+			ISO31661: "BG",
+		}},
 	}
 }
 
@@ -2359,6 +2402,20 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 			assert.NoError(t, err, scenario.testName)
 		}
 	}
+}
+
+func TestWriteLocation(t *testing.T) {
+	defer cleanDB(t)
+
+	location := getLocation()
+	_, err := conceptsDriver.Write(location, "test_tid")
+	assert.NoError(t, err, "Failed to write concept")
+	readConceptAndCompare(t, location, "TestWriteLocation")
+
+	locationISO31661 := getLocationWithISO31661()
+	_, err = conceptsDriver.Write(locationISO31661, "test_tid")
+	assert.NoError(t, err, "Failed to write concept")
+	readConceptAndCompare(t, locationISO31661, "TestWriteLocationISO31661")
 }
 
 func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName string) {

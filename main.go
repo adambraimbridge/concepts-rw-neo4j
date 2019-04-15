@@ -1,26 +1,26 @@
 package main
 
 import (
-	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
-	"github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
-	"github.com/gorilla/mux"
-	"github.com/jawher/mow.cli"
-	_ "github.com/joho/godotenv/autoload"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"strconv"
+
+	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
+	logger "github.com/Financial-Times/go-logger"
+	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/gorilla/mux"
+	cli "github.com/jawher/mow.cli"
 )
 
-const appDescription = "A RESTful API for managing Concepts in neo4j"
+const appDescription = "A RESTful API for managing Concepts in Neo4j"
 const serviceName = "concepts-rw-neo4j"
 
 type ServerConf struct {
-	AppSystemCode      string
-	AppName            string
-	Port               int
-	RequestLoggingOn   bool
+	AppSystemCode    string
+	AppName          string
+	Port             int
+	RequestLoggingOn bool
 }
 
 func main() {
@@ -79,10 +79,10 @@ func main() {
 		}
 
 		appConf := ServerConf{
-			AppSystemCode:      *appSystemCode,
-			AppName:            *appName,
-			Port:               *port,
-			RequestLoggingOn:   *requestLoggingOn,
+			AppSystemCode:    *appSystemCode,
+			AppName:          *appName,
+			Port:             *port,
+			RequestLoggingOn: *requestLoggingOn,
 		}
 
 		conceptsService := concepts.NewConceptService(db)

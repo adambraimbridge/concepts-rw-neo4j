@@ -8,19 +8,41 @@ __An API for reading/writing concepts into Neo4j.__
 
 ## Installation
 
-For the first time:
+        go get -u github.com/Financial-Times/concepts-rw-neo4j
+        cd $GOPATH/src/github.com/Financial-Times/concepts-rw-neo4j
+        dep ensure -v -vendor-only
+        go build
 
-`go get github.com/Financial-Times/concepts-rw-neo4j`
+## Running locally
 
-or update:
+```
+Usage: concepts-rw-neo4j [OPTIONS]
 
-`go get -u github.com/Financial-Times/concepts-rw-neo4j`
+A RESTful API for managing Concepts in Neo4j
 
-## Running
-
-`$GOPATH/bin/concepts-rw-neo4j --neo-url={neo4jUrl} --port={port} --batchSize=50 --logLevel=Info --requestLoggingOn=true
+Options:
+      --app-system-code    System Code of the application (env $APP_SYSTEM_CODE) (default "concept-rw-neo4j")
+      --app-name           Application name (env $APP_NAME) (default "Concept Rw Neo4j")
+      --neo-url            neo4j endpoint URL (env $NEO_URL) (default "http://localhost:7474/db/data")
+      --port               Port to listen on (env $APP_PORT) (default 8080)
+      --batchSize          Maximum number of statements to execute per batch (env $BATCH_SIZE) (default 1024)
+      --requestLoggingOn   Whether to log requests or not (env $REQUEST_LOGGING_ON) (default true)
+      --logLevel           Level of logging to be shown (env $LOG_LEVEL) (default "info")
+```
 
 All arguments are optional, they default to a local Neo4j install on the default port (7474), application running on port 8080, batchSize of 1024.
+
+* Testing
+A running Neo4j server is needed for the tests to complete successfully:
+
+        docker run --rm -p=7474:7474 -p=7687:7687 \
+                -e NEO4J_ACCEPT_LICENSE_AGREEMENT="yes" \
+                -e NEO4J_AUTH="none" \
+	        neo4j
+
+After it has started do:
+
+	go test -race ./...
 
 ## Deployment
 
@@ -28,9 +50,16 @@ This deploys to our delivery cluster via the normal mechanism https://sites.goog
 
 ## Service Endpoints
 
-Taxonomy refers to the concept type. Phase 1 is only the simplest TME taxonomies of Genres, Topics, Subjects, SpecialReports, Locations, Sections
-
-Coming soon more complex taxonomies including concorded people and orgs
+Taxonomy refers to the concept type. Allowed concepts types (not complete list):
+	alphaville-series
+	genres
+	locations
+	memberships
+	membership-roles
+	people
+	organisations
+	sections
+	topics
 
 ### PUT /{taxonomy}/{uuid}
 

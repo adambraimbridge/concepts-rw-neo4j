@@ -1248,6 +1248,12 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if concept.CountryOfIncorporation != "" {
 		nodeProps["countryOfIncorporation"] = concept.CountryOfIncorporation
 	}
+	if concept.CountryOfRisk != "" {
+		nodeProps["countryOfRisk"] = concept.CountryOfRisk
+	}
+	if concept.CountryOfOperations != "" {
+		nodeProps["countryOfOperations"] = concept.CountryOfOperations
+	}
 	if concept.PostalCode != "" {
 		nodeProps["postalCode"] = concept.PostalCode
 	}

@@ -33,16 +33,21 @@ type AggregatedConcept struct {
 	FigiCode              string           `json:"figiCode,omitempty"`
 	IssuedBy              string           `json:"issuedBy,omitempty"`
 	// Organisations
-	ProperName             string   `json:"properName,omitempty"`
-	ShortName              string   `json:"shortName,omitempty"`
-	TradeNames             []string `json:"tradeNames,omitempty"`
-	FormerNames            []string `json:"formerNames,omitempty"`
-	CountryCode            string   `json:"countryCode,omitempty"`
-	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
-	PostalCode             string   `json:"postalCode,omitempty"`
-	YearFounded            int      `json:"yearFounded,omitempty"`
-	LeiCode                string   `json:"leiCode,omitempty"`
-	IsDeprecated           bool     `json:"isDeprecated,omitempty"`
+	ProperName                 string   `json:"properName,omitempty"`
+	ShortName                  string   `json:"shortName,omitempty"`
+	TradeNames                 []string `json:"tradeNames,omitempty"`
+	FormerNames                []string `json:"formerNames,omitempty"`
+	CountryCode                string   `json:"countryCode,omitempty"`
+	CountryOfRisk              string   `json:"countryOfRisk,omitempty"`
+	CountryOfIncorporation     string   `json:"countryOfIncorporation,omitempty"`
+	CountryOfOperations        string   `json:"countryOfOperations,omitempty"`
+	CountryOfRiskUUID          string   `json:"countryOfRiskUUID,omitempty"`
+	CountryOfIncorporationUUID string   `json:"countryOfIncorporationUUID,omitempty"`
+	CountryOfOperationsUUID    string   `json:"countryOfOperationsUUID,omitempty"`
+	PostalCode                 string   `json:"postalCode,omitempty"`
+	YearFounded                int      `json:"yearFounded,omitempty"`
+	LeiCode                    string   `json:"leiCode,omitempty"`
+	IsDeprecated               bool     `json:"isDeprecated,omitempty"`
 	// Location
 	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
@@ -82,17 +87,22 @@ type Concept struct {
 	FigiCode             string           `json:"figiCode,omitempty"`
 	IssuedBy             string           `json:"issuedBy,omitempty"`
 	// Organisations
-	ProperName             string   `json:"properName,omitempty"`
-	ShortName              string   `json:"shortName,omitempty"`
-	TradeNames             []string `json:"tradeNames,omitempty"`
-	FormerNames            []string `json:"formerNames,omitempty"`
-	CountryCode            string   `json:"countryCode,omitempty"`
-	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
-	PostalCode             string   `json:"postalCode,omitempty"`
-	YearFounded            int      `json:"yearFounded,omitempty"`
-	LeiCode                string   `json:"leiCode,omitempty"`
-	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
-	IsDeprecated           bool     `json:"isDeprecated,omitempty"`
+	ProperName                 string   `json:"properName,omitempty"`
+	ShortName                  string   `json:"shortName,omitempty"`
+	TradeNames                 []string `json:"tradeNames,omitempty"`
+	FormerNames                []string `json:"formerNames,omitempty"`
+	CountryCode                string   `json:"countryCode,omitempty"`
+	CountryOfRisk              string   `json:"countryOfRisk,omitempty"`
+	CountryOfIncorporation     string   `json:"countryOfIncorporation,omitempty"`
+	CountryOfOperations        string   `json:"countryOfOperations,omitempty"`
+	CountryOfRiskUUID          string   `json:"countryOfRiskUUID,omitempty"`
+	CountryOfIncorporationUUID string   `json:"countryOfIncorporationUUID,omitempty"`
+	CountryOfOperationsUUID    string   `json:"countryOfOperationsUUID,omitempty"`
+	PostalCode                 string   `json:"postalCode,omitempty"`
+	YearFounded                int      `json:"yearFounded,omitempty"`
+	LeiCode                    string   `json:"leiCode,omitempty"`
+	ParentOrganisation         string   `json:"parentOrganisation,omitempty"`
+	IsDeprecated               bool     `json:"isDeprecated,omitempty"`
 	// Location
 	ISO31661 string `json:"iso31661,omitempty"`
 	// Person

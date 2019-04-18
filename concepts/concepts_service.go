@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
-	logger "github.com/Financial-Times/go-logger"
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	"github.com/bradfitz/slice"
 	"github.com/jmcvetta/neoism"
 	"github.com/mitchellh/hashstructure"
 )
@@ -837,9 +837,12 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->(mr)
 			OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
 			OPTIONAL MATCH (t)-[parentOrgRel:SUB_ORGANISATION_OF]->(parentOrg)
+			OPTIONAL MATCH (t)-[coo:COUNTRY_OF_OPERATIONS]->(managedLocation) 
+			OPTIONAL MATCH (t)-[coi:COUNTRY_OF_INCORPORATION]->(managedLocation) 
+			OPTIONAL MATCH (t)-[cor:COUNTRY_OF_RISK]->(managedLocation) 
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr, issuerRel, parentOrgRel, supersededBy`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, coo, coi, cor`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -1407,7 +1410,7 @@ func cleanConcept(c AggregatedConcept) AggregatedConcept {
 			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
 			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
 		}
-		slice.Sort(c.SourceRepresentations[j].MembershipRoles[:], func(k, l int) bool {
+		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles[:], func(k, l int) bool {
 			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
 		})
 	}
@@ -1415,7 +1418,7 @@ func cleanConcept(c AggregatedConcept) AggregatedConcept {
 		c.MembershipRoles[i].InceptionDateEpoch = 0
 		c.MembershipRoles[i].TerminationDateEpoch = 0
 	}
-	slice.Sort(c.SourceRepresentations[:], func(k, l int) bool {
+	sort.SliceStable(c.SourceRepresentations[:], func(k, l int) bool {
 		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
 	})
 	return c

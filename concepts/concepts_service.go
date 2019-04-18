@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Financial-Times/go-logger"
+	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
@@ -105,18 +105,21 @@ type neoAggregatedConcept struct {
 	Types                 []string         `json:"types"`
 	IsDeprecated          bool             `json:"isDeprecated,omitempty"`
 	// Organisations
-	ProperName             string   `json:"properName,omitempty"`
-	ShortName              string   `json:"shortName,omitempty"`
-	TradeNames             []string `json:"tradeNames,omitempty"`
-	FormerNames            []string `json:"formerNames,omitempty"`
-	CountryCode            string   `json:"countryCode,omitempty"`
-	CountryOfRisk          string   `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations    string   `json:"countryOfOperations,omitempty"`
-	PostalCode             string   `json:"postalCode,omitempty"`
-	YearFounded            int      `json:"yearFounded,omitempty"`
-	LeiCode                string   `json:"leiCode,omitempty"`
-	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
+	ProperName                 string   `json:"properName,omitempty"`
+	ShortName                  string   `json:"shortName,omitempty"`
+	TradeNames                 []string `json:"tradeNames,omitempty"`
+	FormerNames                []string `json:"formerNames,omitempty"`
+	CountryCode                string   `json:"countryCode,omitempty"`
+	CountryOfRisk              string   `json:"countryOfRisk,omitempty"`
+	CountryOfIncorporation     string   `json:"countryOfIncorporation,omitempty"`
+	CountryOfOperations        string   `json:"countryOfOperations,omitempty"`
+	CountryOfRiskUUID          string   `json:"countryOfRiskUUID,omitempty"`
+	CountryOfIncorporationUUID string   `json:"countryOfIncorporationUUID,omitempty"`
+	CountryOfOperationsUUID    string   `json:"countryOfOperationsUUID,omitempty"`
+	PostalCode                 string   `json:"postalCode,omitempty"`
+	YearFounded                int      `json:"yearFounded,omitempty"`
+	LeiCode                    string   `json:"leiCode,omitempty"`
+	ParentOrganisation         string   `json:"parentOrganisation,omitempty"`
 	// Location
 	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
@@ -156,18 +159,21 @@ type neoConcept struct {
 	UUID                 string           `json:"uuid,omitempty"`
 	IsDeprecated         bool             `json:"isDeprecated,omitempty"`
 	// Organisations
-	ProperName             string   `json:"properName,omitempty"`
-	ShortName              string   `json:"shortName,omitempty"`
-	TradeNames             []string `json:"tradeNames,omitempty"`
-	FormerNames            []string `json:"formerNames,omitempty"`
-	CountryCode            string   `json:"countryCode,omitempty"`
-	CountryOfRisk          string   `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations    string   `json:"countryOfOperations,omitempty"`
-	PostalCode             string   `json:"postalCode,omitempty"`
-	YearFounded            int      `json:"yearFounded,omitempty"`
-	LeiCode                string   `json:"leiCode,omitempty"`
-	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
+	ProperName                 string   `json:"properName,omitempty"`
+	ShortName                  string   `json:"shortName,omitempty"`
+	TradeNames                 []string `json:"tradeNames,omitempty"`
+	FormerNames                []string `json:"formerNames,omitempty"`
+	CountryCode                string   `json:"countryCode,omitempty"`
+	CountryOfRisk              string   `json:"countryOfRisk,omitempty"`
+	CountryOfIncorporation     string   `json:"countryOfIncorporation,omitempty"`
+	CountryOfOperations        string   `json:"countryOfOperations,omitempty"`
+	CountryOfRiskUUID          string   `json:"countryOfRiskUUID,omitempty"`
+	CountryOfIncorporationUUID string   `json:"countryOfIncorporationUUID,omitempty"`
+	CountryOfOperationsUUID    string   `json:"countryOfOperationsUUID,omitempty"`
+	PostalCode                 string   `json:"postalCode,omitempty"`
+	YearFounded                int      `json:"yearFounded,omitempty"`
+	LeiCode                    string   `json:"leiCode,omitempty"`
+	ParentOrganisation         string   `json:"parentOrganisation,omitempty"`
 	// Location
 	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
@@ -199,6 +205,9 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
 			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
+			OPTIONAL MATCH (source)-[:COUNTRY_OF_OPERATIONS]->(coo:Thing)
+			OPTIONAL MATCH (source)-[:COUNTRY_OF_RISK]->(cor:Thing)
+			OPTIONAL MATCH (source)-[:COUNTRY_OF_INCORPORATION]->(coi:Thing)
 			WITH
 				broader,
 				canonical,
@@ -211,6 +220,9 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				role,
 				roleRel,
 				parentOrg,
+				coo,
+				cor,
+				coi,
 				source
 				ORDER BY
 					source.uuid,
@@ -224,6 +236,9 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				person,
 				supersededBy,
 				related,
+				coo,
+				cor,
+				coi,
 				{
 					authority: source.authority,
 					authorityValue: source.authorityValue,
@@ -247,7 +262,10 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					relatedUUIDs: collect(related.uuid),
 					types: labels(source),
 					uuid: source.uuid,
-					isDeprecated: source.isDeprecated
+					isDeprecated: source.isDeprecated,
+					countryOfIncorporationUUID: coi.uuid,
+					countryOfOperationsUUID: coo.uuid,
+					countryOfRiskUUID: cor.uuid
 				} as sources,
 				collect({
 					inceptionDate: roleRel.inceptionDate,
@@ -286,6 +304,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				canonical.formerNames as formerNames,
 				canonical.countryCode as countryCode,
 				canonical.countryOfIncorporation as countryOfIncorporation,
+				canonical.countryOfOperations as countryOfOperations,
+				canonical.countryOfRisk as countryOfRisk,
 				canonical.postalCode as postalCode,
 				canonical.yearFounded as yearFounded,
 				canonical.leiCode as leiCode,
@@ -339,15 +359,20 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		Type:             typeName,
 		IsDeprecated:     results[0].IsDeprecated,
 		// Organisations
-		ProperName:             results[0].ProperName,
-		ShortName:              results[0].ShortName,
-		TradeNames:             results[0].TradeNames,
-		FormerNames:            results[0].FormerNames,
-		CountryCode:            results[0].CountryCode,
-		CountryOfIncorporation: results[0].CountryOfIncorporation,
-		PostalCode:             results[0].PostalCode,
-		YearFounded:            results[0].YearFounded,
-		LeiCode:                results[0].LeiCode,
+		ProperName:                 results[0].ProperName,
+		ShortName:                  results[0].ShortName,
+		TradeNames:                 results[0].TradeNames,
+		FormerNames:                results[0].FormerNames,
+		CountryCode:                results[0].CountryCode,
+		CountryOfIncorporation:     results[0].CountryOfIncorporation,
+		CountryOfRisk:              results[0].CountryOfRisk,
+		CountryOfOperations:        results[0].CountryOfOperations,
+		CountryOfIncorporationUUID: results[0].CountryOfIncorporationUUID,
+		CountryOfRiskUUID:          results[0].CountryOfRiskUUID,
+		CountryOfOperationsUUID:    results[0].CountryOfOperationsUUID,
+		PostalCode:                 results[0].PostalCode,
+		YearFounded:                results[0].YearFounded,
+		LeiCode:                    results[0].LeiCode,
 		// Person
 		Salutation: results[0].Salutation,
 		BirthYear:  results[0].BirthYear,
@@ -364,22 +389,25 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		}
 
 		concept := Concept{
-			Authority:         srcConcept.Authority,
-			AuthorityValue:    srcConcept.AuthorityValue,
-			BroaderUUIDs:      filterSlice(srcConcept.BroaderUUIDs),
-			SupersededByUUIDs: filterSlice(srcConcept.SupersededByUUIDs),
-			FigiCode:          srcConcept.FigiCode,
-			IssuedBy:          srcConcept.IssuedBy,
-			LastModifiedEpoch: srcConcept.LastModifiedEpoch,
-			MembershipRoles:   cleanMembershipRoles(srcConcept.MembershipRoles),
-			OrganisationUUID:  srcConcept.OrganisationUUID,
-			ParentUUIDs:       filterSlice(srcConcept.ParentUUIDs),
-			PersonUUID:        srcConcept.PersonUUID,
-			PrefLabel:         srcConcept.PrefLabel,
-			RelatedUUIDs:      filterSlice(srcConcept.RelatedUUIDs),
-			Type:              conceptType,
-			UUID:              srcConcept.UUID,
-			IsDeprecated:      srcConcept.IsDeprecated,
+			Authority:                  srcConcept.Authority,
+			AuthorityValue:             srcConcept.AuthorityValue,
+			BroaderUUIDs:               filterSlice(srcConcept.BroaderUUIDs),
+			SupersededByUUIDs:          filterSlice(srcConcept.SupersededByUUIDs),
+			FigiCode:                   srcConcept.FigiCode,
+			IssuedBy:                   srcConcept.IssuedBy,
+			LastModifiedEpoch:          srcConcept.LastModifiedEpoch,
+			MembershipRoles:            cleanMembershipRoles(srcConcept.MembershipRoles),
+			OrganisationUUID:           srcConcept.OrganisationUUID,
+			CountryOfIncorporationUUID: srcConcept.CountryOfIncorporationUUID,
+			CountryOfRiskUUID:          srcConcept.CountryOfRiskUUID,
+			CountryOfOperationsUUID:    srcConcept.CountryOfOperationsUUID,
+			ParentUUIDs:                filterSlice(srcConcept.ParentUUIDs),
+			PersonUUID:                 srcConcept.PersonUUID,
+			PrefLabel:                  srcConcept.PrefLabel,
+			RelatedUUIDs:               filterSlice(srcConcept.RelatedUUIDs),
+			Type:                       conceptType,
+			UUID:                       srcConcept.UUID,
+			IsDeprecated:               srcConcept.IsDeprecated,
 			// Organisations
 			ParentOrganisation: srcConcept.ParentOrganisation,
 		}
@@ -890,15 +918,20 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		//TODO deprecated event?
 		IsDeprecated: aggregatedConcept.IsDeprecated,
 		// Organisations
-		ProperName:             aggregatedConcept.ProperName,
-		ShortName:              aggregatedConcept.ShortName,
-		TradeNames:             aggregatedConcept.TradeNames,
-		FormerNames:            aggregatedConcept.FormerNames,
-		CountryCode:            aggregatedConcept.CountryCode,
-		CountryOfIncorporation: aggregatedConcept.CountryOfIncorporation,
-		PostalCode:             aggregatedConcept.PostalCode,
-		YearFounded:            aggregatedConcept.YearFounded,
-		LeiCode:                aggregatedConcept.LeiCode,
+		ProperName:                 aggregatedConcept.ProperName,
+		ShortName:                  aggregatedConcept.ShortName,
+		TradeNames:                 aggregatedConcept.TradeNames,
+		FormerNames:                aggregatedConcept.FormerNames,
+		CountryCode:                aggregatedConcept.CountryCode,
+		CountryOfIncorporation:     aggregatedConcept.CountryOfIncorporation,
+		CountryOfRisk:              aggregatedConcept.CountryOfRisk,
+		CountryOfOperations:        aggregatedConcept.CountryOfOperations,
+		CountryOfIncorporationUUID: aggregatedConcept.CountryOfIncorporationUUID,
+		CountryOfRiskUUID:          aggregatedConcept.CountryOfRiskUUID,
+		CountryOfOperationsUUID:    aggregatedConcept.CountryOfOperationsUUID,
+		PostalCode:                 aggregatedConcept.PostalCode,
+		YearFounded:                aggregatedConcept.YearFounded,
+		LeiCode:                    aggregatedConcept.LeiCode,
 		// Person
 		Salutation: aggregatedConcept.Salutation,
 		BirthYear:  aggregatedConcept.BirthYear,
@@ -1168,10 +1201,11 @@ func getSourceData(sourceConcepts []Concept) map[string]string {
 	return conceptData
 }
 
-//set properties on concept node
+//This function dictates which properties will be actually
+//written in neo for both canonical and source nodes.
 func setProps(concept Concept, id string, isSource bool) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
-
+	//common props
 	if concept.PrefLabel != "" {
 		nodeProps["prefLabel"] = concept.PrefLabel
 	}
@@ -1183,7 +1217,7 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if concept.IsDeprecated {
 		nodeProps["isDeprecated"] = true
 	}
-
+	//source specific props
 	if isSource {
 		nodeProps["uuid"] = id
 		nodeProps["authority"] = concept.Authority
@@ -1191,7 +1225,7 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 
 		return nodeProps
 	}
-
+	//canonical specific props
 	nodeProps["prefUUID"] = id
 	nodeProps["aggregateHash"] = concept.Hash
 
@@ -1270,7 +1304,6 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	if concept.TerminationDateEpoch > 0 {
 		nodeProps["terminationDateEpoch"] = concept.TerminationDateEpoch
 	}
-
 	if concept.Salutation != "" {
 		nodeProps["salutation"] = concept.Salutation
 	}
@@ -1454,7 +1487,10 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 			FigiCode:          source.FigiCode,
 			IsDeprecated:      source.IsDeprecated,
 			// Organisations
-			ParentOrganisation: source.ParentOrganisation,
+			ParentOrganisation:         source.ParentOrganisation,
+			CountryOfOperationsUUID:    source.CountryOfOperationsUUID,
+			CountryOfIncorporationUUID: source.CountryOfIncorporationUUID,
+			CountryOfRiskUUID:          source.CountryOfRiskUUID,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

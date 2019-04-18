@@ -110,7 +110,9 @@ type neoAggregatedConcept struct {
 	TradeNames             []string `json:"tradeNames,omitempty"`
 	FormerNames            []string `json:"formerNames,omitempty"`
 	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfRisk          string   `json:"countryOfRisk,omitempty"`
 	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	CountryOfOperations    string   `json:"countryOfOperations,omitempty"`
 	PostalCode             string   `json:"postalCode,omitempty"`
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`
@@ -159,7 +161,9 @@ type neoConcept struct {
 	TradeNames             []string `json:"tradeNames,omitempty"`
 	FormerNames            []string `json:"formerNames,omitempty"`
 	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfRisk          string   `json:"countryOfRisk,omitempty"`
 	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	CountryOfOperations    string   `json:"countryOfOperations,omitempty"`
 	PostalCode             string   `json:"postalCode,omitempty"`
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`

@@ -849,6 +849,78 @@ func getOrganisation() AggregatedConcept {
 	}
 }
 
+func getOrganisationWithAllCountries() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:   testOrgUUID,
+		Type:       "PublicCompany",
+		ProperName: "Strix Group Plc",
+		PrefLabel:  "Strix Group Plc",
+		ShortName:  "Strix Group",
+		TradeNames: []string{
+			"STRIX GROUP PLC",
+		},
+		FormerNames: []string{
+			"Castletown Thermostats",
+			"Steam Plc",
+		},
+		Aliases: []string{
+			"Strix Group Plc",
+			"STRIX GROUP PLC",
+			"Strix Group",
+			"Castletown Thermostats",
+			"Steam Plc",
+		},
+		CountryCode:                "BG",
+		CountryOfIncorporation:     "BG",
+		CountryOfOperations:        "BG",
+		CountryOfRisk:              "BG",
+		CountryOfIncorporationUUID: locationUUID,
+		CountryOfOperationsUUID:    locationUUID,
+		CountryOfRiskUUID:          locationUUID,
+		PostalCode:                 "IM9 2RG",
+		YearFounded:                1951,
+		EmailAddress:               "info@strix.com",
+		LeiCode:                    "213800KZEW5W6BZMNT62",
+		SourceRepresentations: []Concept{
+			{
+				UUID:           testOrgUUID,
+				Type:           "PublicCompany",
+				Authority:      "FACTSET",
+				AuthorityValue: "B000BB-S",
+				ProperName:     "Strix Group Plc",
+				PrefLabel:      "Strix Group Plc",
+				ShortName:      "Strix Group",
+				TradeNames: []string{
+					"STRIX GROUP PLC",
+				},
+				FormerNames: []string{
+					"Castletown Thermostats",
+					"Steam Plc",
+				},
+				Aliases: []string{
+					"Strix Group Plc",
+					"STRIX GROUP PLC",
+					"Strix Group",
+					"Castletown Thermostats",
+					"Steam Plc",
+				},
+				CountryCode:                "BG",
+				CountryOfIncorporation:     "BG",
+				CountryOfOperations:        "BG",
+				CountryOfRisk:              "BG",
+				CountryOfIncorporationUUID: locationUUID,
+				CountryOfOperationsUUID:    locationUUID,
+				CountryOfRiskUUID:          locationUUID,
+				PostalCode:                 "IM9 2RG",
+				YearFounded:                1951,
+				EmailAddress:               "info@strix.com",
+				LeiCode:                    "213800KZEW5W6BZMNT62",
+				ParentOrganisation:         parentOrgUUID,
+			},
+		},
+	}
+}
+
 func getUpdatedOrganisation() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:   testOrgUUID,
@@ -1282,6 +1354,30 @@ func TestWriteService(t *testing.T) {
 			errStr:               "already exists with label `TMEIdentifier` and property `value` = '1234'",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
+			},
+		},
+		{
+			testName:          "Adding Organisation with all related locations in place works",
+			aggregatedConcept: getOrganisationWithAllCountries(),
+			otherRelatedConcepts: []AggregatedConcept{
+				getLocationWithISO31661(),
+			},
+			errStr: "",
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "PublicCompany",
+						ConceptUUID:   testOrgUUID,
+						AggregateHash: "3714549711210580775",
+						TransactionID: "",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					testOrgUUID,
+				},
 			},
 		},
 		{

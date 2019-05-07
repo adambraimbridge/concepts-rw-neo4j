@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Financial-Times/go-logger"
+	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
@@ -263,9 +263,9 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					types: labels(source),
 					uuid: source.uuid,
 					isDeprecated: source.isDeprecated,
-			        countryOfIncorporationUUID: coi.uuid,
-				    countryOfOperationsUUID: coo.uuid,
-				    countryOfRiskUUID: cor.uuid
+					countryOfIncorporationUUID: coi.uuid,
+					countryOfOperationsUUID: coo.uuid,
+					countryOfRiskUUID: cor.uuid
 				} as sources,
 				collect({
 					inceptionDate: roleRel.inceptionDate,

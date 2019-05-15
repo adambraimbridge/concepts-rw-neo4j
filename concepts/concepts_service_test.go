@@ -42,6 +42,7 @@ const (
 	testOrgUUID                       = "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
 	parentOrgUUID                     = "c001ee9c-94c5-11e8-8f42-da24cd01f044"
 	locationUUID                      = "82cba3ce-329b-3010-b29d-4282a215889f"
+	anotherLocationUUID               = "6b683eff-56c3-43d9-acfc-7511d974fc01"
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
@@ -870,17 +871,14 @@ func getOrganisationWithAllCountries() AggregatedConcept {
 			"Castletown Thermostats",
 			"Steam Plc",
 		},
-		CountryCode:                "BG",
-		CountryOfIncorporation:     "BG",
-		CountryOfOperations:        "BG",
-		CountryOfRisk:              "BG",
-		CountryOfIncorporationUUID: locationUUID,
-		CountryOfOperationsUUID:    locationUUID,
-		CountryOfRiskUUID:          locationUUID,
-		PostalCode:                 "IM9 2RG",
-		YearFounded:                1951,
-		EmailAddress:               "info@strix.com",
-		LeiCode:                    "213800KZEW5W6BZMNT62",
+		CountryCode:            "BG",
+		CountryOfIncorporation: "GB",
+		CountryOfOperations:    "FR",
+		CountryOfRisk:          "BG",
+		PostalCode:             "IM9 2RG",
+		YearFounded:            1951,
+		EmailAddress:           "info@strix.com",
+		LeiCode:                "213800KZEW5W6BZMNT62",
 		SourceRepresentations: []Concept{
 			{
 				UUID:           testOrgUUID,
@@ -905,12 +903,12 @@ func getOrganisationWithAllCountries() AggregatedConcept {
 					"Steam Plc",
 				},
 				CountryCode:                "BG",
-				CountryOfIncorporation:     "BG",
-				CountryOfOperations:        "BG",
+				CountryOfIncorporation:     "GB",
+				CountryOfOperations:        "FR",
 				CountryOfRisk:              "BG",
 				CountryOfIncorporationUUID: locationUUID,
 				CountryOfOperationsUUID:    locationUUID,
-				CountryOfRiskUUID:          locationUUID,
+				CountryOfRiskUUID:          anotherLocationUUID,
 				PostalCode:                 "IM9 2RG",
 				YearFounded:                1951,
 				EmailAddress:               "info@strix.com",
@@ -1368,7 +1366,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "PublicCompany",
 						ConceptUUID:   testOrgUUID,
-						AggregateHash: "3714549711210580775",
+						AggregateHash: "12456709707628250518",
 						TransactionID: "",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
@@ -2571,6 +2569,8 @@ func cleanDB(t *testing.T) {
 		parentOrgUUID,
 		supersededByUUID,
 		testOrgUUID,
+		locationUUID,
+		anotherLocationUUID,
 	)
 	deleteSourceNodes(t,
 		parentUUID,
@@ -2597,6 +2597,8 @@ func cleanDB(t *testing.T) {
 		parentOrgUUID,
 		supersededByUUID,
 		testOrgUUID,
+		locationUUID,
+		anotherLocationUUID,
 	)
 	deleteConcordedNodes(t,
 		parentUUID,
@@ -2623,6 +2625,8 @@ func cleanDB(t *testing.T) {
 		parentOrgUUID,
 		supersededByUUID,
 		testOrgUUID,
+		locationUUID,
+		anotherLocationUUID,
 	)
 }
 

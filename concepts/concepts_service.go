@@ -1081,9 +1081,9 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if uuid != "" && concept.CountryOfRiskUUID != "" {
 		writeCountryOfRisk := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (orgUPP:Identifier:UPPIdentifier {value: {locUUID}})
+							MERGE (locUPP:Identifier:UPPIdentifier {value: {locUUID}})
 							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (orgUPP)-[:IDENTIFIES]->(location)
+							MERGE (locUPP)-[:IDENTIFIES]->(location)
 							MERGE (org)-[:COUNTRY_OF_RISK]->(location)`,
 			Parameters: neoism.Props{
 				"locUUID": concept.CountryOfRiskUUID,
@@ -1095,9 +1095,9 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if uuid != "" && concept.CountryOfIncorporationUUID != "" {
 		writeCountryOfIncorporation := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (orgUPP:Identifier:UPPIdentifier {value: {locUUID}})
+							MERGE (locUPP:Identifier:UPPIdentifier {value: {locUUID}})
 							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (orgUPP)-[:IDENTIFIES]->(location)
+							MERGE (locUPP)-[:IDENTIFIES]->(location)
 							MERGE (org)-[:COUNTRY_OF_INCORPORATION]->(location)`,
 			Parameters: neoism.Props{
 				"locUUID": concept.CountryOfIncorporationUUID,
@@ -1109,9 +1109,9 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if uuid != "" && concept.CountryOfOperationsUUID != "" {
 		writeCountryOfOperations := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (orgUPP:Identifier:UPPIdentifier {value: {locUUID}})
+							MERGE (locUPP:Identifier:UPPIdentifier {value: {locUUID}})
 							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (orgUPP)-[:IDENTIFIES]->(location)
+							MERGE (locUPP)-[:IDENTIFIES]->(location)
 							MERGE (org)-[:COUNTRY_OF_OPERATIONS]->(location)`,
 			Parameters: neoism.Props{
 				"locUUID": concept.CountryOfOperationsUUID,

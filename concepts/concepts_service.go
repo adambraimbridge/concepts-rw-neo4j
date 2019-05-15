@@ -105,21 +105,18 @@ type neoAggregatedConcept struct {
 	Types                 []string         `json:"types"`
 	IsDeprecated          bool             `json:"isDeprecated,omitempty"`
 	// Organisations
-	ProperName                 string   `json:"properName,omitempty"`
-	ShortName                  string   `json:"shortName,omitempty"`
-	TradeNames                 []string `json:"tradeNames,omitempty"`
-	FormerNames                []string `json:"formerNames,omitempty"`
-	CountryCode                string   `json:"countryCode,omitempty"`
-	CountryOfRisk              string   `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation     string   `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations        string   `json:"countryOfOperations,omitempty"`
-	CountryOfRiskUUID          string   `json:"countryOfRiskUUID,omitempty"`
-	CountryOfIncorporationUUID string   `json:"countryOfIncorporationUUID,omitempty"`
-	CountryOfOperationsUUID    string   `json:"countryOfOperationsUUID,omitempty"`
-	PostalCode                 string   `json:"postalCode,omitempty"`
-	YearFounded                int      `json:"yearFounded,omitempty"`
-	LeiCode                    string   `json:"leiCode,omitempty"`
-	ParentOrganisation         string   `json:"parentOrganisation,omitempty"`
+	ProperName             string   `json:"properName,omitempty"`
+	ShortName              string   `json:"shortName,omitempty"`
+	TradeNames             []string `json:"tradeNames,omitempty"`
+	FormerNames            []string `json:"formerNames,omitempty"`
+	CountryCode            string   `json:"countryCode,omitempty"`
+	CountryOfRisk          string   `json:"countryOfRisk,omitempty"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
+	CountryOfOperations    string   `json:"countryOfOperations,omitempty"`
+	PostalCode             string   `json:"postalCode,omitempty"`
+	YearFounded            int      `json:"yearFounded,omitempty"`
+	LeiCode                string   `json:"leiCode,omitempty"`
+	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
 	// Location
 	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
@@ -359,20 +356,17 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		Type:             typeName,
 		IsDeprecated:     results[0].IsDeprecated,
 		// Organisations
-		ProperName:                 results[0].ProperName,
-		ShortName:                  results[0].ShortName,
-		TradeNames:                 results[0].TradeNames,
-		FormerNames:                results[0].FormerNames,
-		CountryCode:                results[0].CountryCode,
-		CountryOfIncorporation:     results[0].CountryOfIncorporation,
-		CountryOfRisk:              results[0].CountryOfRisk,
-		CountryOfOperations:        results[0].CountryOfOperations,
-		CountryOfIncorporationUUID: results[0].CountryOfIncorporationUUID,
-		CountryOfRiskUUID:          results[0].CountryOfRiskUUID,
-		CountryOfOperationsUUID:    results[0].CountryOfOperationsUUID,
-		PostalCode:                 results[0].PostalCode,
-		YearFounded:                results[0].YearFounded,
-		LeiCode:                    results[0].LeiCode,
+		ProperName:             results[0].ProperName,
+		ShortName:              results[0].ShortName,
+		TradeNames:             results[0].TradeNames,
+		FormerNames:            results[0].FormerNames,
+		CountryCode:            results[0].CountryCode,
+		CountryOfIncorporation: results[0].CountryOfIncorporation,
+		CountryOfRisk:          results[0].CountryOfRisk,
+		CountryOfOperations:    results[0].CountryOfOperations,
+		PostalCode:             results[0].PostalCode,
+		YearFounded:            results[0].YearFounded,
+		LeiCode:                results[0].LeiCode,
 		// Person
 		Salutation: results[0].Salutation,
 		BirthYear:  results[0].BirthYear,
@@ -918,20 +912,17 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		//TODO deprecated event?
 		IsDeprecated: aggregatedConcept.IsDeprecated,
 		// Organisations
-		ProperName:                 aggregatedConcept.ProperName,
-		ShortName:                  aggregatedConcept.ShortName,
-		TradeNames:                 aggregatedConcept.TradeNames,
-		FormerNames:                aggregatedConcept.FormerNames,
-		CountryCode:                aggregatedConcept.CountryCode,
-		CountryOfIncorporation:     aggregatedConcept.CountryOfIncorporation,
-		CountryOfRisk:              aggregatedConcept.CountryOfRisk,
-		CountryOfOperations:        aggregatedConcept.CountryOfOperations,
-		CountryOfIncorporationUUID: aggregatedConcept.CountryOfIncorporationUUID,
-		CountryOfRiskUUID:          aggregatedConcept.CountryOfRiskUUID,
-		CountryOfOperationsUUID:    aggregatedConcept.CountryOfOperationsUUID,
-		PostalCode:                 aggregatedConcept.PostalCode,
-		YearFounded:                aggregatedConcept.YearFounded,
-		LeiCode:                    aggregatedConcept.LeiCode,
+		ProperName:             aggregatedConcept.ProperName,
+		ShortName:              aggregatedConcept.ShortName,
+		TradeNames:             aggregatedConcept.TradeNames,
+		FormerNames:            aggregatedConcept.FormerNames,
+		CountryCode:            aggregatedConcept.CountryCode,
+		CountryOfIncorporation: aggregatedConcept.CountryOfIncorporation,
+		CountryOfRisk:          aggregatedConcept.CountryOfRisk,
+		CountryOfOperations:    aggregatedConcept.CountryOfOperations,
+		PostalCode:             aggregatedConcept.PostalCode,
+		YearFounded:            aggregatedConcept.YearFounded,
+		LeiCode:                aggregatedConcept.LeiCode,
 		// Person
 		Salutation: aggregatedConcept.Salutation,
 		BirthYear:  aggregatedConcept.BirthYear,

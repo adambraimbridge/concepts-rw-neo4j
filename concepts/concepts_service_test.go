@@ -42,6 +42,7 @@ const (
 	testOrgUUID                       = "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
 	parentOrgUUID                     = "c001ee9c-94c5-11e8-8f42-da24cd01f044"
 	locationUUID                      = "82cba3ce-329b-3010-b29d-4282a215889f"
+	anotherLocationUUID               = "6b683eff-56c3-43d9-acfc-7511d974fc01"
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
@@ -984,6 +985,47 @@ func getLocationWithISO31661() AggregatedConcept {
 	}
 }
 
+func getLocationWithISO31661AndConcordance() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  anotherLocationUUID,
+		PrefLabel: "Location Pref Label 2",
+		Type:      "Location",
+		Aliases: []string{
+			"Bulgaria",
+			"Bulgarie",
+			"Bulgarien",
+		},
+		ISO31661: "BG",
+		SourceRepresentations: []Concept{
+			{
+				UUID:           locationUUID,
+				PrefLabel:      "Location Pref Label 2",
+				Type:           "Location",
+				Authority:      "ManagedLocation",
+				AuthorityValue: locationUUID,
+				Aliases: []string{
+					"Bulgaria",
+					"Bulgarie",
+					"Bulgarien",
+				},
+				ISO31661: "BG",
+			},
+			{
+				UUID:           anotherLocationUUID,
+				PrefLabel:      "Location Pref Label 2",
+				Type:           "Location",
+				Authority:      "Smartlogic",
+				AuthorityValue: anotherLocationUUID,
+				Aliases: []string{
+					"Bulgaria",
+					"Bulgarie",
+					"Bulgarien",
+				},
+			},
+		},
+	}
+}
+
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
@@ -1293,6 +1335,40 @@ func TestWriteService(t *testing.T) {
 				UpdatedIds: []string{},
 			},
 		},
+		{
+			testName:          "Concord a ManagedLocation concept with ISO code to a Smartlogic concept",
+			aggregatedConcept: getLocationWithISO31661AndConcordance(),
+			otherRelatedConcepts: []AggregatedConcept{
+				getLocationWithISO31661(),
+			},
+			errStr: "",
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Location",
+						ConceptUUID:   locationUUID,
+						AggregateHash: "6683721433776998817",
+						EventDetails: ConcordanceEvent{
+							Type:  AddedEvent,
+							OldID: locationUUID,
+							NewID: anotherLocationUUID,
+						},
+					},
+					{
+						ConceptType:   "Location",
+						ConceptUUID:   anotherLocationUUID,
+						AggregateHash: "6683721433776998817",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					locationUUID,
+					anotherLocationUUID,
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -1315,6 +1391,10 @@ func TestWriteService(t *testing.T) {
 				if len(test.aggregatedConcept.SourceRepresentations) != 1 {
 					// Check leaf nodes for Identifiers
 					for _, leaf := range test.aggregatedConcept.SourceRepresentations {
+						// We don't have Identifiers for ManagedLocation concepts
+						if leaf.Authority == "ManagedLocation" {
+							continue
+						}
 						actualValue := getIdentifierValue(t, "uuid", leaf.UUID, fmt.Sprintf("%vIdentifier", leaf.Authority))
 						assert.Equal(t, leaf.AuthorityValue, actualValue, "Identifier value incorrect")
 					}
@@ -2475,6 +2555,8 @@ func cleanDB(t *testing.T) {
 		parentOrgUUID,
 		supersededByUUID,
 		testOrgUUID,
+		locationUUID,
+		anotherLocationUUID,
 	)
 	deleteSourceNodes(t,
 		parentUUID,
@@ -2501,6 +2583,8 @@ func cleanDB(t *testing.T) {
 		parentOrgUUID,
 		supersededByUUID,
 		testOrgUUID,
+		locationUUID,
+		anotherLocationUUID,
 	)
 	deleteConcordedNodes(t,
 		parentUUID,
@@ -2527,6 +2611,8 @@ func cleanDB(t *testing.T) {
 		parentOrgUUID,
 		supersededByUUID,
 		testOrgUUID,
+		locationUUID,
+		anotherLocationUUID,
 	)
 }
 

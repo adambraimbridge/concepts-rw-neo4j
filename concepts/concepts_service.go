@@ -493,11 +493,6 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			}
 		}
 	} else {
-		var conceptsToCheckForExistingConcordance []string
-		for _, sr := range aggregatedConceptToWrite.SourceRepresentations {
-			conceptsToCheckForExistingConcordance = append(conceptsToCheckForExistingConcordance, sr.UUID)
-		}
-
 		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(requestSourceData, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
 		if err != nil {
 			return updateRecord, err
@@ -514,11 +509,11 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		}
 	}
 
-	aggregatedConceptToWrite.AggregatedHash = hashAsString
-	queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
 	for _, query := range prefUUIDsToBeDeletedQueryBatch {
 		queryBatch = append(queryBatch, query)
 	}
+	aggregatedConceptToWrite.AggregatedHash = hashAsString
+	queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
 
 	updateRecord.UpdatedIds = updatedUUIDList
 	updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{

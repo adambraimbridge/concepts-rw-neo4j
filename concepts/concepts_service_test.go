@@ -1440,7 +1440,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Location",
 						ConceptUUID:   locationUUID,
-						AggregateHash: "6683721433776998817",
+						AggregateHash: "11262391833318090928",
 						EventDetails: ConcordanceEvent{
 							Type:  AddedEvent,
 							OldID: locationUUID,
@@ -1450,7 +1450,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Location",
 						ConceptUUID:   anotherLocationUUID,
-						AggregateHash: "6683721433776998817",
+						AggregateHash: "11262391833318090928",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},

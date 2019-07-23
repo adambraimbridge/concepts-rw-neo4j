@@ -8,10 +8,9 @@ __An API for reading/writing concepts into Neo4j.__
 
 ## Installation
 
-        go get -u github.com/Financial-Times/concepts-rw-neo4j
+        go get github.com/Financial-Times/concepts-rw-neo4j
         cd $GOPATH/src/github.com/Financial-Times/concepts-rw-neo4j
-        dep ensure -v -vendor-only
-        go build
+        go build -mod=readonly
 
 ## Running locally
 
@@ -34,7 +33,7 @@ All arguments are optional, they default to a local Neo4j install on the default
 
 ## Testing
 
-* Unit tests only: `go test -race ./...`
+* Unit tests only: `go test -mod=readonly -race ./...`
 * Unit and integration tests: 
     ```
     docker-compose -f docker-compose-tests.yml up -d --build && \

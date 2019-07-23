@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: /go/src/github.com/Financial-Times/concepts-rw-neo4j
     docker:
-      - image: circleci/golang:1.10
+      - image: golang:1
         environment:
           CIRCLE_TEST_REPORTS: /tmp/test-reports
           CIRCLE_ARTIFACTS: /tmp/artifacts
@@ -21,23 +21,18 @@ jobs:
             mkdir -p $CIRCLE_TEST_REPORTS/golang
             mkdir -p $CIRCLE_ARTIFACTS
       - run:
-          name: Download dependancies
+          name: Download dependencies
           command: |
-            go get -u github.com/jstemmer/go-junit-report
-            go get -u github.com/mattn/goveralls
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-      - run:
-          name: Download vendored dependancies
-          command: |
-            dep ensure -v -vendor-only
+            GO111MODULE=off go get -u github.com/jstemmer/go-junit-report
+            GO111MODULE=off go get -u github.com/mattn/goveralls
       - run:
           name: Build app
           command: |
-            go build -v
+            go build -mod=readonly -v
       - run:
           name: Run tests and create coverage report
           command: |
-            go test ./... -race -tags=integration -cover -coverprofile=$CIRCLE_TEST_REPORTS/coverage.out | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
+            go test -mod=readonly -race -tags=integration -cover -coverprofile=$CIRCLE_TEST_REPORTS/coverage.out ./... | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
       - run:
           name: Upload coverage report
           command: |

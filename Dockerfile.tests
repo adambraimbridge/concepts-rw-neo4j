@@ -11,8 +11,6 @@ WORKDIR ${SRC_FOLDER}
 RUN echo "Fetching dependencies..." \
   && git clone https://github.com/vishnubob/wait-for-it.git \
   && cd wait-for-it \
-  && mv ./wait-for-it.sh ${SRC_FOLDER} \
-  && curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh \
-  && $GOPATH/bin/dep ensure -vendor-only
+  && mv ./wait-for-it.sh ${SRC_FOLDER}
 
 ENTRYPOINT ["./wait-for-it.sh", "neo4j:7474", "-t", "60", "--"]

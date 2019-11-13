@@ -99,190 +99,6 @@ func getAggregatedConcept(t *testing.T, name string) AggregatedConcept {
 	return ac
 }
 
-func getMembership() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:         membershipUUID,
-		PrefLabel:        "Membership Pref Label",
-		Type:             "Membership",
-		OrganisationUUID: organisationUUID,
-		PersonUUID:       personUUID,
-		InceptionDate:    membershipRole.InceptionDate,
-		TerminationDate:  membershipRole.TerminationDate,
-		MembershipRoles: []MembershipRole{
-			membershipRole,
-			anotherMembershipRole,
-		},
-		Salutation: "Mr",
-		BirthYear:  2018,
-		SourceRepresentations: []Concept{
-			{
-				UUID:             membershipUUID,
-				PrefLabel:        "Membership Pref Label",
-				Type:             "Membership",
-				Authority:        "Smartlogic",
-				AuthorityValue:   "746464",
-				OrganisationUUID: organisationUUID,
-				PersonUUID:       personUUID,
-				InceptionDate:    membershipRole.InceptionDate,
-				TerminationDate:  membershipRole.TerminationDate,
-				MembershipRoles: []MembershipRole{
-					membershipRole,
-					anotherMembershipRole,
-				},
-				Salutation: "Mr",
-				BirthYear:  2018,
-			},
-		},
-	}
-}
-
-func getOldMembership() Concept {
-	return Concept{
-		UUID:             membershipUUID,
-		PrefLabel:        "Membership Pref Label",
-		Type:             "Membership",
-		Authority:        "Smartlogic",
-		AuthorityValue:   "746464",
-		OrganisationUUID: organisationUUID,
-		PersonUUID:       personUUID,
-		InceptionDate:    "2016-01-01T00:00:00Z",
-		TerminationDate:  "2017-02-02T00:00:00Z",
-		MembershipRoles: []MembershipRole{
-			MembershipRole{
-				RoleUUID:        "f807193d-337b-412f-b32c-afa14b385819",
-				InceptionDate:   "2016-01-01T00:00:00Z",
-				TerminationDate: "2017-02-02T00:00:00Z",
-			}, MembershipRole{
-				RoleUUID:        "f807193d-337b-412f-b32c-afa14b385819",
-				InceptionDate:   "2016-01-01T00:00:00Z",
-				TerminationDate: "2017-02-02T00:00:00Z",
-			},
-		},
-	}
-}
-
-func getFinancialInstrument() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  financialInstrumentUUID,
-		PrefLabel: "FinancialInstrument Pref Label",
-		Type:      "FinancialInstrument",
-		FigiCode:  "12345",
-		IssuedBy:  financialOrgUUID,
-		SourceRepresentations: []Concept{{
-			UUID:               financialInstrumentUUID,
-			PrefLabel:          "FinancialInstrument Pref Label",
-			Type:               "FinancialInstrument",
-			Authority:          "FACTSET",
-			AuthorityValue:     "746464",
-			FigiCode:           "12345",
-			ParentOrganisation: parentOrgUUID,
-			IssuedBy:           financialOrgUUID,
-		}},
-	}
-}
-
-func getFinancialInstrumentWithSameIssuer() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  financialInstrumentSameIssuerUUID,
-		PrefLabel: "FinancialInstrument Pref Label 2",
-		Type:      "FinancialInstrument",
-		FigiCode:  "12345678",
-		IssuedBy:  financialOrgUUID,
-		SourceRepresentations: []Concept{{
-			UUID:               financialInstrumentSameIssuerUUID,
-			PrefLabel:          "FinancialInstrument Pref Label 2",
-			Type:               "FinancialInstrument",
-			Authority:          "FACTSET",
-			AuthorityValue:     "19283671",
-			FigiCode:           "12345678",
-			ParentOrganisation: parentOrgUUID,
-			IssuedBy:           financialOrgUUID,
-		}},
-	}
-}
-
-func getUpdatedFinancialInstrument() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:  financialInstrumentUUID,
-		PrefLabel: "FinancialInstrument Pref Label",
-		Type:      "FinancialInstrument",
-		FigiCode:  "123457",
-		IssuedBy:  anotherFinancialOrgUUID,
-		SourceRepresentations: []Concept{{
-			UUID:               financialInstrumentUUID,
-			PrefLabel:          "FinancialInstrument Pref Label",
-			Type:               "FinancialInstrument",
-			Authority:          "FACTSET",
-			AuthorityValue:     "746464",
-			FigiCode:           "123457",
-			ParentOrganisation: parentOrgUUID,
-			IssuedBy:           anotherFinancialOrgUUID,
-		}},
-	}
-}
-
-func getOrganisation() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:   testOrgUUID,
-		Type:       "PublicCompany",
-		ProperName: "Strix Group Plc",
-		PrefLabel:  "Strix Group Plc",
-		ShortName:  "Strix Group",
-		TradeNames: []string{
-			"STRIX GROUP PLC",
-		},
-		FormerNames: []string{
-			"Castletown Thermostats",
-			"Steam Plc",
-		},
-		Aliases: []string{
-			"Strix Group Plc",
-			"STRIX GROUP PLC",
-			"Strix Group",
-			"Castletown Thermostats",
-			"Steam Plc",
-		},
-		CountryCode:            "GB",
-		CountryOfIncorporation: "IM",
-		PostalCode:             "IM9 2RG",
-		YearFounded:            1951,
-		EmailAddress:           "info@strix.com",
-		LeiCode:                "213800KZEW5W6BZMNT62",
-		SourceRepresentations: []Concept{
-			{
-				UUID:           testOrgUUID,
-				Type:           "PublicCompany",
-				Authority:      "FACTSET",
-				AuthorityValue: "B000BB-S",
-				ProperName:     "Strix Group Plc",
-				PrefLabel:      "Strix Group Plc",
-				ShortName:      "Strix Group",
-				TradeNames: []string{
-					"STRIX GROUP PLC",
-				},
-				FormerNames: []string{
-					"Castletown Thermostats",
-					"Steam Plc",
-				},
-				Aliases: []string{
-					"Strix Group Plc",
-					"STRIX GROUP PLC",
-					"Strix Group",
-					"Castletown Thermostats",
-					"Steam Plc",
-				},
-				CountryCode:            "GB",
-				CountryOfIncorporation: "IM",
-				PostalCode:             "IM9 2RG",
-				YearFounded:            1951,
-				EmailAddress:           "info@strix.com",
-				LeiCode:                "213800KZEW5W6BZMNT62",
-				ParentOrganisation:     parentOrgUUID,
-			},
-		},
-	}
-}
-
 func getOrganisationWithAllCountries() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:   testOrgUUID,
@@ -352,97 +168,6 @@ func getOrganisationWithAllCountries() AggregatedConcept {
 	}
 }
 
-func getUpdatedOrganisation() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:   testOrgUUID,
-		Type:       "PublicCompany",
-		ProperName: "Strix Group Plc",
-		PrefLabel:  "Strix Group Plc",
-		ShortName:  "Strix Group",
-		TradeNames: []string{
-			"STRIX GROUP PLC",
-		},
-		FormerNames: []string{
-			"Castletown Thermostats",
-			"Steam Plc",
-		},
-		Aliases: []string{
-			"Strix Group Plc",
-			"STRIX GROUP PLC",
-			"Strix Group",
-			"Castletown Thermostats",
-			"Steam Plc",
-		},
-		CountryCode:            "GB 2",
-		CountryOfIncorporation: "IM 2",
-		PostalCode:             "IM9 2RG 2",
-		YearFounded:            1951,
-		EmailAddress:           "info@strix.com",
-		LeiCode:                "213800KZEW5W6BZMNT62",
-		SourceRepresentations: []Concept{
-			{
-				UUID:           testOrgUUID,
-				Type:           "PublicCompany",
-				Authority:      "FACTSET",
-				AuthorityValue: "B000BB-S",
-				ProperName:     "Strix Group Plc",
-				PrefLabel:      "Strix Group Plc",
-				ShortName:      "Strix Group",
-				TradeNames: []string{
-					"STRIX GROUP PLC",
-				},
-				FormerNames: []string{
-					"Castletown Thermostats",
-					"Steam Plc",
-				},
-				Aliases: []string{
-					"Strix Group Plc",
-					"STRIX GROUP PLC",
-					"Strix Group",
-					"Castletown Thermostats",
-					"Steam Plc",
-				},
-				CountryCode:            "GB 2",
-				CountryOfIncorporation: "IM 2",
-				PostalCode:             "IM9 2RG 2",
-				YearFounded:            1951,
-				EmailAddress:           "info@strix.com",
-				LeiCode:                "213800KZEW5W6BZMNT62",
-				ParentOrganisation:     parentOrgUUID,
-			},
-		},
-	}
-}
-
-func getUpdatedMembership() AggregatedConcept {
-	return AggregatedConcept{
-		PrefUUID:         membershipUUID,
-		PrefLabel:        "Membership Pref Label",
-		Type:             "Membership",
-		OrganisationUUID: anotherOrganisationUUID,
-		PersonUUID:       anotherPersonUUID,
-		InceptionDate:    anotherMembershipRole.InceptionDate,
-		TerminationDate:  anotherMembershipRole.TerminationDate,
-		MembershipRoles: []MembershipRole{
-			anotherMembershipRole,
-		},
-		SourceRepresentations: []Concept{
-			{
-				UUID:             membershipUUID,
-				PrefLabel:        "Membership Pref Label",
-				Type:             "Membership",
-				Authority:        "Smartlogic",
-				AuthorityValue:   "746464",
-				OrganisationUUID: anotherOrganisationUUID,
-				PersonUUID:       anotherPersonUUID,
-				InceptionDate:    anotherMembershipRole.InceptionDate,
-				TerminationDate:  anotherMembershipRole.TerminationDate,
-				MembershipRoles: []MembershipRole{
-					anotherMembershipRole,
-				},
-			},
-		},
-	}
 func getConcept(t *testing.T, name string) Concept {
 	c := Concept{}
 	json.Unmarshal(helperLoadBytes(t, name), &c)
@@ -535,7 +260,7 @@ func getLocationWithISO31661AndConcordance() AggregatedConcept {
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
-	logger.InitLogger("test-concepts-rw-neo4j", "info")
+	logger.InitLogger("test-concepts-rw-neo4j", "panic")
 
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
@@ -1148,7 +873,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   sourceID1,
-					AggregateHash: "15207796918306738565",
+					AggregateHash: "1418787289619035431",
 					TransactionID: "test_tid",
 					EventDetails: ConcordanceEvent{
 						Type:  RemovedEvent,
@@ -1159,7 +884,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "15207796918306738565",
+					AggregateHash: "1418787289619035431",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1417,7 +1142,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "2917315517571043417",
+					AggregateHash: "8107888847988408436",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1445,7 +1170,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "15546696036700135939",
+					AggregateHash: "13104020555437672862",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -1474,7 +1199,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				{
 					ConceptType:   "Brand",
 					ConceptUUID:   basicConceptUUID,
-					AggregateHash: "15207796918306738565",
+					AggregateHash: "1418787289619035431",
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
@@ -2047,16 +1772,6 @@ func newURL() string {
 		url = "http://localhost:7474/db/data"
 	}
 	return url
-}
-
-func getConceptService(t *testing.T) ConceptService {
-	conf := neoutils.DefaultConnectionConfig()
-	conf.Transactional = false
-	db, err := neoutils.Connect(newURL(), conf)
-	assert.NoError(t, err, "Failed to connect to Neo4j")
-	service := NewConceptService(db)
-	service.Initialise()
-	return service
 }
 
 func cleanDB(t *testing.T) {

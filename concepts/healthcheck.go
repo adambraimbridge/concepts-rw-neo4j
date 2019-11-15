@@ -59,7 +59,7 @@ func (h *ConceptsHandler) makeNeo4jAvailabilityCheck() fthealth.Check {
 	return fthealth.Check{
 		BusinessImpact:   "Cannot read/write concepts via this writer",
 		Name:             "Check connectivity to Neo4j - neoUrl is a parameter in hieradata for this service",
-		PanicGuide:       "https://dewey.ft.com/concepts-rw-neo4j.html",
+		PanicGuide:       "https://runbooks.in.ft.com/concepts-rw-neo4j",
 		Severity:         2,
 		TechnicalSummary: "Cannot connect to Neo4j instance with at least one concept loaded in it",
 		Checker:          h.checkNeo4jAvailability,

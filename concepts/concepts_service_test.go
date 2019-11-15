@@ -95,7 +95,10 @@ func helperLoadBytes(t *testing.T, name string) []byte {
 // currently missing validation around this
 func getAggregatedConcept(t *testing.T, name string) AggregatedConcept {
 	ac := AggregatedConcept{}
-	json.Unmarshal(helperLoadBytes(t, name), &ac)
+	err := json.Unmarshal(helperLoadBytes(t, name), &ac)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return ac
 }
 
@@ -170,7 +173,10 @@ func getOrganisationWithAllCountries() AggregatedConcept {
 
 func getConcept(t *testing.T, name string) Concept {
 	c := Concept{}
-	json.Unmarshal(helperLoadBytes(t, name), &c)
+	err := json.Unmarshal(helperLoadBytes(t, name), &c)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return c
 }
 

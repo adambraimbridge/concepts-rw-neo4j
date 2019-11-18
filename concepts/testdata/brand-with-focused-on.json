@@ -1,0 +1,23 @@
+{  
+    "prefUUID":"cce1bc63-3717-4ae6-9399-88dab5966815",
+    "prefLabel":"Pref Label",
+    "type":"Brand",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"cce1bc63-3717-4ae6-9399-88dab5966815",
+            "prefLabel":"Pref Label",
+            "type":"Brand",
+            "authority":"Smartlogic",
+            "authorityValue":"1234",
+            "aliases":[  
+                "brandLabel",
+                "secondBrandLabel",
+                "anotherBrandOne",
+                "whyNotBrand"
+            ],
+            "focusedOnUUIDs":[  
+                "740c604b-8d97-443e-be70-33de6f1d6e67"
+            ]
+        }
+    ]
+}

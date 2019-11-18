@@ -3,70 +3,43 @@ package concepts
 import (
 	"encoding/json"
 	"errors"
-
-	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
-	"github.com/stretchr/testify/mock"
 )
 
 type mockConceptService struct {
-	mock.Mock
-	uuid         string
-	conceptType  string
-	transID      string
-	uuidList     []string
-	failParse    bool
-	failWrite    bool
-	failRead     bool
-	failConflict bool
-	failCheck    bool
+	write      func(thing interface{}, transID string) (interface{}, error)
+	read       func(uuid string, transID string) (interface{}, bool, error)
+	decodeJSON func(*json.Decoder) (interface{}, string, error)
+	check      func() error
 }
 
-func (dS *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
-	mockList := ConceptChanges{}
-	if dS.failWrite {
-		return mockList, errors.New("TEST failing to WRITE")
+func (mcs *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
+	if mcs.write != nil {
+		return mcs.write(thing, transID)
 	}
-	if dS.failConflict {
-		return mockList, rwapi.ConstraintOrTransactionError{}
-	}
-	if len(dS.uuidList) > 0 {
-		mockList.UpdatedIds = dS.uuidList
-	}
-	dS.transID = transID
-	return mockList, nil
+	return nil, errors.New("not implemented")
 }
 
-func (dS *mockConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
-	if dS.failRead {
-		return nil, false, errors.New("TEST failing to READ")
+func (mcs *mockConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
+	if mcs.read != nil {
+		return mcs.read(uuid, transID)
 	}
-	if uuid == dS.uuid {
-		return AggregatedConcept{
-			PrefUUID: dS.uuid,
-			Type:     dS.conceptType,
-		}, true, nil
-	}
-	dS.transID = transID
-	return nil, false, nil
+	return nil, false, errors.New("not implemented")
 }
 
-func (dS *mockConceptService) DecodeJSON(*json.Decoder) (interface{}, string, error) {
-	if dS.failParse {
-		return "", "", errors.New("TEST failing to DECODE")
+func (mcs *mockConceptService) DecodeJSON(d *json.Decoder) (interface{}, string, error) {
+	if mcs.decodeJSON != nil {
+		return mcs.decodeJSON(d)
 	}
-	return AggregatedConcept{
-		PrefUUID: dS.uuid,
-		Type:     dS.conceptType,
-	}, dS.uuid, nil
+	return nil, "", errors.New("not implemented")
 }
 
-func (dS *mockConceptService) Check() error {
-	if dS.failCheck {
-		return errors.New("TEST failing to CHECK")
+func (mcs *mockConceptService) Check() error {
+	if mcs.check != nil {
+		return mcs.check()
 	}
-	return nil
+	return errors.New("not implemented")
 }
 
-func (dS *mockConceptService) Initialise() error {
+func (mcs *mockConceptService) Initialise() error {
 	return nil
 }

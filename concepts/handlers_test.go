@@ -1,7 +1,10 @@
 package concepts
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,10 +27,14 @@ func TestPutHandler(t *testing.T) {
 	}{
 		{
 			name: "Success",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "Dummy",
+				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
+					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
+				},
+				write: func(thing interface{}, transID string) (interface{}, error) {
+					return ConceptChanges{}, nil
+				},
 			},
 			statusCode:  http.StatusOK,
 			contentType: "",
@@ -35,10 +42,14 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "RegularPathSuccess",
-			req:  newRequest("PUT", fmt.Sprintf("/financial-instruments/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/financial-instruments/%s", knownUUID), t),
 			mockService: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "FinancialInstrument",
+				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
+					return AggregatedConcept{PrefUUID: knownUUID, Type: "FinancialInstrument"}, knownUUID, nil
+				},
+				write: func(thing interface{}, transID string) (interface{}, error) {
+					return ConceptChanges{}, nil
+				},
 			},
 			statusCode:  http.StatusOK,
 			contentType: "",
@@ -46,11 +57,11 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "ParseError",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "Dummy",
-				failParse:   true,
+				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
+					return nil, "", errors.New("TEST failing to DECODE")
+				},
 			},
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
@@ -58,10 +69,14 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "UUIDMisMatch",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999")),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999"), t),
 			mockService: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "Dummy",
+				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
+					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
+				},
+				write: func(thing interface{}, transID string) (interface{}, error) {
+					return ConceptChanges{}, nil
+				},
 			},
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
@@ -69,11 +84,14 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "WriteFailed",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "Dummy",
-				failWrite:   true,
+				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
+					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
+				},
+				write: func(thing interface{}, transID string) (interface{}, error) {
+					return nil, errors.New("TEST failing to WRITE")
+				},
 			},
 			statusCode:  http.StatusServiceUnavailable,
 			contentType: "",
@@ -81,11 +99,14 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "WriteFailedDueToConflict",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
-				uuid:         knownUUID,
-				conceptType:  "Dummy",
-				failConflict: true,
+				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
+					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
+				},
+				write: func(thing interface{}, transID string) (interface{}, error) {
+					return nil, rwapi.ConstraintOrTransactionError{}
+				},
 			},
 			statusCode:  http.StatusConflict,
 			contentType: "",
@@ -93,10 +114,14 @@ func TestPutHandler(t *testing.T) {
 		},
 		{
 			name: "BadConceptOrPath",
-			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "not-dummy",
+				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
+					return AggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, knownUUID, nil
+				},
+				write: func(thing interface{}, transID string) (interface{}, error) {
+					return ConceptChanges{}, nil
+				},
 			},
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
@@ -127,10 +152,11 @@ func TestGetHandler(t *testing.T) {
 	}{
 		{
 			name: "Success",
-			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "Dummy",
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+				},
 			},
 			statusCode:  http.StatusOK,
 			contentType: "",
@@ -138,10 +164,11 @@ func TestGetHandler(t *testing.T) {
 		},
 		{
 			name: "NotFound",
-			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", "99999")),
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", "99999"), t),
 			ds: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "Dummy",
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return nil, false, nil
+				},
 			},
 			statusCode:  http.StatusNotFound,
 			contentType: "",
@@ -149,11 +176,11 @@ func TestGetHandler(t *testing.T) {
 		},
 		{
 			name: "ReadError",
-			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "Dummy",
-				failRead:    true,
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return nil, false, errors.New("TEST failing to READ")
+				},
 			},
 			statusCode:  http.StatusServiceUnavailable,
 			contentType: "",
@@ -161,10 +188,11 @@ func TestGetHandler(t *testing.T) {
 		},
 		{
 			name: "BadConceptOrPath",
-			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)),
+			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
-				uuid:        knownUUID,
-				conceptType: "not-dummy",
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return AggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, true, nil
+				},
 			},
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
@@ -193,8 +221,30 @@ func TestGtgHandler(t *testing.T) {
 		contentType string // Contents of the Content-Type header
 		body        string
 	}{
-		{"Success", newRequest("GET", "/__gtg"), &mockConceptService{failCheck: false}, http.StatusOK, "", "OK"},
-		{"GTGError", newRequest("GET", "/__gtg"), &mockConceptService{failCheck: true}, http.StatusServiceUnavailable, "", "TEST failing to CHECK"},
+		{
+			"Success",
+			newRequest("GET", "/__gtg", t),
+			&mockConceptService{
+				check: func() error {
+					return nil
+				},
+			},
+			http.StatusOK,
+			"",
+			"OK",
+		},
+		{
+			"GTGError",
+			newRequest("GET", "/__gtg", t),
+			&mockConceptService{
+				check: func() error {
+					return errors.New("TEST failing to CHECK")
+				},
+			},
+			http.StatusServiceUnavailable,
+			"",
+			"TEST failing to CHECK",
+		},
 	}
 
 	for _, test := range tests {
@@ -208,10 +258,10 @@ func TestGtgHandler(t *testing.T) {
 	}
 }
 
-func newRequest(method, url string) *http.Request {
+func newRequest(method, url string, t *testing.T) *http.Request {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	return req
 }

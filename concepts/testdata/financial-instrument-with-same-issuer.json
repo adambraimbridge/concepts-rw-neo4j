@@ -1,0 +1,19 @@
+{  
+    "prefUUID":"08c6066c-9356-4e96-abd5-9a4f3726724a",
+    "prefLabel":"FinancialInstrument Pref Label 2",
+    "type":"FinancialInstrument",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"08c6066c-9356-4e96-abd5-9a4f3726724a",
+            "prefLabel":"FinancialInstrument Pref Label 2",
+            "type":"FinancialInstrument",
+            "authority":"FACTSET",
+            "authorityValue":"19283671",
+            "figiCode":"12345678",
+            "issuedBy":"4290f028-05e9-4c2d-9f11-61ec59ba081a",
+            "parentOrganisation":"c001ee9c-94c5-11e8-8f42-da24cd01f044"
+        }
+    ],
+    "figiCode":"12345678",
+    "issuedBy":"4290f028-05e9-4c2d-9f11-61ec59ba081a"
+}

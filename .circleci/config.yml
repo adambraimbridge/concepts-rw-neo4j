@@ -37,7 +37,7 @@ jobs:
       - run:
           name: Run tests and create coverage report
           command: |
-            go test ./... -race -cover -coverprofile=$CIRCLE_TEST_REPORTS/coverage.out | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
+            go test ./... -race -tags=integration -cover -coverprofile=$CIRCLE_TEST_REPORTS/coverage.out | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
       - run:
           name: Upload coverage report
           command: |

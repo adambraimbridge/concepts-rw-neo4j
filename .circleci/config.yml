@@ -25,10 +25,15 @@ jobs:
           command: |
             GO111MODULE=off go get -u github.com/jstemmer/go-junit-report
             GO111MODULE=off go get -u github.com/mattn/goveralls
+            curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.18.0
+            wget https://raw.githubusercontent.com/Financial-Times/upp-coding-standard/v1.0.0/golangci-config/.golangci.yml
       - run:
           name: Build app
           command: |
             go build -mod=readonly -v
+      - run:
+          name: Run linters
+          command: golangci-lint run --config=.golangci.yml --new-from-rev=master --build-tags=integration
       - run:
           name: Run tests and create coverage report
           command: |

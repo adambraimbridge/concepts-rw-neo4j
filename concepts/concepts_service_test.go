@@ -453,6 +453,29 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
+			testName:          "Creates All Values correctly for a Concept with multiple IS_RELATED_TO relationships",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-related-to.json"),
+			otherRelatedConcepts: []AggregatedConcept{
+				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
+			},
+			errStr: "",
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "14599683085828585622",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			},
+		},
+		{
 			testName:          "Creates All Values Present for a Concept with a HAS_BROADER relationship",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-has-broader.json"),
 			otherRelatedConcepts: []AggregatedConcept{
@@ -486,6 +509,29 @@ func TestWriteService(t *testing.T) {
 						ConceptType:   "Section",
 						ConceptUUID:   basicConceptUUID,
 						AggregateHash: "7804922918884804897",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values correctly for a Concept with multiple HAS_BROADER relationships",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-has-broader.json"),
+			otherRelatedConcepts: []AggregatedConcept{
+				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
+			},
+			errStr: "",
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "5636141849922580276",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -534,6 +580,49 @@ func TestWriteService(t *testing.T) {
 				},
 				UpdatedIds: []string{
 					brandUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values correctly for a Brand with multiple HAS_FOCUS relationships",
+			aggregatedConcept: getAggregatedConcept(t, "brand-with-multiple-has-focus.json"),
+			otherRelatedConcepts: []AggregatedConcept{
+				getAggregatedConcept(t, "topic-focus-of-brand.json"),
+			},
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Brand",
+						ConceptUUID:   brandUUID,
+						AggregateHash: "12360461169757218021",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					brandUUID,
+				},
+			},
+		},
+		{
+			testName:             "Creates All Values correctly for a Concept with multiple SUPERSEDED_BY relationships",
+			aggregatedConcept:    getAggregatedConcept(t, "concept-with-multiple-superseded-by.json"),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "12904407635903330926",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					basicConceptUUID,
 				},
 			},
 		},

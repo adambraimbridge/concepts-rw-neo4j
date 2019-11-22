@@ -295,19 +295,16 @@ func TestWriteService(t *testing.T) {
 		updatedConcepts      ConceptChanges
 	}{
 		{
-			testName:             "Throws validation error for invalid concept",
-			aggregatedConcept:    AggregatedConcept{PrefUUID: basicConceptUUID},
-			otherRelatedConcepts: nil,
-			errStr:               "Invalid request, no prefLabel has been supplied",
+			testName:          "Throws validation error for invalid concept",
+			aggregatedConcept: AggregatedConcept{PrefUUID: basicConceptUUID},
+			errStr:            "Invalid request, no prefLabel has been supplied",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a Lone Concept",
-			aggregatedConcept:    getAggregatedConcept(t, "full-lone-aggregated-concept.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a Lone Concept",
+			aggregatedConcept: getAggregatedConcept(t, "full-lone-aggregated-concept.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -325,10 +322,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a MembershipRole",
-			aggregatedConcept:    getAggregatedConcept(t, "membership-role.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a MembershipRole",
+			aggregatedConcept: getAggregatedConcept(t, "membership-role.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -346,10 +341,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a BoardRole",
-			aggregatedConcept:    getAggregatedConcept(t, "board-role.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a BoardRole",
+			aggregatedConcept: getAggregatedConcept(t, "board-role.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -367,10 +360,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a Membership",
-			aggregatedConcept:    getAggregatedConcept(t, "membership.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a Membership",
+			aggregatedConcept: getAggregatedConcept(t, "membership.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -388,10 +379,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a FinancialInstrument",
-			aggregatedConcept:    getAggregatedConcept(t, "financial-instrument.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a FinancialInstrument",
+			aggregatedConcept: getAggregatedConcept(t, "financial-instrument.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -414,7 +403,6 @@ func TestWriteService(t *testing.T) {
 			otherRelatedConcepts: []AggregatedConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
-			errStr: "",
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -432,10 +420,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a Concept with a IS_RELATED_TO relationship to an unknown thing",
-			aggregatedConcept:    getAggregatedConcept(t, "concept-with-related-to-unknown-thing.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a Concept with a IS_RELATED_TO relationship to an unknown thing",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-related-to-unknown-thing.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -458,7 +444,6 @@ func TestWriteService(t *testing.T) {
 			otherRelatedConcepts: []AggregatedConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
-			errStr: "",
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -481,7 +466,6 @@ func TestWriteService(t *testing.T) {
 			otherRelatedConcepts: []AggregatedConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
-			errStr: "",
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -499,10 +483,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing",
-			aggregatedConcept:    getAggregatedConcept(t, "concept-with-has-broader-to-unknown-thing.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-has-broader-to-unknown-thing.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -525,7 +507,6 @@ func TestWriteService(t *testing.T) {
 			otherRelatedConcepts: []AggregatedConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
-			errStr: "",
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -606,10 +587,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values correctly for a Concept with multiple SUPERSEDED_BY relationships",
-			aggregatedConcept:    getAggregatedConcept(t, "concept-with-multiple-superseded-by.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values correctly for a Concept with multiple SUPERSEDED_BY relationships",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-superseded-by.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -627,10 +606,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a Concorded Concept",
-			aggregatedConcept:    getAggregatedConcept(t, "full-concorded-aggregated-concept.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a Concorded Concept",
+			aggregatedConcept: getAggregatedConcept(t, "full-concorded-aggregated-concept.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -667,10 +644,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates Handles Special Characters",
-			aggregatedConcept:    getAggregatedConcept(t, "lone-source-system-pref-label.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates Handles Special Characters",
+			aggregatedConcept: getAggregatedConcept(t, "lone-source-system-pref-label.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -688,10 +663,9 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Adding Concept with existing Identifiers fails",
-			aggregatedConcept:    getAggregatedConcept(t, "concorded-concept-with-conflicted-identifier.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "already exists with label `TMEIdentifier` and property `value` = '1234'",
+			testName:          "Adding Concept with existing Identifiers fails",
+			aggregatedConcept: getAggregatedConcept(t, "concorded-concept-with-conflicted-identifier.json"),
+			errStr:            "already exists with label `TMEIdentifier` and property `value` = '1234'",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
@@ -702,7 +676,6 @@ func TestWriteService(t *testing.T) {
 			otherRelatedConcepts: []AggregatedConcept{
 				getLocationWithISO31661(),
 			},
-			errStr: "",
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -721,10 +694,9 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Unknown Authority Should Fail",
-			aggregatedConcept:    getAggregatedConcept(t, "unknown-authority.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "Invalid Request",
+			testName:          "Unknown Authority Should Fail",
+			aggregatedConcept: getAggregatedConcept(t, "unknown-authority.json"),
+			errStr:            "Invalid Request",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
@@ -735,7 +707,6 @@ func TestWriteService(t *testing.T) {
 			otherRelatedConcepts: []AggregatedConcept{
 				getLocationWithISO31661(),
 			},
-			errStr: "",
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{

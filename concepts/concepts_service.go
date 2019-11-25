@@ -146,6 +146,7 @@ type neoConcept struct {
 	PrefUUID             string           `json:"prefUUID,omitempty"`
 	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
 	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
+	FocusedUUIDs         []string         `json:"focusedUUIDs,omitempty"`
 	ScopeNote            string           `json:"scopeNote,omitempty"`
 	ShortLabel           string           `json:"shortLabel,omitempty"`
 	Strapline            string           `json:"strapline,omitempty"`
@@ -199,6 +200,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
 			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
 			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
+			OPTIONAL MATCH (source)-[:HAS_FOCUS]->(focused:Thing)
 			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
 			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
@@ -214,6 +216,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				person,
 				related,
 				supersededBy,
+				focused,
 				role,
 				roleRel,
 				parentOrg,
@@ -233,6 +236,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				person,
 				supersededBy,
 				related,
+				focused,
 				coo,
 				cor,
 				coi,
@@ -257,6 +261,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					parentOrganisation: parentOrg.uuid,
 					prefLabel: source.prefLabel,
 					relatedUUIDs: collect(related.uuid),
+					focusedUUIDs: collect(focused.uuid),
 					types: labels(source),
 					uuid: source.uuid,
 					isDeprecated: source.isDeprecated,
@@ -399,6 +404,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			PersonUUID:                 srcConcept.PersonUUID,
 			PrefLabel:                  srcConcept.PrefLabel,
 			RelatedUUIDs:               filterSlice(srcConcept.RelatedUUIDs),
+			FocusedUUIDs:               filterSlice(srcConcept.FocusedUUIDs),
 			Type:                       conceptType,
 			UUID:                       srcConcept.UUID,
 			IsDeprecated:               srcConcept.IsDeprecated,
@@ -853,6 +859,7 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
 			OPTIONAL MATCH (t)-[supersededBy:SUPERSEDED_BY]->(supersedesNode)
 			OPTIONAL MATCH (t)-[broader:HAS_BROADER]->(brNode)
+			OPTIONAL MATCH (t)-[focused:HAS_FOCUS]->(focusedNode)
 			OPTIONAL MATCH (t)-[ho:HAS_ORGANISATION]->(org)
 			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->(memb)
 			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->(mr)
@@ -863,7 +870,7 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[corRel:COUNTRY_OF_RISK]->(cor)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo, broader, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader, focused, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -956,6 +963,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 
 		if len(sourceConcept.SupersededByUUIDs) > 0 {
 			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", queryBatch)
+		}
+
+		if len(sourceConcept.FocusedUUIDs) > 0 {
+			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.FocusedUUIDs, "HAS_FOCUS", queryBatch)
 		}
 	}
 	return queryBatch
@@ -1516,6 +1527,7 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 			RelatedUUIDs:      source.RelatedUUIDs,
 			BroaderUUIDs:      source.BroaderUUIDs,
 			SupersededByUUIDs: source.SupersededByUUIDs,
+			FocusedUUIDs:      source.FocusedUUIDs,
 			MembershipRoles:   source.MembershipRoles,
 			IssuedBy:          source.IssuedBy,
 			FigiCode:          source.FigiCode,

@@ -228,18 +228,10 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					source.uuid,
 					role.uuid
 			WITH
-				broaderUUIDs,
 				canonical,
 				issuer,
 				org,
-				parent,
 				person,
-				supersededByUUIDs,
-				relatedUUIDs,
-				focusedUUIDs,
-				coo,
-				cor,
-				coi,
 				{
 					authority: source.authority,
 					authorityValue: source.authorityValue,

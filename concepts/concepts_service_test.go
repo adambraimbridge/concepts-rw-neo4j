@@ -54,9 +54,11 @@ const (
 	sourceID2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
 	sourceID3 = "5b1d8c31-dfe4-4326-b6a9-6227cb59af1f"
 
-	unknownThingUUID = "b5d7c6b5-db7d-4bce-9d6a-f62195571f92"
+	unknownThingUUID        = "b5d7c6b5-db7d-4bce-9d6a-f62195571f92"
+	anotherUnknownThingUUID = "a4fe339d-664f-4609-9fe0-dd3ec6efe87e"
 
 	brandUUID             = "cce1bc63-3717-4ae6-9399-88dab5966815"
+	anotherBrandUUID      = "21b4bdb5-25ca-4705-af5f-519b279f4764"
 	topicFocusOfBrandUUID = "740c604b-8d97-443e-be70-33de6f1d6e67"
 )
 
@@ -587,6 +589,47 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
+			testName:          "Creates All Values correctly for a multiple Brand sources with common HAS_FOCUS relationships",
+			aggregatedConcept: getAggregatedConcept(t, "concorded-brand-with-multiple-has-focus.json"),
+			otherRelatedConcepts: []AggregatedConcept{
+				getAggregatedConcept(t, "topic-focus-of-brand.json"),
+			},
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Brand",
+						ConceptUUID:   brandUUID,
+						AggregateHash: "8625501871529028906",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+					{
+						ConceptType:   "Brand",
+						ConceptUUID:   anotherBrandUUID,
+						AggregateHash: "8625501871529028906",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+					{
+						ConceptType:   "Brand",
+						ConceptUUID:   anotherBrandUUID,
+						AggregateHash: "8625501871529028906",
+						EventDetails: ConcordanceEvent{
+							Type:  AddedEvent,
+							OldID: anotherBrandUUID,
+							NewID: brandUUID,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					brandUUID,
+					anotherBrandUUID,
+				},
+			},
+		},
+		{
 			testName:          "Creates All Values correctly for a Concept with multiple SUPERSEDED_BY relationships",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-superseded-by.json"),
 			updatedConcepts: ConceptChanges{
@@ -749,6 +792,25 @@ func TestWriteService(t *testing.T) {
 			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
 				readConceptAndCompare(t, test.aggregatedConcept, test.testName)
+
+				sort.Slice(test.updatedConcepts.ChangedRecords, func(i, j int) bool {
+					l, _ := json.Marshal(test.updatedConcepts.ChangedRecords[i])
+					r, _ := json.Marshal(test.updatedConcepts.ChangedRecords[j])
+					c := strings.Compare(string(l), string(r))
+					return c >= 0
+				})
+
+				updatedConcepts := updatedConcepts.(ConceptChanges)
+				sort.Slice(updatedConcepts.ChangedRecords, func(i, j int) bool {
+					l, _ := json.Marshal(updatedConcepts.ChangedRecords[i])
+					r, _ := json.Marshal(updatedConcepts.ChangedRecords[j])
+					c := strings.Compare(string(l), string(r))
+					return c >= 0
+				})
+
+				sort.Strings(test.updatedConcepts.UpdatedIds)
+				sort.Strings(updatedConcepts.UpdatedIds)
+
 				assert.Equal(t, test.updatedConcepts, updatedConcepts, "Test "+test.testName+" failed: Updated uuid list differs from expected")
 
 				// Check lone nodes and leaf nodes for identifiers nodes
@@ -1893,6 +1955,7 @@ func cleanDB(t *testing.T) {
 		sourceID2,
 		sourceID3,
 		unknownThingUUID,
+		anotherUnknownThingUUID,
 		yetAnotherBasicConceptUUID,
 		membershipRole.RoleUUID,
 		personUUID,
@@ -1913,6 +1976,7 @@ func cleanDB(t *testing.T) {
 		locationUUID,
 		anotherLocationUUID,
 		brandUUID,
+		anotherBrandUUID,
 		topicFocusOfBrandUUID,
 	)
 	deleteSourceNodes(t,
@@ -1923,6 +1987,7 @@ func cleanDB(t *testing.T) {
 		sourceID2,
 		sourceID3,
 		unknownThingUUID,
+		anotherUnknownThingUUID,
 		yetAnotherBasicConceptUUID,
 		membershipRole.RoleUUID,
 		personUUID,
@@ -1943,6 +2008,7 @@ func cleanDB(t *testing.T) {
 		locationUUID,
 		anotherLocationUUID,
 		brandUUID,
+		anotherBrandUUID,
 		topicFocusOfBrandUUID,
 	)
 	deleteConcordedNodes(t,
@@ -1953,6 +2019,7 @@ func cleanDB(t *testing.T) {
 		sourceID2,
 		sourceID3,
 		unknownThingUUID,
+		anotherUnknownThingUUID,
 		yetAnotherBasicConceptUUID,
 		membershipRole.RoleUUID,
 		personUUID,
@@ -1973,6 +2040,7 @@ func cleanDB(t *testing.T) {
 		locationUUID,
 		anotherLocationUUID,
 		brandUUID,
+		anotherBrandUUID,
 		topicFocusOfBrandUUID,
 	)
 }

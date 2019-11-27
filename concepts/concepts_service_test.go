@@ -54,9 +54,11 @@ const (
 	sourceID2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
 	sourceID3 = "5b1d8c31-dfe4-4326-b6a9-6227cb59af1f"
 
-	unknownThingUUID = "b5d7c6b5-db7d-4bce-9d6a-f62195571f92"
+	unknownThingUUID        = "b5d7c6b5-db7d-4bce-9d6a-f62195571f92"
+	anotherUnknownThingUUID = "a4fe339d-664f-4609-9fe0-dd3ec6efe87e"
 
 	brandUUID             = "cce1bc63-3717-4ae6-9399-88dab5966815"
+	anotherBrandUUID      = "21b4bdb5-25ca-4705-af5f-519b279f4764"
 	topicFocusOfBrandUUID = "740c604b-8d97-443e-be70-33de6f1d6e67"
 )
 
@@ -295,19 +297,16 @@ func TestWriteService(t *testing.T) {
 		updatedConcepts      ConceptChanges
 	}{
 		{
-			testName:             "Throws validation error for invalid concept",
-			aggregatedConcept:    AggregatedConcept{PrefUUID: basicConceptUUID},
-			otherRelatedConcepts: nil,
-			errStr:               "Invalid request, no prefLabel has been supplied",
+			testName:          "Throws validation error for invalid concept",
+			aggregatedConcept: AggregatedConcept{PrefUUID: basicConceptUUID},
+			errStr:            "Invalid request, no prefLabel has been supplied",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a Lone Concept",
-			aggregatedConcept:    getAggregatedConcept(t, "full-lone-aggregated-concept.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a Lone Concept",
+			aggregatedConcept: getAggregatedConcept(t, "full-lone-aggregated-concept.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -325,10 +324,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a MembershipRole",
-			aggregatedConcept:    getAggregatedConcept(t, "membership-role.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a MembershipRole",
+			aggregatedConcept: getAggregatedConcept(t, "membership-role.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -346,10 +343,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a BoardRole",
-			aggregatedConcept:    getAggregatedConcept(t, "board-role.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a BoardRole",
+			aggregatedConcept: getAggregatedConcept(t, "board-role.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -367,10 +362,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a Membership",
-			aggregatedConcept:    getAggregatedConcept(t, "membership.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a Membership",
+			aggregatedConcept: getAggregatedConcept(t, "membership.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -388,10 +381,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a FinancialInstrument",
-			aggregatedConcept:    getAggregatedConcept(t, "financial-instrument.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a FinancialInstrument",
+			aggregatedConcept: getAggregatedConcept(t, "financial-instrument.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -414,7 +405,6 @@ func TestWriteService(t *testing.T) {
 			otherRelatedConcepts: []AggregatedConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
-			errStr: "",
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -432,10 +422,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a Concept with a IS_RELATED_TO relationship to an unknown thing",
-			aggregatedConcept:    getAggregatedConcept(t, "concept-with-related-to-unknown-thing.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a Concept with a IS_RELATED_TO relationship to an unknown thing",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-related-to-unknown-thing.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -453,12 +441,33 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
+			testName:          "Creates All Values correctly for a Concept with multiple IS_RELATED_TO relationships",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-related-to.json"),
+			otherRelatedConcepts: []AggregatedConcept{
+				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
+			},
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "14599683085828585622",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			},
+		},
+		{
 			testName:          "Creates All Values Present for a Concept with a HAS_BROADER relationship",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-has-broader.json"),
 			otherRelatedConcepts: []AggregatedConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
-			errStr: "",
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -476,16 +485,36 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing",
-			aggregatedConcept:    getAggregatedConcept(t, "concept-with-has-broader-to-unknown-thing.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values Present for a Concept with a HAS_BROADER relationship to an unknown thing",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-has-broader-to-unknown-thing.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
 						ConceptType:   "Section",
 						ConceptUUID:   basicConceptUUID,
 						AggregateHash: "7804922918884804897",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values correctly for a Concept with multiple HAS_BROADER relationships",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-has-broader.json"),
+			otherRelatedConcepts: []AggregatedConcept{
+				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
+			},
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "5636141849922580276",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -538,10 +567,90 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates All Values Present for a Concorded Concept",
-			aggregatedConcept:    getAggregatedConcept(t, "full-concorded-aggregated-concept.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates All Values correctly for a Brand with multiple HAS_FOCUS relationships",
+			aggregatedConcept: getAggregatedConcept(t, "brand-with-multiple-has-focus.json"),
+			otherRelatedConcepts: []AggregatedConcept{
+				getAggregatedConcept(t, "topic-focus-of-brand.json"),
+			},
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Brand",
+						ConceptUUID:   brandUUID,
+						AggregateHash: "12360461169757218021",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					brandUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values correctly for a multiple Brand sources with common HAS_FOCUS relationships",
+			aggregatedConcept: getAggregatedConcept(t, "concorded-brand-with-multiple-has-focus.json"),
+			otherRelatedConcepts: []AggregatedConcept{
+				getAggregatedConcept(t, "topic-focus-of-brand.json"),
+			},
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Brand",
+						ConceptUUID:   brandUUID,
+						AggregateHash: "8625501871529028906",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+					{
+						ConceptType:   "Brand",
+						ConceptUUID:   anotherBrandUUID,
+						AggregateHash: "8625501871529028906",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+					{
+						ConceptType:   "Brand",
+						ConceptUUID:   anotherBrandUUID,
+						AggregateHash: "8625501871529028906",
+						EventDetails: ConcordanceEvent{
+							Type:  AddedEvent,
+							OldID: anotherBrandUUID,
+							NewID: brandUUID,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					brandUUID,
+					anotherBrandUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values correctly for a Concept with multiple SUPERSEDED_BY relationships",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-superseded-by.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Section",
+						ConceptUUID:   basicConceptUUID,
+						AggregateHash: "12904407635903330926",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					basicConceptUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a Concorded Concept",
+			aggregatedConcept: getAggregatedConcept(t, "full-concorded-aggregated-concept.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -578,10 +687,8 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Creates Handles Special Characters",
-			aggregatedConcept:    getAggregatedConcept(t, "lone-source-system-pref-label.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "",
+			testName:          "Creates Handles Special Characters",
+			aggregatedConcept: getAggregatedConcept(t, "lone-source-system-pref-label.json"),
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -599,10 +706,9 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Adding Concept with existing Identifiers fails",
-			aggregatedConcept:    getAggregatedConcept(t, "concorded-concept-with-conflicted-identifier.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "already exists with label `TMEIdentifier` and property `value` = '1234'",
+			testName:          "Adding Concept with existing Identifiers fails",
+			aggregatedConcept: getAggregatedConcept(t, "concorded-concept-with-conflicted-identifier.json"),
+			errStr:            "already exists with label `TMEIdentifier` and property `value` = '1234'",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
@@ -613,7 +719,6 @@ func TestWriteService(t *testing.T) {
 			otherRelatedConcepts: []AggregatedConcept{
 				getLocationWithISO31661(),
 			},
-			errStr: "",
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -632,10 +737,9 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:             "Unknown Authority Should Fail",
-			aggregatedConcept:    getAggregatedConcept(t, "unknown-authority.json"),
-			otherRelatedConcepts: nil,
-			errStr:               "Invalid Request",
+			testName:          "Unknown Authority Should Fail",
+			aggregatedConcept: getAggregatedConcept(t, "unknown-authority.json"),
+			errStr:            "Invalid Request",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
@@ -646,7 +750,6 @@ func TestWriteService(t *testing.T) {
 			otherRelatedConcepts: []AggregatedConcept{
 				getLocationWithISO31661(),
 			},
-			errStr: "",
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
@@ -689,6 +792,25 @@ func TestWriteService(t *testing.T) {
 			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
 				readConceptAndCompare(t, test.aggregatedConcept, test.testName)
+
+				sort.Slice(test.updatedConcepts.ChangedRecords, func(i, j int) bool {
+					l, _ := json.Marshal(test.updatedConcepts.ChangedRecords[i])
+					r, _ := json.Marshal(test.updatedConcepts.ChangedRecords[j])
+					c := strings.Compare(string(l), string(r))
+					return c >= 0
+				})
+
+				updatedConcepts := updatedConcepts.(ConceptChanges)
+				sort.Slice(updatedConcepts.ChangedRecords, func(i, j int) bool {
+					l, _ := json.Marshal(updatedConcepts.ChangedRecords[i])
+					r, _ := json.Marshal(updatedConcepts.ChangedRecords[j])
+					c := strings.Compare(string(l), string(r))
+					return c >= 0
+				})
+
+				sort.Strings(test.updatedConcepts.UpdatedIds)
+				sort.Strings(updatedConcepts.UpdatedIds)
+
 				assert.Equal(t, test.updatedConcepts, updatedConcepts, "Test "+test.testName+" failed: Updated uuid list differs from expected")
 
 				// Check lone nodes and leaf nodes for identifiers nodes
@@ -1833,6 +1955,7 @@ func cleanDB(t *testing.T) {
 		sourceID2,
 		sourceID3,
 		unknownThingUUID,
+		anotherUnknownThingUUID,
 		yetAnotherBasicConceptUUID,
 		membershipRole.RoleUUID,
 		personUUID,
@@ -1853,6 +1976,7 @@ func cleanDB(t *testing.T) {
 		locationUUID,
 		anotherLocationUUID,
 		brandUUID,
+		anotherBrandUUID,
 		topicFocusOfBrandUUID,
 	)
 	deleteSourceNodes(t,
@@ -1863,6 +1987,7 @@ func cleanDB(t *testing.T) {
 		sourceID2,
 		sourceID3,
 		unknownThingUUID,
+		anotherUnknownThingUUID,
 		yetAnotherBasicConceptUUID,
 		membershipRole.RoleUUID,
 		personUUID,
@@ -1883,6 +2008,7 @@ func cleanDB(t *testing.T) {
 		locationUUID,
 		anotherLocationUUID,
 		brandUUID,
+		anotherBrandUUID,
 		topicFocusOfBrandUUID,
 	)
 	deleteConcordedNodes(t,
@@ -1893,6 +2019,7 @@ func cleanDB(t *testing.T) {
 		sourceID2,
 		sourceID3,
 		unknownThingUUID,
+		anotherUnknownThingUUID,
 		yetAnotherBasicConceptUUID,
 		membershipRole.RoleUUID,
 		personUUID,
@@ -1913,6 +2040,7 @@ func cleanDB(t *testing.T) {
 		locationUUID,
 		anotherLocationUUID,
 		brandUUID,
+		anotherBrandUUID,
 		topicFocusOfBrandUUID,
 	)
 }

@@ -208,15 +208,15 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			OPTIONAL MATCH (source)-[:COUNTRY_OF_RISK]->(cor:Thing)
 			OPTIONAL MATCH (source)-[:COUNTRY_OF_INCORPORATION]->(coi:Thing)
 			WITH
-				broader,
+				collect(DISTINCT broader.uuid) as broaderUUIDs,
 				canonical,
 				issuer,
 				org,
 				parent,
 				person,
-				related,
-				supersededBy,
-				focused,
+				collect(DISTINCT related.uuid) as relatedUUIDs,
+				collect(DISTINCT supersededBy.uuid) as supersededByUUIDs,
+				collect(DISTINCT focused.uuid) as focusedUUIDs,
 				role,
 				roleRel,
 				parentOrg,
@@ -228,23 +228,15 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					source.uuid,
 					role.uuid
 			WITH
-				broader,
 				canonical,
 				issuer,
 				org,
-				parent,
 				person,
-				supersededBy,
-				related,
-				focused,
-				coo,
-				cor,
-				coi,
 				{
 					authority: source.authority,
 					authorityValue: source.authorityValue,
-					broaderUUIDs: collect(broader.uuid),
-					supersededByUUIDs: collect(supersededBy.uuid),
+					broaderUUIDs: broaderUUIDs,
+					supersededByUUIDs: supersededByUUIDs,
 					figiCode: source.figiCode,
 					issuedBy: issuer.uuid,
 					lastModifiedEpoch: source.lastModifiedEpoch,
@@ -260,8 +252,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					personUUID: person.uuid,
 					parentOrganisation: parentOrg.uuid,
 					prefLabel: source.prefLabel,
-					relatedUUIDs: collect(related.uuid),
-					focusedUUIDs: collect(focused.uuid),
+					relatedUUIDs: relatedUUIDs,
+					focusedUUIDs: focusedUUIDs,
 					types: labels(source),
 					uuid: source.uuid,
 					isDeprecated: source.isDeprecated,
@@ -1493,15 +1485,27 @@ func cleanConcept(c AggregatedConcept) AggregatedConcept {
 			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
 			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
 		}
-		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles[:], func(k, l int) bool {
+		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
 			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
+		})
+		sort.SliceStable(c.SourceRepresentations[j].BroaderUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].BroaderUUIDs[k] < c.SourceRepresentations[j].BroaderUUIDs[l]
+		})
+		sort.SliceStable(c.SourceRepresentations[j].RelatedUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].RelatedUUIDs[k] < c.SourceRepresentations[j].RelatedUUIDs[l]
+		})
+		sort.SliceStable(c.SourceRepresentations[j].SupersededByUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].SupersededByUUIDs[k] < c.SourceRepresentations[j].SupersededByUUIDs[l]
+		})
+		sort.SliceStable(c.SourceRepresentations[j].FocusedUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].FocusedUUIDs[k] < c.SourceRepresentations[j].FocusedUUIDs[l]
 		})
 	}
 	for i := range c.MembershipRoles {
 		c.MembershipRoles[i].InceptionDateEpoch = 0
 		c.MembershipRoles[i].TerminationDateEpoch = 0
 	}
-	sort.SliceStable(c.SourceRepresentations[:], func(k, l int) bool {
+	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
 		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
 	})
 	return c

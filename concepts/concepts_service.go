@@ -146,7 +146,7 @@ type neoConcept struct {
 	PrefUUID             string           `json:"prefUUID,omitempty"`
 	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
 	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
-	FocusedUUIDs         []string         `json:"focusedUUIDs,omitempty"`
+	ImpliedByUUIDs       []string         `json:"impliedByUUIDs,omitempty"`
 	ScopeNote            string           `json:"scopeNote,omitempty"`
 	ShortLabel           string           `json:"shortLabel,omitempty"`
 	Strapline            string           `json:"strapline,omitempty"`
@@ -200,7 +200,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
 			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
 			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
-			OPTIONAL MATCH (source)-[:HAS_FOCUS]->(focused:Thing)
+			OPTIONAL MATCH (source)-[:IMPLIED_BY]->(impliedBy:Thing)
 			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
 			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
@@ -216,7 +216,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				person,
 				collect(DISTINCT related.uuid) as relatedUUIDs,
 				collect(DISTINCT supersededBy.uuid) as supersededByUUIDs,
-				collect(DISTINCT focused.uuid) as focusedUUIDs,
+				collect(DISTINCT impliedBy.uuid) as impliedByUUIDs,
 				role,
 				roleRel,
 				parentOrg,
@@ -253,7 +253,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					parentOrganisation: parentOrg.uuid,
 					prefLabel: source.prefLabel,
 					relatedUUIDs: relatedUUIDs,
-					focusedUUIDs: focusedUUIDs,
+					impliedByUUIDs: impliedByUUIDs,
 					types: labels(source),
 					uuid: source.uuid,
 					isDeprecated: source.isDeprecated,
@@ -396,7 +396,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			PersonUUID:                 srcConcept.PersonUUID,
 			PrefLabel:                  srcConcept.PrefLabel,
 			RelatedUUIDs:               filterSlice(srcConcept.RelatedUUIDs),
-			FocusedUUIDs:               filterSlice(srcConcept.FocusedUUIDs),
+			ImpliedByUUIDs:             filterSlice(srcConcept.ImpliedByUUIDs),
 			Type:                       conceptType,
 			UUID:                       srcConcept.UUID,
 			IsDeprecated:               srcConcept.IsDeprecated,
@@ -851,7 +851,7 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
 			OPTIONAL MATCH (t)-[supersededBy:SUPERSEDED_BY]->(supersedesNode)
 			OPTIONAL MATCH (t)-[broader:HAS_BROADER]->(brNode)
-			OPTIONAL MATCH (t)-[focused:HAS_FOCUS]->(focusedNode)
+			OPTIONAL MATCH (t)-[impliedBy:IMPLIED_BY]->(impliesNode)
 			OPTIONAL MATCH (t)-[ho:HAS_ORGANISATION]->(org)
 			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->(memb)
 			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->(mr)
@@ -862,7 +862,7 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[corRel:COUNTRY_OF_RISK]->(cor)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo, broader, focused, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader, impliedBy, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -957,8 +957,8 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", queryBatch)
 		}
 
-		if len(sourceConcept.FocusedUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.FocusedUUIDs, "HAS_FOCUS", queryBatch)
+		if len(sourceConcept.ImpliedByUUIDs) > 0 {
+			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", queryBatch)
 		}
 	}
 	return queryBatch
@@ -1497,8 +1497,8 @@ func cleanConcept(c AggregatedConcept) AggregatedConcept {
 		sort.SliceStable(c.SourceRepresentations[j].SupersededByUUIDs, func(k, l int) bool {
 			return c.SourceRepresentations[j].SupersededByUUIDs[k] < c.SourceRepresentations[j].SupersededByUUIDs[l]
 		})
-		sort.SliceStable(c.SourceRepresentations[j].FocusedUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].FocusedUUIDs[k] < c.SourceRepresentations[j].FocusedUUIDs[l]
+		sort.SliceStable(c.SourceRepresentations[j].ImpliedByUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].ImpliedByUUIDs[k] < c.SourceRepresentations[j].ImpliedByUUIDs[l]
 		})
 	}
 	for i := range c.MembershipRoles {
@@ -1531,7 +1531,7 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 			RelatedUUIDs:      source.RelatedUUIDs,
 			BroaderUUIDs:      source.BroaderUUIDs,
 			SupersededByUUIDs: source.SupersededByUUIDs,
-			FocusedUUIDs:      source.FocusedUUIDs,
+			ImpliedByUUIDs:    source.ImpliedByUUIDs,
 			MembershipRoles:   source.MembershipRoles,
 			IssuedBy:          source.IssuedBy,
 			FigiCode:          source.FigiCode,

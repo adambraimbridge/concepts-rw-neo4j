@@ -6,8 +6,8 @@ github.com/Financial-Times/http-handlers-go v0.0.0-20180517120644-2c20324ab887 h
 github.com/Financial-Times/http-handlers-go v0.0.0-20180517120644-2c20324ab887/go.mod h1:sAkXv1oPYgNTYBYsYs83HwpYp7R50mvgBGGcsOlJtOw=
 github.com/Financial-Times/neo-model-utils-go v0.0.0-20180712095719-aea1e95c8305 h1:ob+VRuAq7QGfqT4ccoH5Ru0nfnBmjmNgUEaLzXTzUNw=
 github.com/Financial-Times/neo-model-utils-go v0.0.0-20180712095719-aea1e95c8305/go.mod h1:HdCuBcOftPWj3SBix/6H9NbPQpur9F7stSF0MEROMcU=
-github.com/Financial-Times/neo-utils-go v0.0.0-20180807105745-1fe6ae2f38f3 h1:oH+0BiMwcZVV1zwYm4f/jybJ9LhzrQn1Y4WwbIpwQ+s=
-github.com/Financial-Times/neo-utils-go v0.0.0-20180807105745-1fe6ae2f38f3/go.mod h1:LF1qICt4PuWDINYtXL4WXU595WTKReIBwV6obcncNBI=
+github.com/Financial-Times/neo-utils-go v0.0.0-20200131083751-caf9d212b521 h1:gLoRRi38oq9M7/0FfnqefWazlqnTAD+QG/eFvNzg5eA=
+github.com/Financial-Times/neo-utils-go v0.0.0-20200131083751-caf9d212b521/go.mod h1:LF1qICt4PuWDINYtXL4WXU595WTKReIBwV6obcncNBI=
 github.com/Financial-Times/neoism v1.3.2-0.20180622150314-0a3ba1ab89c4 h1:6u+Xk6f3tn/v6kV/syCh5Sl390UsfOY09pZpfsq2fbs=
 github.com/Financial-Times/neoism v1.3.2-0.20180622150314-0a3ba1ab89c4/go.mod h1:2EIISwy4fjhF4clp4S68S+qkDzRJ40pN86TgSPdRG08=
 github.com/Financial-Times/service-status-go v0.0.0-20160323111542-3f5199736a3d h1:USNBTIof6vWGM49SYrxvC5Y8NqyDL3YuuYmID81ORZQ=

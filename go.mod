@@ -7,7 +7,7 @@ require (
 	github.com/Financial-Times/go-logger v0.0.0-20180323124113-febee6537e90
 	github.com/Financial-Times/http-handlers-go v0.0.0-20180517120644-2c20324ab887
 	github.com/Financial-Times/neo-model-utils-go v0.0.0-20180712095719-aea1e95c8305
-	github.com/Financial-Times/neo-utils-go v0.0.0-20180807105745-1fe6ae2f38f3
+	github.com/Financial-Times/neo-utils-go v0.0.0-20200131083751-caf9d212b521
 	github.com/Financial-Times/service-status-go v0.0.0-20160323111542-3f5199736a3d
 	github.com/Financial-Times/transactionid-utils-go v0.2.0
 	github.com/Financial-Times/up-rw-app-api-go v0.0.0-20170710125828-d9d93a1f6895

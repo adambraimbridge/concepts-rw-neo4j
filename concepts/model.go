@@ -73,7 +73,7 @@ type Concept struct {
 	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
 	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
 	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
-	FocusedUUIDs         []string         `json:"focusedUUIDs,omitempty"`
+	ImpliedByUUIDs       []string         `json:"impliedByUUIDs,omitempty"`
 	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
 	PersonUUID           string           `json:"personUUID,omitempty"`
 	Hash                 string           `json:"hash,omitempty"`

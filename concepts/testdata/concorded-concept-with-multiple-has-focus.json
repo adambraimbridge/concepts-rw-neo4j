@@ -1,0 +1,41 @@
+{
+    "prefUUID": "a39a4558-f562-4dca-8774-000246e6eebe",
+    "prefLabel": "Pref Label",
+    "type": "Organisation",
+    "sourceRepresentations": [
+        {
+            "uuid": "a39a4558-f562-4dca-8774-000246e6eebe",
+            "prefLabel": "Pref Label",
+            "type": "Organisation",
+            "authority": "Smartlogic",
+            "authorityValue": "1234",
+            "aliases": [
+                "brandLabel",
+                "secondBrandLabel",
+                "anotherBrandOne",
+                "whyNotBrand"
+            ],
+            "hasFocusUUIDs": [
+                "2e7429bd-7a84-41cb-a619-2c702893e359",
+                "82bec2ec-34bb-4989-9f7c-d601cff87faf"
+            ]
+        },
+        {
+            "uuid": "2abff0bd-544d-31c3-899b-fba2f60d53dd",
+            "prefLabel": "Another Pref Label",
+            "type": "Organisation",
+            "authority": "TME",
+            "authorityValue": "4567",
+            "aliases": [
+                "brandLabel",
+                "secondBrandLabel",
+                "anotherBrandOne",
+                "whyNotBrand"
+            ],
+            "hasFocusUUIDs": [
+                "2e7429bd-7a84-41cb-a619-2c702893e359",
+                "a4fe339d-664f-4609-9fe0-dd3ec6efe87e"
+            ]
+        }
+    ]
+}

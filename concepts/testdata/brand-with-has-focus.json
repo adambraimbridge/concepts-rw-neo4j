@@ -15,8 +15,8 @@
                 "anotherBrandOne",
                 "whyNotBrand"
             ],
-            "impliedByUUIDs":[  
-                "740c604b-8d97-443e-be70-33de6f1d6e68"
+            "hasFocusUUIDs":[  
+                "740c604b-8d97-443e-be70-33de6f1d6e67"
             ]
         }
     ]

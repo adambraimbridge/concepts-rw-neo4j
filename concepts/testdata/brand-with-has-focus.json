@@ -1,10 +1,10 @@
 {  
-    "prefUUID":"cce1bc63-3717-4ae6-9399-88dab5966815",
+    "prefUUID":"2d3e16e0-61cb-4322-8aff-3b01c59f4dab",
     "prefLabel":"Pref Label",
     "type":"Brand",
     "sourceRepresentations":[  
         {  
-            "uuid":"cce1bc63-3717-4ae6-9399-88dab5966815",
+            "uuid":"2d3e16e0-61cb-4322-8aff-3b01c59f4dab",
             "prefLabel":"Pref Label",
             "type":"Brand",
             "authority":"Smartlogic",
@@ -15,8 +15,9 @@
                 "anotherBrandOne",
                 "whyNotBrand"
             ],
-            "impliedByUUIDs":[  
-                "740c604b-8d97-443e-be70-33de6f1d6e68"
+            "hasFocusUUIDs":[  
+                "2e7429bd-7a84-41cb-a619-2c702893e359",
+                "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
             ]
         }
     ]
